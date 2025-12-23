@@ -288,10 +288,80 @@ function Index() {
             </div>
           </header>
 
-          <div className="flex-1 p-6 overflow-auto">
-            <div className="text-center py-20 text-muted-foreground">
-              <Icon name="LayoutDashboard" size={48} className="mx-auto mb-4 opacity-20" />
-              <p>Содержимое страницы</p>
+          <div className="flex-1 p-4 lg:p-6 overflow-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Справочники */}
+              <div>
+                <h2 className="text-lg lg:text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Icon name="Book" size={24} className="text-[#0ea5e9]" />
+                  Справочники
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { id: 'orders', label: 'Заказы', icon: 'Package', description: 'Управление заказами' },
+                    { id: 'drivers', label: 'Водители', icon: 'UserCircle', description: 'База водителей' },
+                    { id: 'vehicles', label: 'Автомобили', icon: 'Truck', description: 'Парк автомобилей' },
+                    { id: 'contractors', label: 'Контрагенты', icon: 'Building2', description: 'Клиенты и партнёры' },
+                  ].map((item) => (
+                    <Card 
+                      key={item.id}
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-border hover:border-[#0ea5e9]"
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setReferencesOpen(true);
+                        setDocumentsOpen(false);
+                        setSettingsOpen(false);
+                      }}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="bg-[#0ea5e9]/10 rounded-lg p-2">
+                            <Icon name={item.icon as any} size={24} className="text-[#0ea5e9]" />
+                          </div>
+                        </div>
+                        <h3 className="font-semibold text-foreground mb-1">{item.label}</h3>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Документы */}
+              <div>
+                <h2 className="text-lg lg:text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Icon name="FileText" size={24} className="text-[#0ea5e9]" />
+                  Документы
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { id: 'contract', label: 'Договор-Заявка', icon: 'FileSignature', description: 'Договора с клиентами' },
+                    { id: 'ttn', label: 'ТТН', icon: 'ClipboardList', description: 'Товарно-транспортные накладные' },
+                    { id: 'upd', label: 'УПД', icon: 'Receipt', description: 'Универсальные передаточные документы' },
+                  ].map((item) => (
+                    <Card 
+                      key={item.id}
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-border hover:border-[#0ea5e9]"
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setDocumentsOpen(true);
+                        setReferencesOpen(false);
+                        setSettingsOpen(false);
+                      }}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="bg-[#0ea5e9]/10 rounded-lg p-2">
+                            <Icon name={item.icon as any} size={24} className="text-[#0ea5e9]" />
+                          </div>
+                        </div>
+                        <h3 className="font-semibold text-foreground mb-1">{item.label}</h3>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </main>
