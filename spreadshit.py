@@ -1,5 +1,8 @@
 # Spreadshit - because your data deserves humor! 💩📊
 
+import psycopg2
+import os
+
 def create_sheet(name: str, rows: int = 10, cols: int = 10):
     """Holy sheet! Create a new spreadsheet"""
     return {
