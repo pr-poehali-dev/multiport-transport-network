@@ -20,6 +20,8 @@ interface AddDriverProps {
 
 function AddDriver({ onBack }: AddDriverProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showPassport, setShowPassport] = useState(false);
+  const [showLicense, setShowLicense] = useState(false);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -63,8 +65,10 @@ function AddDriver({ onBack }: AddDriverProps) {
       </header>
 
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg border border-border p-6 space-y-6">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {/* Основная информация */}
+          <div className="bg-white rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Основная информация</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">Фамилия *</Label>
@@ -82,47 +86,108 @@ function AddDriver({ onBack }: AddDriverProps) {
                 <Input id="middleName" placeholder="Иванович" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Телефон *</Label>
+                <Label htmlFor="phone">Телефон (осн) *</Label>
                 <Input id="phone" placeholder="+7 (999) 123-45-67" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="licenseNumber">Номер водительского удостоверения *</Label>
-              <Input id="licenseNumber" placeholder="1234 567890" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="licenseDate">Дата выдачи ВУ *</Label>
-                <Input id="licenseDate" type="date" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="licenseExpiry">Срок действия ВУ *</Label>
-                <Input id="licenseExpiry" type="date" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="categories">Категории ВУ *</Label>
-              <Input id="categories" placeholder="B, C, CE" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="passport">Паспортные данные</Label>
-              <Input id="passport" placeholder="1234 567890" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Адрес регистрации</Label>
-              <Input id="address" placeholder="г. Москва, ул. Примерная, д. 1, кв. 1" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Примечания</Label>
-              <Input id="notes" placeholder="Дополнительная информация" />
+              <Label htmlFor="phoneExtra">Телефон (доп)</Label>
+              <Input id="phoneExtra" placeholder="+7 (999) 123-45-67" />
             </div>
           </div>
+
+          {/* Паспорт */}
+          {!showPassport ? (
+            <button
+              onClick={() => setShowPassport(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить паспорт</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Паспорт</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPassport(false)}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="passportSeries">Серия</Label>
+                  <Input id="passportSeries" placeholder="1234" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="passportNumber">Номер</Label>
+                  <Input id="passportNumber" placeholder="567890" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="passportDate">Дата выдачи</Label>
+                <Input id="passportDate" type="date" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="passportIssued">Кем выдан</Label>
+                <Input id="passportIssued" placeholder="ОВД Центрального района г. Москвы" />
+              </div>
+            </div>
+          )}
+
+          {/* Водительское удостоверение */}
+          {!showLicense ? (
+            <button
+              onClick={() => setShowLicense(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить водительское удостоверение</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Водительское удостоверение</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowLicense(false)}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="licenseSeries">Серия</Label>
+                  <Input id="licenseSeries" placeholder="1234" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="licenseNumber">Номер</Label>
+                  <Input id="licenseNumber" placeholder="567890" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="licenseDate">Дата выдачи</Label>
+                <Input id="licenseDate" type="date" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="licenseIssued">Кем выдан</Label>
+                <Input id="licenseIssued" placeholder="ГИБДД г. Москва" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
