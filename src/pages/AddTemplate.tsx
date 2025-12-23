@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import * as pdfjsLib from 'pdfjs-dist';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,13 @@ interface FieldMapping {
   width: number;
   height: number;
   page: number;
+  fontSize?: number;
+  fontFamily?: string;
+  text?: string;
+}
+
+interface TextItemWithPosition extends TextItem {
+  transform: number[];
 }
 
 const DRIVER_FIELDS = [
@@ -87,6 +95,16 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const [hasSelection, setHasSelection] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [scale, setScale] = useState(1.0);
+  const [textItems, setTextItems] = useState<Array<{
+    text: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fontSize: number;
+    fontFamily: string;
+  }>>([]);
+  const [selectedTextItems, setSelectedTextItems] = useState<number[]>([]);
 
   useEffect(() => {
     if (file) {
@@ -118,6 +136,48 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
         canvasContext: context,
         viewport: viewport,
       }).promise;
+
+      // Извлекаем текстовые элементы
+      const textContent = await page.getTextContent();
+      const items: Array<{
+        text: string;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        fontSize: number;
+        fontFamily: string;
+      }> = [];
+
+      textContent.items.forEach((item) => {
+        if ('str' in item && 'transform' in item) {
+          const textItem = item as TextItemWithPosition;
+          const tx = textItem.transform[4];
+          const ty = textItem.transform[5];
+          const fontSize = Math.abs(textItem.transform[0]);
+          const fontFamily = textItem.fontName || 'sans-serif';
+          
+          // Преобразуем координаты PDF в координаты canvas
+          const x = tx;
+          const y = viewport.height - ty;
+          
+          // Примерная ширина текста
+          const width = textItem.width * scale;
+          const height = fontSize;
+
+          items.push({
+            text: textItem.str,
+            x,
+            y: y - height,
+            width,
+            height,
+            fontSize,
+            fontFamily,
+          });
+        }
+      });
+
+      setTextItems(items);
     } catch (error) {
       console.error('Error loading PDF:', error);
       toast({
@@ -154,10 +214,28 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const handleMouseUp = () => {
     if (isSelecting) {
       setIsSelecting(false);
-      const width = Math.abs(selectionEnd.x - selectionStart.x);
-      const height = Math.abs(selectionEnd.y - selectionStart.y);
       
-      if (width > 5 && height > 5) {
+      // Находим все текстовые элементы в выделенной области
+      const minX = Math.min(selectionStart.x, selectionEnd.x);
+      const minY = Math.min(selectionStart.y, selectionEnd.y);
+      const maxX = Math.max(selectionStart.x, selectionEnd.x);
+      const maxY = Math.max(selectionStart.y, selectionEnd.y);
+      
+      const selected: number[] = [];
+      textItems.forEach((item, index) => {
+        // Проверяем пересечение с выделенной областью
+        if (
+          item.x < maxX &&
+          item.x + item.width > minX &&
+          item.y < maxY &&
+          item.y + item.height > minY
+        ) {
+          selected.push(index);
+        }
+      });
+      
+      if (selected.length > 0) {
+        setSelectedTextItems(selected);
         setHasSelection(true);
       }
     }
@@ -170,28 +248,38 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
 
   const handleAssignField = (fieldValue: string) => {
     const field = DRIVER_FIELDS.find(f => f.value === fieldValue);
-    if (!field) return;
+    if (!field || selectedTextItems.length === 0) return;
 
-    const x = Math.min(selectionStart.x, selectionEnd.x);
-    const y = Math.min(selectionStart.y, selectionEnd.y);
-    const width = Math.abs(selectionEnd.x - selectionStart.x);
-    const height = Math.abs(selectionEnd.y - selectionStart.y);
+    // Получаем границы выделенных текстовых элементов
+    const selectedItems = selectedTextItems.map(i => textItems[i]);
+    const minX = Math.min(...selectedItems.map(item => item.x));
+    const minY = Math.min(...selectedItems.map(item => item.y));
+    const maxX = Math.max(...selectedItems.map(item => item.x + item.width));
+    const maxY = Math.max(...selectedItems.map(item => item.y + item.height));
+    
+    // Берем размер шрифта первого выделенного элемента
+    const firstItem = selectedItems[0];
+    const text = selectedItems.map(item => item.text).join(' ');
 
     const newMapping: FieldMapping = {
       id: `field_${Date.now()}`,
       fieldName: field.value,
       fieldLabel: field.label,
-      x,
-      y,
-      width,
-      height,
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
       page: 0,
+      fontSize: firstItem.fontSize,
+      fontFamily: firstItem.fontFamily,
+      text,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
     setShowAssignMenu(false);
     setSelectedField(null);
     setHasSelection(false);
+    setSelectedTextItems([]);
 
     toast({
       title: 'Поле назначено',
@@ -464,18 +552,22 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
                   </div>
                 )}
                 
-                {/* Рамка выделения */}
-                {hasSelection && !isSelecting && (
-                  <div
-                    className="absolute border-2 border-[#0ea5e9] bg-[#0ea5e9]/5 pointer-events-none"
-                    style={{
-                      left: Math.min(selectionStart.x, selectionEnd.x),
-                      top: Math.min(selectionStart.y, selectionEnd.y),
-                      width: Math.abs(selectionEnd.x - selectionStart.x),
-                      height: Math.abs(selectionEnd.y - selectionStart.y),
-                    }}
-                  />
-                )}
+                {/* Подсветка выделенных текстовых элементов */}
+                {selectedTextItems.map((itemIndex) => {
+                  const item = textItems[itemIndex];
+                  return (
+                    <div
+                      key={itemIndex}
+                      className="absolute bg-[#0ea5e9]/20 pointer-events-none"
+                      style={{
+                        left: item.x,
+                        top: item.y,
+                        width: item.width,
+                        height: item.height,
+                      }}
+                    />
+                  );
+                })}
                 
                 {/* Маркеры назначенных полей */}
                 {fieldMappings.map((mapping) => (
