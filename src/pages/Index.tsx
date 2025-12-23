@@ -26,6 +26,7 @@ interface Notification {
 
 function Index() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [referencesOpen, setReferencesOpen] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -88,31 +89,98 @@ function Index() {
           </div>
 
           <nav className="space-y-1">
-            {[
-              { id: 'dashboard', label: 'Дашборд', icon: 'LayoutGrid', hasSubmenu: false },
-              { id: 'references', label: 'Справочники', icon: 'Book', hasSubmenu: true },
-              { id: 'documents', label: 'Документы', icon: 'FileText', hasSubmenu: true },
-              { id: 'overview', label: 'Обзор', icon: 'Activity', hasSubmenu: false },
-              { id: 'settings', label: 'Настройки', icon: 'Settings', hasSubmenu: true },
-            ].map((item) => (
+            <button
+              onClick={() => setActiveSection('dashboard')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
+                activeSection === 'dashboard'
+                  ? 'bg-[#0ea5e9] text-white'
+                  : 'text-white/80 hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Icon name="LayoutGrid" size={20} />
+                <span className="text-sm font-medium">Дашборд</span>
+              </div>
+            </button>
+
+            <div>
               <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
-                  activeSection === item.id
-                    ? 'bg-[#0ea5e9] text-white'
-                    : 'text-white/80 hover:bg-white/5'
-                }`}
+                onClick={() => setReferencesOpen(!referencesOpen)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-white/80 hover:bg-white/5"
               >
                 <div className="flex items-center gap-3">
-                  <Icon name={item.icon as any} size={20} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <Icon name="Book" size={20} />
+                  <span className="text-sm font-medium">Справочники</span>
                 </div>
-                {item.hasSubmenu && (
-                  <Icon name="ChevronRight" size={16} className="text-white/60" />
-                )}
+                <Icon name="ChevronRight" size={16} className={`text-white/60 transition-transform ${referencesOpen ? 'rotate-90' : ''}`} />
               </button>
-            ))}
+              {referencesOpen && (
+                <div className="mt-1 ml-9 space-y-1">
+                  {[
+                    { id: 'orders', label: 'Заказы' },
+                    { id: 'drivers', label: 'Водители' },
+                    { id: 'vehicles', label: 'Автомобили' },
+                    { id: 'contractors', label: 'Контрагенты' },
+                  ].map((subItem) => (
+                    <button
+                      key={subItem.id}
+                      onClick={() => setActiveSection(subItem.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                        activeSection === subItem.id
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/70 hover:bg-white/5 hover:text-white/90'
+                      }`}
+                    >
+                      {subItem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setActiveSection('documents')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
+                activeSection === 'documents'
+                  ? 'bg-[#0ea5e9] text-white'
+                  : 'text-white/80 hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Icon name="FileText" size={20} />
+                <span className="text-sm font-medium">Документы</span>
+              </div>
+              <Icon name="ChevronRight" size={16} className="text-white/60" />
+            </button>
+
+            <button
+              onClick={() => setActiveSection('overview')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
+                activeSection === 'overview'
+                  ? 'bg-[#0ea5e9] text-white'
+                  : 'text-white/80 hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Icon name="Activity" size={20} />
+                <span className="text-sm font-medium">Обзор</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('settings')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
+                activeSection === 'settings'
+                  ? 'bg-[#0ea5e9] text-white'
+                  : 'text-white/80 hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Icon name="Settings" size={20} />
+                <span className="text-sm font-medium">Настройки</span>
+              </div>
+              <Icon name="ChevronRight" size={16} className="text-white/60" />
+            </button>
           </nav>
         </div>
       </aside>
