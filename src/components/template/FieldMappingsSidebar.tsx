@@ -23,7 +23,7 @@ function FieldMappingsSidebar({
   hasSelection,
 }: FieldMappingsSidebarProps) {
   return (
-    <div className="w-full lg:w-96 bg-white border-b lg:border-b-0 lg:border-r border-border flex flex-col">
+    <div className="w-64 bg-white border-r border-border flex flex-col flex-shrink-0">
       <div className="p-4 lg:p-6 border-b border-border space-y-4">
         <div className="space-y-2">
           <Label htmlFor="template-name">Название шаблона</Label>
