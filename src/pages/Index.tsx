@@ -221,21 +221,7 @@ function Index() {
       <main className="flex-1 flex flex-col">
         <header className="bg-white border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon">
-                <Icon name="Search" size={20} />
-              </Button>
-              <Button variant="ghost" size="icon" className="relative">
-                <Icon name="Bell" size={20} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Icon name="User" size={20} />
-              </Button>
-            </div>
+            <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
           </div>
         </header>
 
