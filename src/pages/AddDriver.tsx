@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import TopBar from '@/components/TopBar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,28 +36,21 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      <header className="sticky top-0 z-10 bg-white border-b border-border px-4 lg:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 lg:gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onMenuClick}
-              className="lg:hidden"
-            >
-              <Icon name="Menu" size={24} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              className="hover:bg-gray-100"
-            >
-              <Icon name="ArrowLeft" size={20} />
-            </Button>
-            <h1 className="text-base lg:text-xl font-semibold text-foreground">Добавить водителя</h1>
-          </div>
-          <div className="flex items-center gap-2 lg:gap-3">
+      <TopBar
+        title="Добавить водителя"
+        onMenuClick={onMenuClick}
+        leftButton={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCancel}
+            className="hover:bg-gray-100"
+          >
+            <Icon name="ArrowLeft" size={20} />
+          </Button>
+        }
+        rightButtons={
+          <>
             <Button
               variant="outline"
               onClick={handleCancel}
@@ -69,9 +63,9 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
               <Icon name="Check" size={18} />
               <span className="hidden sm:inline">Сохранить</span>
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
+import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
 
 interface Order {
@@ -69,6 +70,10 @@ function Index() {
       case 'info': return 'Info';
       case 'alert': return 'AlertCircle';
     }
+  };
+
+  const handleRefreshDashboard = () => {
+    console.log('Обновление дашборда...');
   };
 
   return (
@@ -268,25 +273,11 @@ function Index() {
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
       ) : (
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-border px-4 lg:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden"
-                >
-                  <Icon name="Menu" size={24} />
-                </Button>
-                <h1 className="text-lg lg:text-xl font-semibold text-foreground">Дашборд</h1>
-              </div>
-              <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
-                <Icon name="RefreshCw" size={18} />
-                <span className="hidden sm:inline">Обновить</span>
-              </Button>
-            </div>
-          </header>
+          <TopBar
+            title="Дашборд"
+            onMenuClick={() => setSidebarOpen(true)}
+            onRefresh={handleRefreshDashboard}
+          />
 
           <div className="flex-1 p-4 lg:p-6 overflow-auto">
             <div className="max-w-7xl mx-auto space-y-6">
