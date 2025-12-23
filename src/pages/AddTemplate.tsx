@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
+import * as pdfjsLib from 'pdfjs-dist';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,14 +26,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
 interface FieldMapping {
   id: string;
   fieldName: string;
   fieldLabel: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
   page: number;
-  originalText: string;
 }
 
 const DRIVER_FIELDS = [
@@ -65,20 +70,63 @@ interface AddTemplateProps {
 
 function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const { toast } = useToast();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const [file, setFile] = useState<File | null>(initialData?.file || null);
   const [templateName, setTemplateName] = useState(initialData?.fileName || '');
   const [isUploading, setIsUploading] = useState(false);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(initialData?.pdfUrl || null);
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [scale, setScale] = useState(1.5);
 
-  const handlePdfClick = (event: React.MouseEvent<HTMLIFrameElement>) => {
-    const iframe = event.currentTarget;
-    const rect = iframe.getBoundingClientRect();
+  useEffect(() => {
+    if (file) {
+      loadPdf();
+    }
+  }, [file]);
+
+  const loadPdf = async () => {
+    if (!file || !canvasRef.current) return;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      setPdfDoc(pdf);
+
+      // Render first page
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale });
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      if (!context) return;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+    } catch (error) {
+      console.error('Error loading PDF:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить PDF',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
@@ -96,8 +144,9 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
       fieldLabel: field.label,
       x: clickPosition.x,
       y: clickPosition.y,
+      width: 200,
+      height: 24,
       page: 0,
-      originalText: '',
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
@@ -329,18 +378,16 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
         {/* Правая панель - PDF Viewer */}
         <div className="flex-1 overflow-y-auto bg-slate-50">
           <div className="p-4 lg:p-6">
-            {pdfPreviewUrl ? (
-              <div className="bg-white rounded-lg border border-border overflow-hidden relative">
-                <div 
-                  className="cursor-crosshair"
-                  onClick={handlePdfClick}
-                >
-                  <iframe
-                    src={`${pdfPreviewUrl}#toolbar=0`}
-                    className="w-full h-[calc(100vh-200px)] min-h-[600px]"
-                    title="PDF Preview"
-                  />
-                </div>
+            {file ? (
+              <div 
+                ref={containerRef}
+                className="bg-white rounded-lg border border-border overflow-hidden relative inline-block"
+              >
+                <canvas
+                  ref={canvasRef}
+                  onClick={handleCanvasClick}
+                  className="cursor-crosshair block"
+                />
                 
                 {/* Маркеры назначенных полей */}
                 {fieldMappings.map((mapping) => (
@@ -350,11 +397,11 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
                     style={{
                       left: mapping.x,
                       top: mapping.y,
-                      width: 150,
-                      height: 20,
+                      width: mapping.width,
+                      height: mapping.height,
                     }}
                   >
-                    <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[18px]">
+                    <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[22px]">
                       {mapping.fieldLabel}
                     </div>
                   </div>
