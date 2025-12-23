@@ -105,7 +105,12 @@ function Index() {
 
           <nav className="space-y-1">
             <button
-              onClick={() => setActiveSection('dashboard')}
+              onClick={() => {
+                setActiveSection('dashboard');
+                setReferencesOpen(false);
+                setDocumentsOpen(false);
+                setSettingsOpen(false);
+              }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                 activeSection === 'dashboard'
                   ? 'bg-[#0ea5e9] text-white'
@@ -142,10 +147,12 @@ function Index() {
                       onClick={() => {
                         setActiveSection(subItem.id);
                         setReferencesOpen(true);
+                        setDocumentsOpen(false);
+                        setSettingsOpen(false);
                       }}
                       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
-                          ? 'bg-white/10 text-white'
+                          ? 'bg-[#0ea5e9] text-white'
                           : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                       }`}
                     >
@@ -177,10 +184,15 @@ function Index() {
                   ].map((subItem) => (
                     <button
                       key={subItem.id}
-                      onClick={() => setActiveSection(subItem.id)}
+                      onClick={() => {
+                        setActiveSection(subItem.id);
+                        setDocumentsOpen(true);
+                        setReferencesOpen(false);
+                        setSettingsOpen(false);
+                      }}
                       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
-                          ? 'bg-white/10 text-white'
+                          ? 'bg-[#0ea5e9] text-white'
                           : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                       }`}
                     >
@@ -193,7 +205,12 @@ function Index() {
             </div>
 
             <button
-              onClick={() => setActiveSection('overview')}
+              onClick={() => {
+                setActiveSection('overview');
+                setReferencesOpen(false);
+                setDocumentsOpen(false);
+                setSettingsOpen(false);
+              }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                 activeSection === 'overview'
                   ? 'bg-[#0ea5e9] text-white'
@@ -220,10 +237,15 @@ function Index() {
               {settingsOpen && (
                 <div className="mt-1 ml-9 space-y-1">
                   <button
-                    onClick={() => setActiveSection('templates')}
+                    onClick={() => {
+                      setActiveSection('templates');
+                      setSettingsOpen(true);
+                      setReferencesOpen(false);
+                      setDocumentsOpen(false);
+                    }}
                     className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                       activeSection === 'templates'
-                        ? 'bg-white/10 text-white'
+                        ? 'bg-[#0ea5e9] text-white'
                         : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                     }`}
                   >
