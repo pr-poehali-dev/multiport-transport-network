@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import AddTemplate from './AddTemplate';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TemplatesProps {
   onMenuClick: () => void;
@@ -21,6 +31,8 @@ function Templates({ onMenuClick }: TemplatesProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<TemplateFile | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   const loadTemplates = () => {
     const saved = JSON.parse(localStorage.getItem('pdf_templates') || '[]');
@@ -62,6 +74,34 @@ function Templates({ onMenuClick }: TemplatesProps) {
     
     setSelectedFile({ file, pdfUrl: url, fileName });
     setIsEditing(true);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    // TODO: Implement edit functionality with existing template data
+    toast({
+      title: 'В разработке',
+      description: 'Редактирование шаблона будет доступно в следующей версии',
+    });
+  };
+
+  const handleDeleteClick = (templateId: string) => {
+    setTemplateToDelete(templateId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!templateToDelete) return;
+    
+    const updatedTemplates = templates.filter(t => t.id !== templateToDelete);
+    localStorage.setItem('pdf_templates', JSON.stringify(updatedTemplates));
+    setTemplates(updatedTemplates);
+    setDeleteDialogOpen(false);
+    setTemplateToDelete(null);
+    
+    toast({
+      title: 'Шаблон удалён',
+      description: 'Шаблон успешно удалён из системы',
+    });
   };
 
   if (isEditing && selectedFile) {
@@ -114,7 +154,7 @@ function Templates({ onMenuClick }: TemplatesProps) {
             {templates.map((template) => (
               <div
                 key={template.id}
-                className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors cursor-pointer"
+                className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
               >
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-[#0ea5e9]/10 rounded">
@@ -129,12 +169,58 @@ function Templates({ onMenuClick }: TemplatesProps) {
                       {new Date(template.createdAt).toLocaleDateString('ru-RU')}
                     </p>
                   </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                      onClick={() => handleEditTemplate(template)}
+                    >
+                      <Icon name="Pencil" size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => handleDeleteClick(template.id)}
+                    >
+                      <Icon name="Trash2" size={16} />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение удаления
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Вы действительно хотите удалить этот шаблон?
+              Это действие нельзя будет отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="X" size={16} />
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="Trash2" size={16} />
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
