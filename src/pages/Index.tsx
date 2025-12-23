@@ -27,6 +27,7 @@ interface Notification {
 function Index() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [referencesOpen, setReferencesOpen] = useState(false);
+  const [documentsOpen, setDocumentsOpen] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -138,20 +139,39 @@ function Index() {
               )}
             </div>
 
-            <button
-              onClick={() => setActiveSection('documents')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
-                activeSection === 'documents'
-                  ? 'bg-[#0ea5e9] text-white'
-                  : 'text-white/80 hover:bg-white/5'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon name="FileText" size={20} />
-                <span className="text-sm font-medium">Документы</span>
-              </div>
-              <Icon name="ChevronRight" size={16} className="text-white/60" />
-            </button>
+            <div>
+              <button
+                onClick={() => setDocumentsOpen(!documentsOpen)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-white/80 hover:bg-white/5"
+              >
+                <div className="flex items-center gap-3">
+                  <Icon name="FileText" size={20} />
+                  <span className="text-sm font-medium">Документы</span>
+                </div>
+                <Icon name="ChevronRight" size={16} className={`text-white/60 transition-transform ${documentsOpen ? 'rotate-90' : ''}`} />
+              </button>
+              {documentsOpen && (
+                <div className="mt-1 ml-9 space-y-1">
+                  {[
+                    { id: 'contract', label: 'Договор-Заявка' },
+                    { id: 'ttn', label: 'ТТН' },
+                    { id: 'upd', label: 'УПД' },
+                  ].map((subItem) => (
+                    <button
+                      key={subItem.id}
+                      onClick={() => setActiveSection(subItem.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                        activeSection === subItem.id
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/70 hover:bg-white/5 hover:text-white/90'
+                      }`}
+                    >
+                      {subItem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <button
               onClick={() => setActiveSection('overview')}
