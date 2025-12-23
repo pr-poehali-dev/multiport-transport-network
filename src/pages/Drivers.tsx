@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddDriver from './AddDriver';
-import { getDrivers, Driver } from '@/api/drivers';
+import { getDrivers, deleteDriver, Driver } from '@/api/drivers';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -101,12 +101,11 @@ function Drivers({ onMenuClick }: DriversProps) {
     if (!driverToDelete) return;
 
     try {
-      // TODO: Добавить API метод для удаления
-      // await deleteDriver(driverToDelete);
+      const result = await deleteDriver(driverToDelete);
       
       toast({
         title: 'Водитель удалён',
-        description: 'Водитель успешно удалён из системы',
+        description: result.message || 'Водитель успешно удалён из системы',
       });
       
       setDeleteDialogOpen(false);
@@ -116,7 +115,7 @@ function Drivers({ onMenuClick }: DriversProps) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: 'Не удалось удалить водителя'
+        description: error instanceof Error ? error.message : 'Не удалось удалить водителя'
       });
     }
   };

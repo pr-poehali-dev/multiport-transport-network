@@ -40,6 +40,31 @@
         "total": "number"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Update driver - success",
+      "method": "PUT",
+      "path": "/?id=1",
+      "body": {
+        "lastName": "Сидоров",
+        "firstName": "Пётр",
+        "phone": "+7 (999) 555-55-55"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Delete driver - success",
+      "method": "DELETE",
+      "path": "/?id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

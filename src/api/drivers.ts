@@ -55,4 +55,17 @@ export async function getDriverById(id: number): Promise<Driver> {
   });
 }
 
-// В будущем можно добавить: updateDriver, deleteDriver
+// Обновить водителя
+export async function updateDriver(id: number, driver: Driver): Promise<CreateDriverResponse> {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}?id=${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(driver),
+  });
+}
+
+// Удалить водителя
+export async function deleteDriver(id: number): Promise<{ message: string }> {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}?id=${id}`, {
+    method: 'DELETE',
+  });
+}
