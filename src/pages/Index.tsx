@@ -119,20 +119,21 @@ function Index() {
               {referencesOpen && (
                 <div className="mt-1 ml-9 space-y-1">
                   {[
-                    { id: 'orders', label: 'Заказы' },
-                    { id: 'drivers', label: 'Водители' },
-                    { id: 'vehicles', label: 'Автомобили' },
-                    { id: 'contractors', label: 'Контрагенты' },
+                    { id: 'orders', label: 'Заказы', icon: 'Package' },
+                    { id: 'drivers', label: 'Водители', icon: 'UserCircle' },
+                    { id: 'vehicles', label: 'Автомобили', icon: 'Truck' },
+                    { id: 'contractors', label: 'Контрагенты', icon: 'Building2' },
                   ].map((subItem) => (
                     <button
                       key={subItem.id}
                       onClick={() => setActiveSection(subItem.id)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                      className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
                           ? 'bg-white/10 text-white'
                           : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                       }`}
                     >
+                      <Icon name={subItem.icon as any} size={16} />
                       {subItem.label}
                     </button>
                   ))}
@@ -154,19 +155,20 @@ function Index() {
               {documentsOpen && (
                 <div className="mt-1 ml-9 space-y-1">
                   {[
-                    { id: 'contract', label: 'Договор-Заявка' },
-                    { id: 'ttn', label: 'ТТН' },
-                    { id: 'upd', label: 'УПД' },
+                    { id: 'contract', label: 'Договор-Заявка', icon: 'FileSignature' },
+                    { id: 'ttn', label: 'ТТН', icon: 'ClipboardList' },
+                    { id: 'upd', label: 'УПД', icon: 'Receipt' },
                   ].map((subItem) => (
                     <button
                       key={subItem.id}
                       onClick={() => setActiveSection(subItem.id)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                      className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
                           ? 'bg-white/10 text-white'
                           : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                       }`}
                     >
+                      <Icon name={subItem.icon as any} size={16} />
                       {subItem.label}
                     </button>
                   ))}
@@ -203,12 +205,13 @@ function Index() {
                 <div className="mt-1 ml-9 space-y-1">
                   <button
                     onClick={() => setActiveSection('templates')}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                    className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                       activeSection === 'templates'
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:bg-white/5 hover:text-white/90'
                     }`}
                   >
+                    <Icon name="Layers" size={16} />
                     Шаблоны
                   </button>
                 </div>
