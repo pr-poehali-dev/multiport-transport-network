@@ -1,0 +1,52 @@
+{
+  "tests": [
+    {
+      "name": "Get all templates",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "templates": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get template by ID",
+      "method": "GET",
+      "path": "/?id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "id": "string",
+        "name": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new template",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Тестовый шаблон",
+        "type": "contract"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "string",
+        "name": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create template without name (validation)",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
