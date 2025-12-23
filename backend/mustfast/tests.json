@@ -1,0 +1,42 @@
+{
+  "tests": [
+    {
+      "name": "GET - API info",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "motto": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST ping",
+      "method": "POST",
+      "body": {
+        "action": "ping"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "status": "pong",
+        "responseTime": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST process data",
+      "method": "POST",
+      "body": {
+        "action": "process",
+        "operation": "transform",
+        "data": ["test", "data"]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "action": "process",
+        "result": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
