@@ -81,8 +81,12 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+  const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
+  const [hasSelection, setHasSelection] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1.0);
 
   useEffect(() => {
     if (file) {
@@ -124,13 +128,43 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     }
   };
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = event.currentTarget;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    setClickPosition({ x, y });
+    setIsSelecting(true);
+    setSelectionStart({ x, y });
+    setSelectionEnd({ x, y });
+    setHasSelection(false);
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isSelecting) return;
+    
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    setSelectionEnd({ x, y });
+  };
+
+  const handleMouseUp = () => {
+    if (isSelecting) {
+      setIsSelecting(false);
+      const width = Math.abs(selectionEnd.x - selectionStart.x);
+      const height = Math.abs(selectionEnd.y - selectionStart.y);
+      
+      if (width > 5 && height > 5) {
+        setHasSelection(true);
+      }
+    }
+  };
+
+  const handleAssignClick = () => {
+    if (!hasSelection) return;
     setShowAssignMenu(true);
   };
 
@@ -138,20 +172,26 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     const field = DRIVER_FIELDS.find(f => f.value === fieldValue);
     if (!field) return;
 
+    const x = Math.min(selectionStart.x, selectionEnd.x);
+    const y = Math.min(selectionStart.y, selectionEnd.y);
+    const width = Math.abs(selectionEnd.x - selectionStart.x);
+    const height = Math.abs(selectionEnd.y - selectionStart.y);
+
     const newMapping: FieldMapping = {
       id: `field_${Date.now()}`,
       fieldName: field.value,
       fieldLabel: field.label,
-      x: clickPosition.x,
-      y: clickPosition.y,
-      width: 200,
-      height: 24,
+      x,
+      y,
+      width,
+      height,
       page: 0,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
     setShowAssignMenu(false);
     setSelectedField(null);
+    setHasSelection(false);
 
     toast({
       title: 'Поле назначено',
@@ -385,9 +425,57 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
               >
                 <canvas
                   ref={canvasRef}
-                  onClick={handleCanvasClick}
-                  className="cursor-crosshair block"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  className="block"
                 />
+                
+                {/* Текущее выделение */}
+                {isSelecting && (
+                  <div
+                    className="absolute border-2 border-dashed border-[#0ea5e9] bg-[#0ea5e9]/10 pointer-events-none"
+                    style={{
+                      left: Math.min(selectionStart.x, selectionEnd.x),
+                      top: Math.min(selectionStart.y, selectionEnd.y),
+                      width: Math.abs(selectionEnd.x - selectionStart.x),
+                      height: Math.abs(selectionEnd.y - selectionStart.y),
+                    }}
+                  />
+                )}
+                
+                {/* Кнопка назначения поля */}
+                {hasSelection && !isSelecting && (
+                  <div
+                    className="absolute"
+                    style={{
+                      left: Math.max(selectionStart.x, selectionEnd.x) + 10,
+                      top: Math.min(selectionStart.y, selectionEnd.y),
+                    }}
+                  >
+                    <Button
+                      onClick={handleAssignClick}
+                      size="sm"
+                      className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white shadow-lg"
+                    >
+                      <Icon name="Plus" size={14} className="mr-1" />
+                      Назначить поле
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Рамка выделения */}
+                {hasSelection && !isSelecting && (
+                  <div
+                    className="absolute border-2 border-[#0ea5e9] bg-[#0ea5e9]/5 pointer-events-none"
+                    style={{
+                      left: Math.min(selectionStart.x, selectionEnd.x),
+                      top: Math.min(selectionStart.y, selectionEnd.y),
+                      width: Math.abs(selectionEnd.x - selectionStart.x),
+                      height: Math.abs(selectionEnd.y - selectionStart.y),
+                    }}
+                  />
+                )}
                 
                 {/* Маркеры назначенных полей */}
                 {fieldMappings.map((mapping) => (
