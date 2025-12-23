@@ -5,6 +5,12 @@
 
 from typing import Dict, Any, List, Optional
 import json
+import io
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 
 class TemplatesPDF:
@@ -104,6 +110,90 @@ class TemplatesPDF:
         # TODO: реализовать удаление из БД
         return True
     
+    def fill_pdf_template(self, template_bytes: bytes, fields: Dict[str, Any]) -> bytes:
+        """
+        Заполнить PDF-шаблон данными (добавить текст поверх)
+        
+        Args:
+            template_bytes: PDF файл шаблона в байтах
+            fields: словарь с данными {field_name: {'text': 'value', 'x': 100, 'y': 200}}
+            
+        Returns:
+            PDF файл с заполненными данными
+        """
+        template_pdf = PdfReader(io.BytesIO(template_bytes))
+        output = PdfWriter()
+        
+        for page_num in range(len(template_pdf.pages)):
+            page = template_pdf.pages[page_num]
+            
+            packet = io.BytesIO()
+            can = canvas.Canvas(packet, pagesize=A4)
+            
+            for field_name, field_data in fields.items():
+                if field_data.get('page', 0) == page_num:
+                    text = str(field_data.get('text', ''))
+                    x = field_data.get('x', 100)
+                    y = field_data.get('y', 700)
+                    font_size = field_data.get('font_size', 12)
+                    
+                    can.setFont("Helvetica", font_size)
+                    can.drawString(x, y, text)
+            
+            can.save()
+            packet.seek(0)
+            
+            overlay = PdfReader(packet)
+            page.merge_page(overlay.pages[0])
+            output.add_page(page)
+        
+        output_stream = io.BytesIO()
+        output.write(output_stream)
+        output_stream.seek(0)
+        
+        return output_stream.read()
+    
+    def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
+        """
+        Извлечь текст из PDF файла
+        
+        Args:
+            pdf_bytes: PDF файл в байтах
+            
+        Returns:
+            Извлеченный текст
+        """
+        pdf = PdfReader(io.BytesIO(pdf_bytes))
+        text = ""
+        
+        for page in pdf.pages:
+            text += page.extract_text()
+        
+        return text
+    
+    def merge_pdfs(self, pdf_list: List[bytes]) -> bytes:
+        """
+        Объединить несколько PDF файлов в один
+        
+        Args:
+            pdf_list: список PDF файлов в байтах
+            
+        Returns:
+            Объединенный PDF
+        """
+        output = PdfWriter()
+        
+        for pdf_bytes in pdf_list:
+            pdf = PdfReader(io.BytesIO(pdf_bytes))
+            for page in pdf.pages:
+                output.add_page(page)
+        
+        output_stream = io.BytesIO()
+        output.write(output_stream)
+        output_stream.seek(0)
+        
+        return output_stream.read()
+    
     def generate_pdf(self, template_id: str, data: Dict[str, Any]) -> bytes:
         """
         Сгенерировать PDF из шаблона с данными
@@ -115,5 +205,12 @@ class TemplatesPDF:
         Returns:
             PDF файл в виде байтов
         """
-        # TODO: реализовать генерацию PDF
-        return b'PDF content'
+        template_info = self.get_template_by_id(template_id)
+        
+        if not template_info:
+            raise ValueError(f"Template {template_id} not found")
+        
+        template_bytes = template_info.get('pdf_content', b'')
+        fields = data.get('fields', {})
+        
+        return self.fill_pdf_template(template_bytes, fields)
