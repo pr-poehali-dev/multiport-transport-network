@@ -330,7 +330,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
         <div className="flex-1 overflow-y-auto bg-slate-50">
           <div className="p-4 lg:p-6">
             {pdfPreviewUrl ? (
-              <div className="bg-white rounded-lg border border-border overflow-hidden">
+              <div className="bg-white rounded-lg border border-border overflow-hidden relative">
                 <div 
                   className="cursor-crosshair"
                   onClick={handlePdfClick}
@@ -341,6 +341,24 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
                     title="PDF Preview"
                   />
                 </div>
+                
+                {/* Маркеры назначенных полей */}
+                {fieldMappings.map((mapping) => (
+                  <div
+                    key={mapping.id}
+                    className="absolute pointer-events-none border-2 border-[#0ea5e9] rounded bg-[#0ea5e9]/10"
+                    style={{
+                      left: mapping.x,
+                      top: mapping.y,
+                      width: 150,
+                      height: 20,
+                    }}
+                  >
+                    <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[18px]">
+                      {mapping.fieldLabel}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="bg-white rounded-lg border border-border p-20 text-center">
