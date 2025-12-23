@@ -3,29 +3,43 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import AddDriver from './AddDriver';
 
-function Drivers() {
+interface DriversProps {
+  onMenuClick: () => void;
+}
+
+function Drivers({ onMenuClick }: DriversProps) {
   const [isAdding, setIsAdding] = useState(false);
 
   if (isAdding) {
-    return <AddDriver onBack={() => setIsAdding(false)} />;
+    return <AddDriver onBack={() => setIsAdding(false)} onMenuClick={onMenuClick} />;
   }
 
   return (
     <div className="flex-1 flex flex-col">
-      <header className="bg-white border-b border-border px-6 py-4">
+      <header className="bg-white border-b border-border px-4 lg:px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-foreground">Водители</h1>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMenuClick}
+              className="lg:hidden"
+            >
+              <Icon name="Menu" size={24} />
+            </Button>
+            <h1 className="text-lg lg:text-xl font-semibold text-foreground">Водители</h1>
+          </div>
+          <div className="flex items-center gap-2 lg:gap-3">
             <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
               <Icon name="RefreshCw" size={18} />
-              Обновить
+              <span className="hidden sm:inline">Обновить</span>
             </Button>
             <Button 
               onClick={() => setIsAdding(true)}
               className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
             >
               <Icon name="Plus" size={18} />
-              Добавить
+              <span className="hidden sm:inline">Добавить</span>
             </Button>
           </div>
         </div>

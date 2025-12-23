@@ -16,9 +16,10 @@ import {
 
 interface AddDriverProps {
   onBack: () => void;
+  onMenuClick: () => void;
 }
 
-function AddDriver({ onBack }: AddDriverProps) {
+function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
   const [showLicense, setShowLicense] = useState(false);
@@ -34,9 +35,17 @@ function AddDriver({ onBack }: AddDriverProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      <header className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-border px-4 lg:px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMenuClick}
+              className="lg:hidden"
+            >
+              <Icon name="Menu" size={24} />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -45,31 +54,31 @@ function AddDriver({ onBack }: AddDriverProps) {
             >
               <Icon name="ArrowLeft" size={20} />
             </Button>
-            <h1 className="text-xl font-semibold text-foreground">Добавить водителя</h1>
+            <h1 className="text-base lg:text-xl font-semibold text-foreground">Добавить водителя</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 lg:gap-3">
             <Button
               variant="outline"
               onClick={handleCancel}
               className="gap-2"
             >
               <Icon name="X" size={18} />
-              Отменить
+              <span className="hidden sm:inline">Отменить</span>
             </Button>
             <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
               <Icon name="Check" size={18} />
-              Сохранить
+              <span className="hidden sm:inline">Сохранить</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Основная информация */}
-          <div className="bg-white rounded-lg border border-border p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Основная информация</h2>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+            <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">Фамилия *</Label>
                 <Input id="lastName" placeholder="Иванов" />
@@ -107,9 +116,9 @@ function AddDriver({ onBack }: AddDriverProps) {
               <span>Добавить паспорт</span>
             </button>
           ) : (
-            <div className="bg-white rounded-lg border border-border p-6 space-y-4">
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Паспорт</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Паспорт</h2>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -120,7 +129,7 @@ function AddDriver({ onBack }: AddDriverProps) {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="passportSeries">Серия</Label>
                   <Input id="passportSeries" placeholder="1234" />
@@ -153,9 +162,9 @@ function AddDriver({ onBack }: AddDriverProps) {
               <span>Добавить водительское удостоверение</span>
             </button>
           ) : (
-            <div className="bg-white rounded-lg border border-border p-6 space-y-4">
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Водительское удостоверение</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Водительское удостоверение</h2>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -166,7 +175,7 @@ function AddDriver({ onBack }: AddDriverProps) {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="licenseSeries">Серия</Label>
                   <Input id="licenseSeries" placeholder="1234" />

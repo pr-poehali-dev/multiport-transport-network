@@ -30,6 +30,7 @@ function Index() {
   const [referencesOpen, setReferencesOpen] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -72,7 +73,18 @@ function Index() {
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
-      <aside className="w-64 bg-[#1a1a1a] text-white flex flex-col flex-shrink-0">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`w-64 bg-[#1a1a1a] text-white flex flex-col flex-shrink-0 fixed lg:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
         <div className="p-4">
           <div className="flex items-center gap-3 mb-6 bg-[#0ea5e9] rounded-lg p-3">
             <div className="bg-white/20 rounded-lg p-2">
@@ -226,15 +238,25 @@ function Index() {
       </aside>
 
       {activeSection === 'drivers' ? (
-        <Drivers />
+        <Drivers onMenuClick={() => setSidebarOpen(true)} />
       ) : (
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-border px-6 py-4">
+          <header className="bg-white border-b border-border px-4 lg:px-6 py-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden"
+                >
+                  <Icon name="Menu" size={24} />
+                </Button>
+                <h1 className="text-lg lg:text-xl font-semibold text-foreground">Дашборд</h1>
+              </div>
               <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
                 <Icon name="RefreshCw" size={18} />
-                Обновить
+                <span className="hidden sm:inline">Обновить</span>
               </Button>
             </div>
           </header>
