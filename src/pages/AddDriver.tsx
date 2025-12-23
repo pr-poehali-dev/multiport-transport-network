@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
-import FUNC_URLS from '../../backend/func2url.json';
+import { createDriver } from '@/api/drivers';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,33 +71,21 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
     setIsSaving(true);
 
     try {
-      const response = await fetch(FUNC_URLS.drivers, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          lastName: lastName.trim(),
-          firstName: firstName.trim(),
-          middleName: middleName.trim(),
-          phone: phone.trim(),
-          phoneExtra: phoneExtra.trim(),
-          passportSeries: passportSeries.trim(),
-          passportNumber: passportNumber.trim(),
-          passportDate: passportDate || null,
-          passportIssued: passportIssued.trim(),
-          licenseSeries: licenseSeries.trim(),
-          licenseNumber: licenseNumber.trim(),
-          licenseDate: licenseDate || null,
-          licenseIssued: licenseIssued.trim()
-        })
+      const data = await createDriver({
+        lastName: lastName.trim(),
+        firstName: firstName.trim(),
+        middleName: middleName.trim(),
+        phone: phone.trim(),
+        phoneExtra: phoneExtra.trim(),
+        passportSeries: passportSeries.trim(),
+        passportNumber: passportNumber.trim(),
+        passportDate: passportDate || undefined,
+        passportIssued: passportIssued.trim(),
+        licenseSeries: licenseSeries.trim(),
+        licenseNumber: licenseNumber.trim(),
+        licenseDate: licenseDate || undefined,
+        licenseIssued: licenseIssued.trim()
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Ошибка сохранения');
-      }
 
       toast({
         title: 'Успешно сохранено',
