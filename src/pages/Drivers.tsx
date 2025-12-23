@@ -68,8 +68,13 @@ function Drivers({ onMenuClick }: DriversProps) {
     });
   };
 
+  const handleBackFromAdd = () => {
+    setIsAdding(false);
+    loadDrivers(); // Перезагрузка списка после добавления
+  };
+
   if (isAdding) {
-    return <AddDriver onBack={() => setIsAdding(false)} onMenuClick={onMenuClick} />;
+    return <AddDriver onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
   }
 
   return (
