@@ -28,7 +28,6 @@ interface FieldAssignDialogProps {
 function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogProps) {
   const [formula, setFormula] = useState<string>('');
   const [cursorPosition, setCursorPosition] = useState<number>(0);
-  const inputRef = useState<HTMLInputElement | null>(null)[0];
 
   useEffect(() => {
     if (!open) {
@@ -87,11 +86,6 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
           <div className="space-y-2">
             <label className="text-sm font-medium">Формула поля</label>
             <Input
-              ref={(el) => {
-                if (el) {
-                  (inputRef as any) = el;
-                }
-              }}
               value={formula}
               onChange={handleInputChange}
               onSelect={(e) => setCursorPosition((e.target as HTMLInputElement).selectionStart || 0)}
