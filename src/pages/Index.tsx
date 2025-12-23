@@ -68,32 +68,49 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-8">
-            <Icon name="Truck" size={32} className="text-primary" />
-            <h1 className="text-xl font-bold">LogisticHub</h1>
+      <aside className="w-64 bg-[#1a1a1a] text-white flex flex-col">
+        <div className="p-4">
+          <div className="flex items-center gap-3 mb-6 bg-[#0ea5e9] rounded-lg p-3">
+            <div className="bg-white/20 rounded-lg p-2">
+              <Icon name="Truck" size={24} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-white font-semibold text-sm leading-tight">TransHub</h1>
+              <p className="text-white/70 text-xs truncate">Управление грузоперевозка...</p>
+            </div>
           </div>
-          <nav className="space-y-2">
+
+          <div className="mb-6 px-2">
+            <div className="flex items-center gap-2 text-white/90">
+              <Icon name="User" size={18} />
+              <span className="text-sm font-medium">Администратор</span>
+            </div>
+          </div>
+
+          <nav className="space-y-1">
             {[
-              { id: 'dashboard', label: 'Дашборд', icon: 'LayoutDashboard' },
-              { id: 'orders', label: 'Заказы', icon: 'Package' },
-              { id: 'routes', label: 'Маршруты', icon: 'Map' },
-              { id: 'partners', label: 'Партнеры', icon: 'Users' },
-              { id: 'documents', label: 'Документы', icon: 'FileText' },
-              { id: 'profile', label: 'Профиль', icon: 'User' },
+              { id: 'dashboard', label: 'Дашборд', icon: 'LayoutGrid', hasSubmenu: false },
+              { id: 'references', label: 'Справочники', icon: 'Book', hasSubmenu: true },
+              { id: 'documents', label: 'Документы', icon: 'FileText', hasSubmenu: true },
+              { id: 'overview', label: 'Обзор', icon: 'Activity', hasSubmenu: false },
+              { id: 'settings', label: 'Настройки', icon: 'Settings', hasSubmenu: true },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                   activeSection === item.id
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'hover:bg-sidebar-accent/50'
+                    ? 'bg-[#0ea5e9] text-white'
+                    : 'text-white/80 hover:bg-white/5'
                 }`}
               >
-                <Icon name={item.icon as any} size={20} />
-                <span className="font-medium">{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <Icon name={item.icon as any} size={20} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
+                {item.hasSubmenu && (
+                  <Icon name="ChevronRight" size={16} className="text-white/60" />
+                )}
               </button>
             ))}
           </nav>
