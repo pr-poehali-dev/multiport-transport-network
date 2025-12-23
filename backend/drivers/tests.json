@@ -1,0 +1,45 @@
+{
+  "tests": [
+    {
+      "name": "Create driver - success",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "lastName": "Иванов",
+        "firstName": "Иван",
+        "middleName": "Иванович",
+        "phone": "+7 (999) 123-45-67"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create driver - missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "lastName": "Петров"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all drivers",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "drivers": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
