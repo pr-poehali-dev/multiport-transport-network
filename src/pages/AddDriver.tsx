@@ -1,13 +1,35 @@
+import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AddDriverProps {
   onBack: () => void;
 }
 
 function AddDriver({ onBack }: AddDriverProps) {
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onBack();
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full">
       <header className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4">
@@ -16,7 +38,7 @@ function AddDriver({ onBack }: AddDriverProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={onBack}
+              onClick={handleCancel}
               className="hover:bg-gray-100"
             >
               <Icon name="ArrowLeft" size={20} />
@@ -26,7 +48,7 @@ function AddDriver({ onBack }: AddDriverProps) {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={onBack}
+              onClick={handleCancel}
               className="gap-2"
             >
               <Icon name="X" size={18} />
@@ -103,6 +125,34 @@ function AddDriver({ onBack }: AddDriverProps) {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Данное действие приведет к потере всех введенных данных.
+              Вы уверены, что хотите выйти без сохранения?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
