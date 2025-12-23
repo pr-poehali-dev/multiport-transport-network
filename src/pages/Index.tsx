@@ -225,6 +225,10 @@ function Index() {
         <header className="bg-white border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
+            <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
+              <Icon name="RefreshCw" size={18} />
+              Обновить
+            </Button>
           </div>
         </header>
 
