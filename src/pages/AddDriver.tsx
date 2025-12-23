@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
-import { createDriver } from '@/api/drivers';
+import { createDriver, updateDriver, Driver } from '@/api/drivers';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,35 +18,48 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface AddDriverProps {
+  driver?: Driver;
   onBack: () => void;
   onMenuClick: () => void;
 }
 
-function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
+function AddDriver({ driver, onBack, onMenuClick }: AddDriverProps) {
   const { toast } = useToast();
+  const isEditMode = !!driver;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
   const [showLicense, setShowLicense] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Основная информация
-  const [lastName, setLastName] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [middleName, setMiddleName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [phoneExtra, setPhoneExtra] = useState('');
+  const [lastName, setLastName] = useState(driver?.lastName || '');
+  const [firstName, setFirstName] = useState(driver?.firstName || '');
+  const [middleName, setMiddleName] = useState(driver?.middleName || '');
+  const [phone, setPhone] = useState(driver?.phone || '');
+  const [phoneExtra, setPhoneExtra] = useState(driver?.phoneExtra || '');
   
   // Паспорт
-  const [passportSeries, setPassportSeries] = useState('');
-  const [passportNumber, setPassportNumber] = useState('');
-  const [passportDate, setPassportDate] = useState('');
-  const [passportIssued, setPassportIssued] = useState('');
+  const [passportSeries, setPassportSeries] = useState(driver?.passportSeries || '');
+  const [passportNumber, setPassportNumber] = useState(driver?.passportNumber || '');
+  const [passportDate, setPassportDate] = useState(driver?.passportDate || '');
+  const [passportIssued, setPassportIssued] = useState(driver?.passportIssued || '');
   
   // Водительское удостоверение
-  const [licenseSeries, setLicenseSeries] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
-  const [licenseDate, setLicenseDate] = useState('');
-  const [licenseIssued, setLicenseIssued] = useState('');
+  const [licenseSeries, setLicenseSeries] = useState(driver?.licenseSeries || '');
+  const [licenseNumber, setLicenseNumber] = useState(driver?.licenseNumber || '');
+  const [licenseDate, setLicenseDate] = useState(driver?.licenseDate || '');
+  const [licenseIssued, setLicenseIssued] = useState(driver?.licenseIssued || '');
+
+  // Показываем секции паспорта и прав если есть данные
+  useState(() => {
+    if (driver) {
+      const hasPassport = driver.passportSeries || driver.passportNumber || driver.passportDate || driver.passportIssued;
+      setShowPassport(!!hasPassport);
+      
+      const hasLicense = driver.licenseSeries || driver.licenseNumber || driver.licenseDate || driver.licenseIssued;
+      setShowLicense(!!hasLicense);
+    }
+  });
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -71,7 +84,7 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
     setIsSaving(true);
 
     try {
-      const data = await createDriver({
+      const driverData = {
         lastName: lastName.trim(),
         firstName: firstName.trim(),
         middleName: middleName.trim(),
@@ -85,11 +98,15 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
         licenseNumber: licenseNumber.trim(),
         licenseDate: licenseDate || undefined,
         licenseIssued: licenseIssued.trim()
-      });
+      };
+
+      const data = isEditMode 
+        ? await updateDriver(driver.id!, driverData)
+        : await createDriver(driverData);
 
       toast({
         title: 'Успешно сохранено',
-        description: data.message || 'Водитель добавлен в базу данных'
+        description: data.message || (isEditMode ? 'Данные водителя обновлены' : 'Водитель добавлен в базу данных')
       });
 
       onBack();
@@ -107,7 +124,7 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
   return (
     <div className="flex-1 flex flex-col h-full">
       <TopBar
-        title="Добавить водителя"
+        title={isEditMode ? 'Редактировать водителя' : 'Добавить водителя'}
         onMenuClick={onMenuClick}
         leftButton={
           <Button
@@ -357,8 +374,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
               Подтверждение отмены
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base pt-2">
-              Данное действие приведет к потере всех введенных данных.
-              Вы уверены, что хотите выйти без сохранения?
+              {isEditMode 
+                ? 'Все несохранённые изменения будут потеряны. Вы уверены, что хотите выйти без сохранения?'
+                : 'Данное действие приведет к потере всех введенных данных. Вы уверены, что хотите выйти без сохранения?'
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

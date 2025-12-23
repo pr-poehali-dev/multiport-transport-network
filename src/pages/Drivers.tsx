@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddDriver from './AddDriver';
-import EditDriver from './EditDriver';
 import { getDrivers, deleteDriver, Driver } from '@/api/drivers';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -25,7 +24,6 @@ interface DriversProps {
 function Drivers({ onMenuClick }: DriversProps) {
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [driverToEdit, setDriverToEdit] = useState<Driver | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
@@ -85,18 +83,13 @@ function Drivers({ onMenuClick }: DriversProps) {
 
   const handleBackFromAdd = () => {
     setIsAdding(false);
+    setDriverToEdit(null);
     loadDrivers();
   };
 
   const handleEditDriver = (driver: Driver) => {
     setDriverToEdit(driver);
-    setIsEditing(true);
-  };
-
-  const handleBackFromEdit = () => {
-    setIsEditing(false);
-    setDriverToEdit(null);
-    loadDrivers();
+    setIsAdding(true);
   };
 
   const handleDeleteClick = (driverId: number) => {
@@ -128,11 +121,7 @@ function Drivers({ onMenuClick }: DriversProps) {
   };
 
   if (isAdding) {
-    return <AddDriver onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
-  }
-
-  if (isEditing && driverToEdit) {
-    return <EditDriver driver={driverToEdit} onBack={handleBackFromEdit} onMenuClick={onMenuClick} />;
+    return <AddDriver driver={driverToEdit || undefined} onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
   }
 
   return (
