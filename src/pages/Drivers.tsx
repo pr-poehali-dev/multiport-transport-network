@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
+import AddDriver from './AddDriver';
 
 function Drivers() {
+  const [isAdding, setIsAdding] = useState(false);
+
+  if (isAdding) {
+    return <AddDriver onBack={() => setIsAdding(false)} />;
+  }
+
   return (
     <div className="flex-1 flex flex-col">
       <header className="bg-white border-b border-border px-6 py-4">
@@ -12,7 +20,10 @@ function Drivers() {
               <Icon name="RefreshCw" size={18} />
               Обновить
             </Button>
-            <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
+            <Button 
+              onClick={() => setIsAdding(true)}
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+            >
               <Icon name="Plus" size={18} />
               Добавить
             </Button>
