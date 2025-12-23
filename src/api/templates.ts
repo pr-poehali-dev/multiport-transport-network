@@ -20,6 +20,7 @@ export interface Template {
   name: string;
   fileName: string;
   fileUrl?: string;
+  fileData?: string;
   fieldMappings: FieldMapping[];
   createdAt?: string;
   updatedAt?: string;
@@ -40,7 +41,13 @@ export interface GetTemplatesResponse {
 export async function createTemplate(template: Template): Promise<CreateTemplateResponse> {
   return apiRequest(API_CONFIG.ENDPOINTS.templates, {
     method: 'POST',
-    body: JSON.stringify(template),
+    body: JSON.stringify({
+      name: template.name,
+      fileName: template.fileName,
+      fileUrl: template.fileUrl,
+      fileData: template.fileData,
+      fieldMappings: template.fieldMappings,
+    }),
   });
 }
 

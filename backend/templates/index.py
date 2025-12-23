@@ -1,6 +1,7 @@
 import json
 import psycopg2
 import os
+import base64
 from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -48,6 +49,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             file_name = body_data.get('fileName', '').strip()
             file_url = body_data.get('fileUrl', '').strip() or None
             field_mappings = body_data.get('fieldMappings', [])
+            file_data_b64 = body_data.get('fileData', '').strip()
             
             if not name or not file_name:
                 return {
@@ -57,11 +59,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
+            # Декодируем base64 в бинарные данные
+            file_data_bytes = None
+            if file_data_b64:
+                try:
+                    file_data_bytes = base64.b64decode(file_data_b64)
+                except Exception as e:
+                    return {
+                        'statusCode': 400,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': f'Ошибка декодирования файла: {str(e)}'}),
+                        'isBase64Encoded': False
+                    }
+            
             cursor.execute('''
-                INSERT INTO templates (name, file_name, file_url, field_mappings)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO templates (name, file_name, file_url, field_mappings, file_data)
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING id, created_at
-            ''', (name, file_name, file_url, json.dumps(field_mappings)))
+            ''', (name, file_name, file_url, json.dumps(field_mappings), file_data_bytes))
             
             result = cursor.fetchone()
             conn.commit()
@@ -93,6 +108,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
+                # Кодируем бинарные данные обратно в base64
+                file_data_b64 = None
+                if row[7]:  # file_data
+                    file_data_b64 = base64.b64encode(row[7]).decode('utf-8')
+                
                 template = {
                     'id': row[0],
                     'name': row[1],
@@ -100,7 +120,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'fileUrl': row[3],
                     'fieldMappings': row[4],
                     'createdAt': row[5].isoformat() if row[5] else None,
-                    'updatedAt': row[6].isoformat() if row[6] else None
+                    'updatedAt': row[6].isoformat() if row[6] else None,
+                    'fileData': file_data_b64
                 }
                 
                 return {
@@ -110,7 +131,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             else:
-                cursor.execute('SELECT * FROM templates ORDER BY created_at DESC')
+                # Получаем список без file_data для экономии трафика
+                cursor.execute('SELECT id, name, file_name, file_url, field_mappings, created_at, updated_at FROM templates ORDER BY created_at DESC')
                 rows = cursor.fetchall()
                 
                 templates = []
@@ -150,6 +172,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             file_name = body_data.get('fileName', '').strip()
             file_url = body_data.get('fileUrl', '').strip() or None
             field_mappings = body_data.get('fieldMappings', [])
+            file_data_b64 = body_data.get('fileData', '').strip()
             
             if not name or not file_name:
                 return {
@@ -159,16 +182,43 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            cursor.execute('''
-                UPDATE templates SET
-                    name = %s,
-                    file_name = %s,
-                    file_url = %s,
-                    field_mappings = %s,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = %s
-                RETURNING id, updated_at
-            ''', (name, file_name, file_url, json.dumps(field_mappings), template_id))
+            # Декодируем base64 в бинарные данные (если передан файл)
+            file_data_bytes = None
+            if file_data_b64:
+                try:
+                    file_data_bytes = base64.b64decode(file_data_b64)
+                except Exception as e:
+                    return {
+                        'statusCode': 400,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': f'Ошибка декодирования файла: {str(e)}'}),
+                        'isBase64Encoded': False
+                    }
+            
+            # Обновляем с или без file_data
+            if file_data_bytes:
+                cursor.execute('''
+                    UPDATE templates SET
+                        name = %s,
+                        file_name = %s,
+                        file_url = %s,
+                        field_mappings = %s,
+                        file_data = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                    RETURNING id, updated_at
+                ''', (name, file_name, file_url, json.dumps(field_mappings), file_data_bytes, template_id))
+            else:
+                cursor.execute('''
+                    UPDATE templates SET
+                        name = %s,
+                        file_name = %s,
+                        file_url = %s,
+                        field_mappings = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                    RETURNING id, updated_at
+                ''', (name, file_name, file_url, json.dumps(field_mappings), template_id))
             
             result = cursor.fetchone()
             

@@ -21,7 +21,8 @@
       "expectedStatus": 201,
       "expectedBody": {
         "id": "number",
-        "message": "string"
+        "message": "string",
+        "createdAt": "string"
       },
       "bodyMatcher": "partial"
     },
@@ -52,7 +53,7 @@
     {
       "name": "Update template - success",
       "method": "PUT",
-      "path": "/?id=1",
+      "path": "/?id=2",
       "body": {
         "name": "Договор обновлённый",
         "fileName": "contract_v2.pdf",
@@ -60,14 +61,16 @@
       },
       "expectedStatus": 200,
       "expectedBody": {
-        "message": "string"
+        "id": "number",
+        "message": "string",
+        "updatedAt": "string"
       },
       "bodyMatcher": "partial"
     },
     {
       "name": "Delete template - success",
       "method": "DELETE",
-      "path": "/?id=1",
+      "path": "/?id=2",
       "expectedStatus": 200,
       "expectedBody": {
         "message": "string"

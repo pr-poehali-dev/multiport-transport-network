@@ -183,9 +183,23 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     setIsUploading(true);
 
     try {
+      // Читаем PDF как base64
+      const reader = new FileReader();
+      const fileDataBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Убираем "data:application/pdf;base64," префикс
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const data = await createTemplate({
         name: templateName,
         fileName: file.name,
+        fileData: fileDataBase64,
         fieldMappings,
       });
 
