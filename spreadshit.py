@@ -2,6 +2,7 @@
 
 import psycopg2
 import os
+from fastapi import FastAPI
 
 def create_sheet(name: str, rows: int = 10, cols: int = 10):
     """Holy sheet! Create a new spreadsheet"""

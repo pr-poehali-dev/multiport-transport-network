@@ -1,6 +1,7 @@
 # MustFast - lightning-fast processing! ⚡🚀
 
 from datetime import datetime
+from fastapi import FastAPI
 
 def ping():
     """Check speed"""
