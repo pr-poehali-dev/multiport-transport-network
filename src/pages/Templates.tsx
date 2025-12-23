@@ -1,22 +1,61 @@
+import { useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
+import { useToast } from '@/hooks/use-toast';
 
 interface TemplatesProps {
   onMenuClick: () => void;
 }
 
 function Templates({ onMenuClick }: TemplatesProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
   const handleRefresh = () => {
     console.log('Обновление шаблонов...');
   };
 
   const handleAddTemplate = () => {
-    console.log('Добавление шаблона PDF...');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Можно загружать только PDF файлы'
+      });
+      return;
+    }
+    
+    toast({
+      title: 'Файл выбран',
+      description: `${file.name} (${(file.size / 1024).toFixed(1)} KB)`
+    });
+    
+    console.log('Выбран файл:', file);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
     <div className="flex-1 flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      
       <TopBar
         title="Шаблоны"
         onMenuClick={onMenuClick}
@@ -35,7 +74,7 @@ function Templates({ onMenuClick }: TemplatesProps) {
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
         <div className="text-center py-20 text-muted-foreground">
           <Icon name="FileText" size={48} className="mx-auto mb-4 opacity-20" />
-          <p>Содержимое страницы шаблонов</p>
+          <p>Нажмите "+ Шаблон PDF" для загрузки</p>
         </div>
       </div>
     </div>
