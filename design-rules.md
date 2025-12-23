@@ -1,0 +1,118 @@
+# Правила дизайна TransHub
+
+## Утверждённые элементы дизайна
+
+### Сайдбар (Sidebar)
+- Ширина: `w-64` (256px)
+- Фон: `bg-[#1a1a1a]` (тёмный)
+- Текст: `text-white`
+- Фиксированная позиция при прокрутке (`flex-shrink-0`)
+- Логотип в синей плашке `bg-[#0ea5e9]`
+- Активный пункт меню: `bg-[#0ea5e9]`
+- Неактивный пункт: `text-white/80 hover:bg-white/5`
+- Подменю с отступом `ml-9`
+
+### Топбар (Header)
+- Фиксированная позиция: `sticky top-0 z-10`
+- Фон: `bg-white`
+- Бордер: `border-b border-border`
+- Отступы: `px-6 py-4`
+- Заголовок: `text-xl font-semibold text-foreground`
+- Кнопки справа с `gap-3`
+
+### Страница списка (Drivers.tsx)
+- Пустое состояние по центру
+- Иконка с прозрачностью `opacity-20`
+- Текст: `text-muted-foreground`
+- Центрирование: `text-center py-20`
+
+### Форма добавления (AddDriver.tsx)
+- Контент прокручивается ПОД топбаром
+- Топбар остаётся на месте (`sticky top-0`)
+- Область прокрутки: `overflow-y-auto`
+- Контейнер: `flex-1 flex flex-col h-full`
+- Форма в белой карточке с `border border-border`
+- Максимальная ширина формы: `max-w-3xl mx-auto`
+- Отступы контента: `p-6`
+
+## Цвета
+
+### Основные цвета
+- Акцент (кнопки, активные элементы): `#0ea5e9` (голубой)
+- Фон сайдбара: `#1a1a1a` (тёмно-серый)
+- Фон страницы: `bg-background`
+- Фон белых блоков: `bg-white`
+
+### Состояния
+- Hover кнопок: `hover:bg-[#0ea5e9]/90`
+- Hover сайдбар: `hover:bg-white/5`
+- Бордеры: `border-border`
+- Приглушённый текст: `text-muted-foreground`
+
+## Кнопки
+
+### Основная кнопка (Primary)
+```tsx
+<Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
+  <Icon name="IconName" size={18} />
+  Текст
+</Button>
+```
+
+### Кнопка отмены (Outline)
+```tsx
+<Button variant="outline" className="gap-2">
+  <Icon name="X" size={18} />
+  Отменить
+</Button>
+```
+
+### Кнопка назад (Ghost)
+```tsx
+<Button variant="ghost" size="icon" className="hover:bg-gray-100">
+  <Icon name="ArrowLeft" size={20} />
+</Button>
+```
+
+### Опасная кнопка (Destructive)
+```tsx
+<Button className="bg-red-600 hover:bg-red-700 gap-2">
+  <Icon name="LogOut" size={16} />
+  Выйти без сохранения
+</Button>
+```
+
+## Модальные окна
+
+### AlertDialog (подтверждение)
+- Иконка предупреждения: `AlertTriangle` с `text-orange-500`
+- Заголовок с иконкой: `flex items-center gap-2`
+- Описание: `text-base pt-2`
+- Две кнопки: Cancel (продолжить) и Action (подтвердить)
+- Action кнопка красная для опасных действий
+
+## Формы
+
+### Поля ввода
+- Лейбл сверху со звёздочкой для обязательных: `Название *`
+- Placeholder с примером: `placeholder="Иванов"`
+- Сетка для двух колонок: `grid grid-cols-2 gap-4`
+- Отступ между полями: `space-y-2`
+
+### Структура формы
+- Белая карточка: `bg-white rounded-lg border border-border p-6`
+- Отступы между группами полей: `space-y-6`
+- Центрирование: `max-w-3xl mx-auto`
+
+## Иконки
+
+- Использовать компонент `<Icon name="..." size={...} />`
+- Размеры: 16px (маленькие), 18-20px (средние), 24px (большие), 48px (декоративные)
+- Всегда добавлять иконки в кнопки с `gap-2`
+
+## Прокрутка
+
+- Главный контейнер: `h-screen overflow-hidden`
+- Сайдбар: фиксированный, без прокрутки своего контента (или с overflow-y-auto если нужно)
+- Рабочая область: `flex-1 overflow-y-auto`
+- Топбар: `sticky top-0` чтобы контент заезжал под него
