@@ -1,18 +1,25 @@
-import { useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
+import AddTemplate from './AddTemplate';
 
 interface TemplatesProps {
   onMenuClick: () => void;
 }
 
+interface TemplateFile {
+  file: File;
+  pdfUrl: string;
+  fileName: string;
+}
+
 function Templates({ onMenuClick }: TemplatesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<TemplateFile | null>(null);
 
   const handleRefresh = () => {
     console.log('Обновление шаблонов...');
@@ -39,14 +46,22 @@ function Templates({ onMenuClick }: TemplatesProps) {
     const url = URL.createObjectURL(file);
     const fileName = file.name.replace('.pdf', '');
     
-    navigate('/add-template', { 
-      state: { 
-        file, 
-        pdfUrl: url, 
-        fileName 
-      } 
-    });
+    setSelectedFile({ file, pdfUrl: url, fileName });
+    setIsEditing(true);
   };
+
+  if (isEditing && selectedFile) {
+    return (
+      <AddTemplate 
+        onBack={() => {
+          setIsEditing(false);
+          setSelectedFile(null);
+        }}
+        onMenuClick={onMenuClick}
+        initialData={selectedFile}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col">

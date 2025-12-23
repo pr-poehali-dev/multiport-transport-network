@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import TopBar from '@/components/TopBar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -42,33 +51,30 @@ const DRIVER_FIELDS = [
   { value: 'licenseIssued', label: 'ВУ: Кем выдан' },
 ];
 
-const AddTemplate = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+interface TemplateFile {
+  file: File;
+  pdfUrl: string;
+  fileName: string;
+}
+
+interface AddTemplateProps {
+  onBack: () => void;
+  onMenuClick: () => void;
+  initialData?: TemplateFile;
+}
+
+function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const { toast } = useToast();
   
-  const [file, setFile] = useState<File | null>(null);
-  const [templateName, setTemplateName] = useState('');
+  const [file, setFile] = useState<File | null>(initialData?.file || null);
+  const [templateName, setTemplateName] = useState(initialData?.fileName || '');
   const [isUploading, setIsUploading] = useState(false);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(initialData?.pdfUrl || null);
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if (location.state) {
-      const { file: stateFile, pdfUrl, fileName } = location.state as { 
-        file: File; 
-        pdfUrl: string; 
-        fileName: string; 
-      };
-      
-      setFile(stateFile);
-      setPdfPreviewUrl(pdfUrl);
-      setTemplateName(fileName);
-    }
-  }, [location.state]);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const handlePdfClick = (event: React.MouseEvent<HTMLIFrameElement>) => {
     const iframe = event.currentTarget;
@@ -112,11 +118,20 @@ const AddTemplate = () => {
     });
   };
 
-  const handleUpload = async () => {
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onBack();
+  };
+
+  const handleSave = async () => {
     if (!file || !templateName.trim()) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните название и выберите файл',
+        description: 'Заполните название шаблона',
         variant: 'destructive',
       });
       return;
@@ -125,9 +140,10 @@ const AddTemplate = () => {
     if (fieldMappings.length === 0) {
       toast({
         title: 'Предупреждение',
-        description: 'Вы не назначили ни одного поля. Продолжить?',
+        description: 'Вы не назначили ни одного поля',
         variant: 'destructive',
       });
+      return;
     }
 
     setIsUploading(true);
@@ -157,10 +173,10 @@ const AddTemplate = () => {
 
         toast({
           title: 'Успех!',
-          description: `Шаблон "${templateName}" успешно загружен`,
+          description: `Шаблон "${templateName}" успешно сохранён`,
         });
 
-        navigate('/');
+        onBack();
       };
 
       reader.readAsDataURL(file);
@@ -175,241 +191,260 @@ const AddTemplate = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/');
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-2">Редактор PDF шаблона</h1>
-            <p className="text-sm lg:text-base text-slate-600">Назначьте поля на элементы документа</p>
-          </div>
-          <Button variant="ghost" onClick={handleCancel}>
-            <Icon name="X" className="mr-2 h-4 w-4" />
-            Закрыть
+    <div className="flex-1 flex flex-col h-full">
+      <TopBar
+        title="Редактор шаблона"
+        onMenuClick={onMenuClick}
+        leftButton={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCancel}
+            className="hover:bg-gray-100"
+          >
+            <Icon name="ArrowLeft" size={20} />
           </Button>
+        }
+        rightButtons={
+          <>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="gap-2"
+            >
+              <Icon name="X" size={18} />
+              <span className="hidden sm:inline">Отменить</span>
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isUploading}
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <Icon name="Loader2" className="animate-spin" size={18} />
+                  <span className="hidden sm:inline">Загрузка...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="Check" size={18} />
+                  <span className="hidden sm:inline">Сохранить</span>
+                </>
+              )}
+            </Button>
+          </>
+        }
+      />
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Левая панель - Настройки */}
+        <div className="w-full lg:w-80 border-r border-border bg-white flex flex-col overflow-hidden">
+          <div className="p-4 lg:p-6 border-b border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Icon name="Settings" size={20} className="text-[#0ea5e9]" />
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Настройки</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="templateName">Название шаблона *</Label>
+                <Input
+                  id="templateName"
+                  placeholder="Договор перевозки"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Файл</Label>
+                <div className="text-sm text-muted-foreground">
+                  {file?.name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {((file?.size || 0) / 1024).toFixed(1)} КБ
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="p-4 lg:p-6 border-b border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Link" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">
+                    Назначенные поля
+                  </h2>
+                </div>
+                <Badge variant="secondary">{fieldMappings.length}</Badge>
+              </div>
+              
+              <Button
+                onClick={() => setShowAssignMenu(true)}
+                className="w-full bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+              >
+                <Icon name="Plus" size={18} />
+                <span className="hidden sm:inline">Назначить поле</span>
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 p-4 lg:p-6">
+              {fieldMappings.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="MousePointerClick" size={48} className="mx-auto mb-4 opacity-20" />
+                  <p className="text-sm">Поля не назначены</p>
+                  <p className="text-xs mt-1">Кликните на PDF для привязки</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {fieldMappings.map((mapping) => (
+                    <div
+                      key={mapping.id}
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
+                        <span className="text-sm font-medium truncate">
+                          {mapping.fieldLabel}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                        onClick={() => handleRemoveMapping(mapping.id)}
+                      >
+                        <Icon name="Trash2" size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-[350px_1fr] gap-4 lg:gap-6">
-          {/* Левая панель - Настройки */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Настройки шаблона</CardTitle>
-                <CardDescription>Основная информация</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="templateName">Название шаблона</Label>
-                  <Input
-                    id="templateName"
-                    placeholder="Договор перевозки"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
+        {/* Правая панель - PDF Viewer */}
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="p-4 lg:p-6">
+            {pdfPreviewUrl ? (
+              <div className="bg-white rounded-lg border border-border overflow-hidden relative">
+                <div 
+                  className="cursor-crosshair"
+                  onClick={handlePdfClick}
+                >
+                  <iframe
+                    src={pdfPreviewUrl}
+                    className="w-full h-[calc(100vh-200px)] min-h-[600px]"
+                    title="PDF Preview"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Файл</Label>
-                  <div className="text-sm text-muted-foreground">
-                    {file?.name} ({((file?.size || 0) / 1024).toFixed(1)} KB)
+                
+                {fieldMappings.map((mapping) => (
+                  <div
+                    key={mapping.id}
+                    className="absolute bg-[#0ea5e9]/20 border-2 border-[#0ea5e9] rounded"
+                    style={{
+                      left: mapping.x,
+                      top: mapping.y,
+                      width: 120,
+                      height: 24,
+                    }}
+                  >
+                    <div className="text-xs font-medium text-[#0ea5e9] px-1 truncate">
+                      {mapping.fieldLabel}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-border p-20 text-center">
+                <Icon name="FileText" size={48} className="mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground">PDF не загружен</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center justify-between">
-                  Назначенные поля
-                  <Badge variant="secondary">{fieldMappings.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Кликните по PDF и выберите поле
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[300px] pr-4">
-                  {fieldMappings.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Icon name="MousePointerClick" size={32} className="mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Поля не назначены</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {fieldMappings.map((mapping) => (
-                        <div
-                          key={mapping.id}
-                          className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Icon name="Link" size={16} className="text-blue-500 flex-shrink-0" />
-                            <span className="text-sm font-medium truncate">
-                              {mapping.fieldLabel}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                            onClick={() => handleRemoveMapping(mapping.id)}
-                          >
-                            <Icon name="Trash2" size={14} />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+      {/* Модальное окно назначения поля */}
+      {showAssignMenu && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-border max-w-md w-full p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Назначить поле</h3>
+              <p className="text-sm text-muted-foreground">
+                Выберите поле из справочника водителей
+              </p>
+            </div>
 
-            <div className="flex flex-col gap-2">
+            <Select value={selectedField || ''} onValueChange={setSelectedField}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите поле..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DRIVER_FIELDS.map((field) => (
+                  <SelectItem key={field.value} value={field.value}>
+                    {field.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
               <Button
-                onClick={handleUpload}
-                disabled={!file || !templateName.trim() || isUploading}
-                className="w-full"
-                size="lg"
+                onClick={() => selectedField && handleAssignField(selectedField)}
+                disabled={!selectedField}
+                className="flex-1 bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white"
               >
-                {isUploading ? (
-                  <>
-                    <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
-                    Загрузка...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Save" className="mr-2 h-4 w-4" />
-                    Сохранить шаблон
-                  </>
-                )}
+                <Icon name="Check" className="mr-2 h-4 w-4" />
+                Назначить
               </Button>
               <Button
                 variant="outline"
-                onClick={handleCancel}
-                disabled={isUploading}
-                size="lg"
-                className="w-full"
+                onClick={() => {
+                  setShowAssignMenu(false);
+                  setSelectedField(null);
+                }}
               >
                 Отмена
               </Button>
             </div>
           </div>
-
-          {/* Правая панель - PDF Viewer */}
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Предпросмотр документа</CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowAssignMenu(true)}
-                >
-                  <Icon name="Plus" className="mr-2 h-4 w-4" />
-                  Назначить поле
-                </Button>
-              </div>
-              <CardDescription>
-                Кликните на документ, чтобы назначить поле для данных
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {pdfPreviewUrl ? (
-                <div className="relative bg-slate-100">
-                  <div 
-                    className="cursor-crosshair"
-                    onClick={handlePdfClick}
-                  >
-                    <iframe
-                      src={pdfPreviewUrl}
-                      className="w-full h-[calc(100vh-250px)] min-h-[600px]"
-                      title="PDF Preview"
-                    />
-                  </div>
-                  
-                  {/* Overlay для назначенных полей */}
-                  {fieldMappings.map((mapping) => (
-                    <div
-                      key={mapping.id}
-                      className="absolute bg-blue-500/20 border-2 border-blue-500 rounded"
-                      style={{
-                        left: mapping.x,
-                        top: mapping.y,
-                        width: 120,
-                        height: 24,
-                      }}
-                    >
-                      <div className="text-xs font-medium text-blue-700 px-1 truncate">
-                        {mapping.fieldLabel}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-[600px] flex items-center justify-center bg-slate-50">
-                  <div className="text-center text-muted-foreground">
-                    <Icon name="FileText" size={64} className="mx-auto mb-4 opacity-20" />
-                    <p>PDF не загружен</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Меню назначения поля */}
-      {showAssignMenu && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Назначить поле</CardTitle>
-              <CardDescription>
-                Выберите поле из справочника водителей
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Select value={selectedField || ''} onValueChange={setSelectedField}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите поле..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {DRIVER_FIELDS.map((field) => (
-                    <SelectItem key={field.value} value={field.value}>
-                      {field.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => selectedField && handleAssignField(selectedField)}
-                  disabled={!selectedField}
-                  className="flex-1"
-                >
-                  <Icon name="Check" className="mr-2 h-4 w-4" />
-                  Назначить
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAssignMenu(false);
-                    setSelectedField(null);
-                  }}
-                >
-                  Отмена
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
+
+      {/* AlertDialog для подтверждения отмены */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Данное действие приведет к потере всех настроек шаблона.
+              Вы уверены, что хотите выйти без сохранения?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCancelDialog(false)}>
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Icon name="LogOut" size={16} className="mr-2" />
+              Выйти без сохранения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-};
+}
 
 export default AddTemplate;
