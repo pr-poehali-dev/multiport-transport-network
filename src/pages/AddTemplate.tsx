@@ -239,7 +239,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Левая панель - Настройки */}
-        <div className="w-full lg:w-80 border-r border-border bg-white flex flex-col overflow-hidden">
+        <div className="w-64 border-r border-border bg-white flex flex-col overflow-hidden flex-shrink-0">
           <div className="p-4 lg:p-6 border-b border-border">
             <div className="flex items-center gap-2 mb-4">
               <Icon name="Settings" size={20} className="text-[#0ea5e9]" />
