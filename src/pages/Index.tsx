@@ -71,8 +71,8 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside className="w-64 bg-[#1a1a1a] text-white flex flex-col">
+    <div className="h-screen bg-background flex overflow-hidden">
+      <aside className="w-64 bg-[#1a1a1a] text-white flex flex-col flex-shrink-0">
         <div className="p-4">
           <div className="flex items-center gap-3 mb-6 bg-[#0ea5e9] rounded-lg p-3">
             <div className="bg-white/20 rounded-lg p-2">
