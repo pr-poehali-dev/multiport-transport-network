@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,26 +8,28 @@ import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 const AddTemplate = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [file, setFile] = useState<File | null>(null);
   const [templateName, setTemplateName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile);
-      const url = URL.createObjectURL(selectedFile);
-      setPdfPreviewUrl(url);
-    } else {
-      toast({
-        title: 'Ошибка',
-        description: 'Пожалуйста, выберите PDF файл',
-        variant: 'destructive',
-      });
+  useEffect(() => {
+    if (location.state) {
+      const { file: stateFile, pdfUrl, fileName } = location.state as { 
+        file: File; 
+        pdfUrl: string; 
+        fileName: string; 
+      };
+      
+      setFile(stateFile);
+      setPdfPreviewUrl(pdfUrl);
+      setTemplateName(fileName);
     }
-  };
+  }, [location.state]);
 
   const handleUpload = async () => {
     if (!file || !templateName.trim()) {
@@ -62,16 +65,12 @@ const AddTemplate = () => {
           throw new Error('Ошибка загрузки шаблона');
         }
 
-        const result = await response.json();
-
         toast({
           title: 'Успех!',
           description: `Шаблон "${templateName}" успешно загружен`,
         });
 
-        setFile(null);
-        setTemplateName('');
-        setPdfPreviewUrl(null);
+        navigate('/');
       };
 
       reader.readAsDataURL(file);
@@ -86,12 +85,22 @@ const AddTemplate = () => {
     }
   };
 
+  const handleCancel = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Добавить PDF шаблон</h1>
-          <p className="text-slate-600">Загрузите PDF файл и задайте название шаблона</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Редактор PDF шаблона</h1>
+            <p className="text-slate-600">Настройте название и проверьте содержимое</p>
+          </div>
+          <Button variant="ghost" onClick={handleCancel}>
+            <Icon name="X" className="mr-2 h-4 w-4" />
+            Закрыть
+          </Button>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -118,8 +127,8 @@ const AddTemplate = () => {
                     id="pdfFile"
                     type="file"
                     accept="application/pdf"
-                    onChange={handleFileChange}
                     className="hidden"
+                    disabled
                   />
                   <label htmlFor="pdfFile" className="cursor-pointer">
                     <Icon name="FileUp" size={48} className="mx-auto text-slate-400 mb-4" />
@@ -131,24 +140,34 @@ const AddTemplate = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={handleUpload}
-                disabled={!file || !templateName.trim() || isUploading}
-                className="w-full"
-                size="lg"
-              >
-                {isUploading ? (
-                  <>
-                    <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
-                    Загрузка...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Upload" className="mr-2 h-4 w-4" />
-                    Загрузить шаблон
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleUpload}
+                  disabled={!file || !templateName.trim() || isUploading}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {isUploading ? (
+                    <>
+                      <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
+                      Загрузка...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Upload" className="mr-2 h-4 w-4" />
+                      Сохранить
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isUploading}
+                  size="lg"
+                >
+                  Отмена
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
