@@ -1,0 +1,78 @@
+{
+  "tests": [
+    {
+      "name": "Create template - success",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Договор подряда",
+        "fileName": "contract.pdf",
+        "fieldMappings": [
+          {
+            "id": "field_1",
+            "fieldName": "lastName",
+            "x": 100,
+            "y": 200,
+            "width": 150,
+            "height": 20
+          }
+        ]
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create template - missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Договор"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all templates",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "templates": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Update template - success",
+      "method": "PUT",
+      "path": "/?id=1",
+      "body": {
+        "name": "Договор обновлённый",
+        "fileName": "contract_v2.pdf",
+        "fieldMappings": []
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Delete template - success",
+      "method": "DELETE",
+      "path": "/?id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
