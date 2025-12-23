@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
+import Drivers from './Drivers';
 
 interface Order {
   id: string;
@@ -126,7 +127,10 @@ function Index() {
                   ].map((subItem) => (
                     <button
                       key={subItem.id}
-                      onClick={() => setActiveSection(subItem.id)}
+                      onClick={() => {
+                        setActiveSection(subItem.id);
+                        setReferencesOpen(true);
+                      }}
                       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
                           ? 'bg-white/10 text-white'
@@ -221,24 +225,28 @@ function Index() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
-            <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
-              <Icon name="RefreshCw" size={18} />
-              Обновить
-            </Button>
-          </div>
-        </header>
+      {activeSection === 'drivers' ? (
+        <Drivers />
+      ) : (
+        <main className="flex-1 flex flex-col">
+          <header className="bg-white border-b border-border px-6 py-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold text-foreground">Дашборд</h1>
+              <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2">
+                <Icon name="RefreshCw" size={18} />
+                Обновить
+              </Button>
+            </div>
+          </header>
 
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="text-center py-20 text-muted-foreground">
-            <Icon name="LayoutDashboard" size={48} className="mx-auto mb-4 opacity-20" />
-            <p>Содержимое страницы</p>
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="text-center py-20 text-muted-foreground">
+              <Icon name="LayoutDashboard" size={48} className="mx-auto mb-4 opacity-20" />
+              <p>Содержимое страницы</p>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
     </div>
   );
 }
