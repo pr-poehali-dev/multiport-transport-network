@@ -78,7 +78,8 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
           {/* Основная информация */}
           <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
             <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">Фамилия *</Label>
                 <Input id="lastName" placeholder="Иванов" />
@@ -87,22 +88,21 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
                 <Label htmlFor="firstName">Имя *</Label>
                 <Input id="firstName" placeholder="Иван" />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="middleName">Отчество</Label>
                 <Input id="middleName" placeholder="Иванович" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Телефон (осн) *</Label>
-                <Input id="phone" placeholder="+7 (999) 123-45-67" />
-              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phoneExtra">Телефон (доп)</Label>
-              <Input id="phoneExtra" placeholder="+7 (999) 123-45-67" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Телефон 1 *</Label>
+                <Input id="phone" placeholder="+7 (999) 123-45-67" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneExtra">Телефон 2</Label>
+                <Input id="phoneExtra" placeholder="+7 (999) 123-45-67" />
+              </div>
             </div>
           </div>
 
@@ -129,7 +129,7 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="passportSeries">Серия</Label>
                   <Input id="passportSeries" placeholder="1234" />
@@ -138,11 +138,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
                   <Label htmlFor="passportNumber">Номер</Label>
                   <Input id="passportNumber" placeholder="567890" />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="passportDate">Дата выдачи</Label>
-                <Input id="passportDate" type="date" />
+                <div className="space-y-2">
+                  <Label htmlFor="passportDate">Дата выдачи</Label>
+                  <Input id="passportDate" type="date" />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -175,7 +174,7 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="licenseSeries">Серия</Label>
                   <Input id="licenseSeries" placeholder="1234" />
@@ -184,11 +183,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
                   <Label htmlFor="licenseNumber">Номер</Label>
                   <Input id="licenseNumber" placeholder="567890" />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="licenseDate">Дата выдачи</Label>
-                <Input id="licenseDate" type="date" />
+                <div className="space-y-2">
+                  <Label htmlFor="licenseDate">Дата выдачи</Label>
+                  <Input id="licenseDate" type="date" />
+                </div>
               </div>
 
               <div className="space-y-2">
