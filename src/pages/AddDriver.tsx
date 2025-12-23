@@ -9,8 +9,8 @@ interface AddDriverProps {
 
 function AddDriver({ onBack }: AddDriverProps) {
   return (
-    <div className="flex-1 flex flex-col">
-      <header className="bg-white border-b border-border px-6 py-4">
+    <div className="flex-1 flex flex-col h-full">
+      <header className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -40,7 +40,7 @@ function AddDriver({ onBack }: AddDriverProps) {
         </div>
       </header>
 
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg border border-border p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4">
