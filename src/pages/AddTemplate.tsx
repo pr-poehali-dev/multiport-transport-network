@@ -49,19 +49,26 @@ interface TextItemWithPosition extends TextItem {
 }
 
 const DRIVER_FIELDS = [
-  { value: 'lastName', label: 'Фамилия' },
-  { value: 'firstName', label: 'Имя' },
-  { value: 'middleName', label: 'Отчество' },
-  { value: 'phone', label: 'Телефон 1' },
-  { value: 'phoneExtra', label: 'Телефон 2' },
-  { value: 'passportSeries', label: 'Паспорт: Серия' },
-  { value: 'passportNumber', label: 'Паспорт: Номер' },
-  { value: 'passportDate', label: 'Паспорт: Дата выдачи' },
-  { value: 'passportIssued', label: 'Паспорт: Кем выдан' },
-  { value: 'licenseSeries', label: 'ВУ: Серия' },
-  { value: 'licenseNumber', label: 'ВУ: Номер' },
-  { value: 'licenseDate', label: 'ВУ: Дата выдачи' },
-  { value: 'licenseIssued', label: 'ВУ: Кем выдан' },
+  { value: 'lastName', label: 'Фамилия', group: 'personal' },
+  { value: 'firstName', label: 'Имя', group: 'personal' },
+  { value: 'middleName', label: 'Отчество', group: 'personal' },
+  { value: 'phone', label: 'Телефон 1', group: 'contact' },
+  { value: 'phoneExtra', label: 'Телефон 2', group: 'contact' },
+  { value: 'passportSeries', label: 'Паспорт: Серия', group: 'passport' },
+  { value: 'passportNumber', label: 'Паспорт: Номер', group: 'passport' },
+  { value: 'passportDate', label: 'Паспорт: Дата выдачи', group: 'passport' },
+  { value: 'passportIssued', label: 'Паспорт: Кем выдан', group: 'passport' },
+  { value: 'licenseSeries', label: 'ВУ: Серия', group: 'license' },
+  { value: 'licenseNumber', label: 'ВУ: Номер', group: 'license' },
+  { value: 'licenseDate', label: 'ВУ: Дата выдачи', group: 'license' },
+  { value: 'licenseIssued', label: 'ВУ: Кем выдан', group: 'license' },
+];
+
+const FIELD_GROUPS = [
+  { value: 'personal', label: 'Личные данные' },
+  { value: 'contact', label: 'Контакты' },
+  { value: 'passport', label: 'Паспорт' },
+  { value: 'license', label: 'Водительское удостоверение' },
 ];
 
 interface TemplateFile {
@@ -74,6 +81,7 @@ interface AddTemplateProps {
   onBack: () => void;
   onMenuClick: () => void;
   initialData?: TemplateFile;
+  onSave?: (templateData: any) => void;
 }
 
 function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
@@ -326,37 +334,33 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     setIsUploading(true);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        const base64Content = base64.split(',')[1];
+      toast({
+        title: 'Сохранение...',
+        description: 'Шаблон сохраняется',
+      });
 
-        const response = await fetch('YOUR_BACKEND_URL_HERE', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: templateName,
-            type: 'pdf',
-            pdf_content: base64Content,
-            field_mappings: fieldMappings,
-          }),
-        });
+      // Имитация сохранения - здесь будет вызов бэкенда
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-        if (!response.ok) {
-          throw new Error('Ошибка загрузки шаблона');
-        }
-
-        toast({
-          title: 'Успех!',
-          description: `Шаблон "${templateName}" успешно сохранён`,
-        });
-
-        onBack();
+      const templateData = {
+        id: `template_${Date.now()}`,
+        name: templateName,
+        fileName: file.name,
+        fieldMappings,
+        createdAt: new Date().toISOString(),
       };
 
-      reader.readAsDataURL(file);
+      // Сохраняем в localStorage временно
+      const templates = JSON.parse(localStorage.getItem('pdf_templates') || '[]');
+      templates.push(templateData);
+      localStorage.setItem('pdf_templates', JSON.stringify(templates));
+
+      toast({
+        title: 'Успех!',
+        description: `Шаблон "${templateName}" успешно сохранён`,
+      });
+
+      onBack();
     } catch (error) {
       toast({
         title: 'Ошибка',
@@ -472,31 +476,56 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
                 <div className="text-center py-12 text-muted-foreground">
                   <Icon name="MousePointerClick" size={48} className="mx-auto mb-4 opacity-20" />
                   <p className="text-sm">Поля не назначены</p>
-                  <p className="text-xs mt-1">Кликните на PDF для привязки</p>
+                  <p className="text-xs mt-1">Выделите текст на PDF для привязки</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {fieldMappings.map((mapping) => (
-                    <div
-                      key={mapping.id}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
-                        <span className="text-sm font-medium truncate">
-                          {mapping.fieldLabel}
-                        </span>
+                <div className="space-y-4">
+                  {FIELD_GROUPS.map((group) => {
+                    const groupFields = fieldMappings.filter((mapping) => {
+                      const field = DRIVER_FIELDS.find(f => f.value === mapping.fieldName);
+                      return field?.group === group.value;
+                    });
+
+                    if (groupFields.length === 0) return null;
+
+                    return (
+                      <div key={group.value} className="space-y-2">
+                        <h3 className="text-sm font-semibold text-foreground px-1">
+                          {group.label}
+                        </h3>
+                        <div className="space-y-2">
+                          {groupFields.map((mapping) => (
+                            <div
+                              key={mapping.id}
+                              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm font-medium truncate block">
+                                    {mapping.fieldLabel}
+                                  </span>
+                                  {mapping.text && (
+                                    <span className="text-xs text-muted-foreground truncate block">
+                                      {mapping.text}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                                onClick={() => handleRemoveMapping(mapping.id)}
+                              >
+                                <Icon name="Trash2" size={14} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                        onClick={() => handleRemoveMapping(mapping.id)}
-                      >
-                        <Icon name="Trash2" size={14} />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
