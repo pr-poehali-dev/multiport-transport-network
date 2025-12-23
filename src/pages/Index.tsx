@@ -110,6 +110,7 @@ function Index() {
                 setReferencesOpen(false);
                 setDocumentsOpen(false);
                 setSettingsOpen(false);
+                setSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                 activeSection === 'dashboard'
@@ -149,6 +150,7 @@ function Index() {
                         setReferencesOpen(true);
                         setDocumentsOpen(false);
                         setSettingsOpen(false);
+                        setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
@@ -189,6 +191,7 @@ function Index() {
                         setDocumentsOpen(true);
                         setReferencesOpen(false);
                         setSettingsOpen(false);
+                        setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                         activeSection === subItem.id
@@ -210,6 +213,7 @@ function Index() {
                 setReferencesOpen(false);
                 setDocumentsOpen(false);
                 setSettingsOpen(false);
+                setSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                 activeSection === 'overview'
@@ -242,6 +246,7 @@ function Index() {
                       setSettingsOpen(true);
                       setReferencesOpen(false);
                       setDocumentsOpen(false);
+                      setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
                       activeSection === 'templates'
