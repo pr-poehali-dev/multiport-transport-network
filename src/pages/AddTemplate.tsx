@@ -336,7 +336,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
                   onClick={handlePdfClick}
                 >
                   <iframe
-                    src={pdfPreviewUrl}
+                    src={`${pdfPreviewUrl}#toolbar=0`}
                     className="w-full h-[calc(100vh-200px)] min-h-[600px]"
                     title="PDF Preview"
                   />
