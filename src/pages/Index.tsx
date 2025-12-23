@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
+import Templates from './Templates';
 
 interface Order {
   id: string;
@@ -271,6 +272,8 @@ function Index() {
 
       {activeSection === 'drivers' ? (
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'templates' ? (
+        <Templates onMenuClick={() => setSidebarOpen(true)} />
       ) : (
         <main className="flex-1 flex flex-col">
           <TopBar
