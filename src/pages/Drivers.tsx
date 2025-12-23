@@ -6,6 +6,16 @@ import TopBar from '@/components/TopBar';
 import AddDriver from './AddDriver';
 import { getDrivers, Driver } from '@/api/drivers';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DriversProps {
   onMenuClick: () => void;
@@ -18,6 +28,8 @@ function Drivers({ onMenuClick }: DriversProps) {
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [driverToDelete, setDriverToDelete] = useState<number | null>(null);
 
   const loadDrivers = async () => {
     setIsLoading(true);
@@ -70,7 +82,43 @@ function Drivers({ onMenuClick }: DriversProps) {
 
   const handleBackFromAdd = () => {
     setIsAdding(false);
-    loadDrivers(); // Перезагрузка списка после добавления
+    loadDrivers();
+  };
+
+  const handleEditDriver = (driver: Driver) => {
+    toast({
+      title: 'В разработке',
+      description: 'Редактирование водителя будет доступно в следующей версии',
+    });
+  };
+
+  const handleDeleteClick = (driverId: number) => {
+    setDriverToDelete(driverId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!driverToDelete) return;
+
+    try {
+      // TODO: Добавить API метод для удаления
+      // await deleteDriver(driverToDelete);
+      
+      toast({
+        title: 'Водитель удалён',
+        description: 'Водитель успешно удалён из системы',
+      });
+      
+      setDeleteDialogOpen(false);
+      setDriverToDelete(null);
+      loadDrivers();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось удалить водителя'
+      });
+    }
   };
 
   if (isAdding) {
@@ -161,6 +209,24 @@ function Drivers({ onMenuClick }: DriversProps) {
                       <p className="text-sm text-muted-foreground truncate">{driver.middleName}</p>
                     )}
                   </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                      onClick={() => handleEditDriver(driver)}
+                    >
+                      <Icon name="Pencil" size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => handleDeleteClick(driver.id!)}
+                    >
+                      <Icon name="Trash2" size={16} />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Информация */}
@@ -212,6 +278,34 @@ function Drivers({ onMenuClick }: DriversProps) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение удаления
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Вы действительно хотите удалить этого водителя?
+              Это действие нельзя будет отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="X" size={16} />
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="Trash2" size={16} />
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
