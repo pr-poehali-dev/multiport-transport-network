@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -28,6 +30,7 @@ interface FieldAssignDialogProps {
 function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogProps) {
   const [formula, setFormula] = useState<string>('');
   const [cursorPosition, setCursorPosition] = useState<number>(0);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -63,6 +66,16 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
   };
 
   const handleCancel = () => {
+    if (formula.trim()) {
+      setShowCancelDialog(true);
+    } else {
+      setFormula('');
+      onOpenChange(false);
+    }
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
     setFormula('');
     onOpenChange(false);
   };
@@ -73,63 +86,93 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-2xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Назначить поле</AlertDialogTitle>
-          <AlertDialogDescription>
-            Выберите поля и добавьте текст между ними. Например: <code className="bg-slate-100 px-1 rounded">Водитель: &lt;Фамилия&gt; &lt;Имя&gt;</code>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Формула поля</label>
-            <Input
-              value={formula}
-              onChange={handleInputChange}
-              onSelect={(e) => setCursorPosition((e.target as HTMLInputElement).selectionStart || 0)}
-              placeholder="Введите текст и вставьте поля"
-              className="font-mono"
-            />
-            <p className="text-xs text-muted-foreground">
-              Поля отображаются в угловых скобках. Вы можете добавлять любой текст между полями.
-            </p>
-          </div>
+    <>
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Назначить поле</AlertDialogTitle>
+            <AlertDialogDescription>
+              Выберите поля и добавьте текст между ними. Например: <code className="bg-slate-100 px-1 rounded">Водитель: &lt;Фамилия&gt; &lt;Имя&gt;</code>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Формула поля</label>
+              <Input
+                value={formula}
+                onChange={handleInputChange}
+                onSelect={(e) => setCursorPosition((e.target as HTMLInputElement).selectionStart || 0)}
+                placeholder="Введите текст и вставьте поля"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Поля отображаются в угловых скобках. Вы можете добавлять любой текст между полями.
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Вставить поле</label>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-              {DRIVER_FIELDS.map((field) => (
-                <Button
-                  key={field.value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleInsertField(field.value)}
-                  className="justify-start text-left"
-                >
-                  <Icon name="Plus" size={14} className="mr-2 flex-shrink-0" />
-                  <span className="truncate">{field.label}</span>
-                </Button>
-              ))}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Вставить поле</label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {DRIVER_FIELDS.map((field) => (
+                  <Button
+                    key={field.value}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleInsertField(field.value)}
+                    className="justify-start text-left"
+                  >
+                    <Icon name="Plus" size={14} className="mr-2 flex-shrink-0" />
+                    <span className="truncate">{field.label}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <AlertDialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
-            Отмена
-          </Button>
-          <Button
-            onClick={handleAssign}
-            disabled={!formula.trim()}
-            className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white"
-          >
-            Назначить
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={handleCancel}>
+              Отмена
+            </Button>
+            <Button
+              onClick={handleAssign}
+              disabled={!formula.trim()}
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white"
+            >
+              Назначить
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Данное действие приведет к потере всех введенных данных.
+              Вы уверены, что хотите выйти без сохранения?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
