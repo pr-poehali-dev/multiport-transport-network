@@ -151,25 +151,7 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
               />
             )}
 
-            {/* Кнопка назначения поля */}
-            {hasSelection && !isSelecting && (
-              <div
-                className="absolute"
-                style={{
-                  left: Math.max(selectionStart.x, selectionEnd.x) + 10,
-                  top: Math.min(selectionStart.y, selectionEnd.y),
-                }}
-              >
-                <Button
-                  onClick={onAssignClick}
-                  size="sm"
-                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white shadow-lg"
-                >
-                  <Icon name="Plus" size={14} className="mr-1" />
-                  Назначить поле
-                </Button>
-              </div>
-            )}
+
 
             {/* Подсветка выделенных текстовых элементов */}
             {selectedTextItems.map((itemIndex) => {

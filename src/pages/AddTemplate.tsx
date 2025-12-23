@@ -101,9 +101,8 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     setShowAssignMenu(true);
   };
 
-  const handleAssignField = (fieldValue: string) => {
-    const field = DRIVER_FIELDS.find(f => f.value === fieldValue);
-    if (!field || selectedTextItems.length === 0) return;
+  const handleAssignField = (formula: string, usedFields: string[]) => {
+    if (selectedTextItems.length === 0) return;
 
     // Получаем границы выделенных текстовых элементов
     const selectedItems = selectedTextItems.map(i => textItems[i]);
@@ -114,12 +113,15 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     
     // Берем размер шрифта первого выделенного элемента
     const firstItem = selectedItems[0];
-    const text = selectedItems.map(item => item.text).join(' ');
+    const originalText = selectedItems.map(item => item.text).join(' ');
+
+    // Используем формулу в качестве fieldName для множественных полей
+    const fieldName = usedFields.length === 1 ? usedFields[0] : `formula_${Date.now()}`;
 
     const newMapping: FieldMapping = {
       id: `field_${Date.now()}`,
-      fieldName: field.value,
-      fieldLabel: field.label,
+      fieldName,
+      fieldLabel: formula,
       x: minX,
       y: minY,
       width: maxX - minX,
@@ -127,7 +129,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
       page: 0,
       fontSize: firstItem.fontSize,
       fontFamily: firstItem.fontFamily,
-      text,
+      text: originalText,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
@@ -137,7 +139,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
 
     toast({
       title: 'Поле назначено',
-      description: `"${field.label}" добавлено в шаблон`,
+      description: `Формула добавлена в шаблон`,
     });
   };
 
@@ -226,23 +228,33 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
         onBack={handleCancel}
         onMenuClick={onMenuClick}
         rightButtons={
-          <Button
-            onClick={handleSave}
-            disabled={isUploading}
-            className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
-          >
-            {isUploading ? (
-              <>
-                <Icon name="Loader2" size={18} className="animate-spin" />
-                <span className="hidden sm:inline">Сохранение...</span>
-              </>
-            ) : (
-              <>
-                <Icon name="Save" size={18} />
-                <span className="hidden sm:inline">Сохранить</span>
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              className="gap-2"
+            >
+              <Icon name="X" size={18} />
+              <span className="hidden sm:inline">Отмена</span>
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isUploading}
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <Icon name="Loader2" size={18} className="animate-spin" />
+                  <span className="hidden sm:inline">Сохранение...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="Save" size={18} />
+                  <span className="hidden sm:inline">Сохранить</span>
+                </>
+              )}
+            </Button>
+          </div>
         }
       />
 
