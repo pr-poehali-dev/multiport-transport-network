@@ -1,14 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
-import * as pdfjsLib from 'pdfjs-dist';
-import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,63 +13,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-// Configure PDF.js worker - use unpkg CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-
-interface FieldMapping {
-  id: string;
-  fieldName: string;
-  fieldLabel: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  page: number;
-  fontSize?: number;
-  fontFamily?: string;
-  text?: string;
-}
-
-interface TextItemWithPosition extends TextItem {
-  transform: number[];
-}
-
-const DRIVER_FIELDS = [
-  { value: 'lastName', label: 'Фамилия', group: 'personal' },
-  { value: 'firstName', label: 'Имя', group: 'personal' },
-  { value: 'middleName', label: 'Отчество', group: 'personal' },
-  { value: 'phone', label: 'Телефон 1', group: 'contact' },
-  { value: 'phoneExtra', label: 'Телефон 2', group: 'contact' },
-  { value: 'passportSeries', label: 'Паспорт: Серия', group: 'passport' },
-  { value: 'passportNumber', label: 'Паспорт: Номер', group: 'passport' },
-  { value: 'passportDate', label: 'Паспорт: Дата выдачи', group: 'passport' },
-  { value: 'passportIssued', label: 'Паспорт: Кем выдан', group: 'passport' },
-  { value: 'licenseSeries', label: 'ВУ: Серия', group: 'license' },
-  { value: 'licenseNumber', label: 'ВУ: Номер', group: 'license' },
-  { value: 'licenseDate', label: 'ВУ: Дата выдачи', group: 'license' },
-  { value: 'licenseIssued', label: 'ВУ: Кем выдан', group: 'license' },
-];
-
-const FIELD_GROUPS = [
-  { value: 'personal', label: 'Личные данные' },
-  { value: 'contact', label: 'Контакты' },
-  { value: 'passport', label: 'Паспорт' },
-  { value: 'license', label: 'Водительское удостоверение' },
-];
-
-interface TemplateFile {
-  file: File;
-  pdfUrl: string;
-  fileName: string;
-}
+import FieldMappingsSidebar from '@/components/template/FieldMappingsSidebar';
+import PdfViewer from '@/components/template/PdfViewer';
+import FieldAssignDialog from '@/components/template/FieldAssignDialog';
+import { FieldMapping, TemplateFile, TextItemData, DRIVER_FIELDS } from '@/components/template/types';
 
 interface AddTemplateProps {
   onBack: () => void;
@@ -87,114 +28,20 @@ interface AddTemplateProps {
 function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   
   const [file, setFile] = useState<File | null>(initialData?.file || null);
   const [templateName, setTemplateName] = useState(initialData?.fileName || '');
   const [isUploading, setIsUploading] = useState(false);
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
-  const [selectedField, setSelectedField] = useState<string | null>(null);
   const [showAssignMenu, setShowAssignMenu] = useState(false);
-  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
   const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
   const [hasSelection, setHasSelection] = useState(false);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [scale, setScale] = useState(1.0);
-  const [textItems, setTextItems] = useState<Array<{
-    text: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    fontSize: number;
-    fontFamily: string;
-  }>>([]);
+  const [textItems, setTextItems] = useState<TextItemData[]>([]);
   const [selectedTextItems, setSelectedTextItems] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (file) {
-      loadPdf();
-    }
-  }, [file]);
-
-  const loadPdf = async () => {
-    if (!file || !canvasRef.current) return;
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      setPdfDoc(pdf);
-
-      // Render first page
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale });
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-
-      if (!context) return;
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-
-      // Извлекаем текстовые элементы
-      const textContent = await page.getTextContent();
-      const items: Array<{
-        text: string;
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        fontSize: number;
-        fontFamily: string;
-      }> = [];
-
-      textContent.items.forEach((item) => {
-        if ('str' in item && 'transform' in item) {
-          const textItem = item as TextItemWithPosition;
-          const tx = textItem.transform[4];
-          const ty = textItem.transform[5];
-          const fontSize = Math.abs(textItem.transform[0]);
-          const fontFamily = textItem.fontName || 'sans-serif';
-          
-          // Преобразуем координаты PDF в координаты canvas
-          const x = tx;
-          const y = viewport.height - ty;
-          
-          // Примерная ширина текста
-          const width = textItem.width * scale;
-          const height = fontSize;
-
-          items.push({
-            text: textItem.str,
-            x,
-            y: y - height,
-            width,
-            height,
-            fontSize,
-            fontFamily,
-          });
-        }
-      });
-
-      setTextItems(items);
-    } catch (error) {
-      console.error('Error loading PDF:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить PDF',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = event.currentTarget;
@@ -285,7 +132,6 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
 
     setFieldMappings([...fieldMappings, newMapping]);
     setShowAssignMenu(false);
-    setSelectedField(null);
     setHasSelection(false);
     setSelectedTextItems([]);
 
@@ -373,329 +219,80 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col">
       <TopBar
-        title="Редактор шаблона"
+        title="Новый шаблон"
+        showBackButton
+        onBack={handleCancel}
         onMenuClick={onMenuClick}
-        leftButton={
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleCancel}
-            className="hover:bg-gray-100"
-          >
-            <Icon name="ArrowLeft" size={20} />
-          </Button>
-        }
         rightButtons={
-          <>
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              className="gap-2"
-            >
-              <Icon name="X" size={18} />
-              <span className="hidden sm:inline">Отменить</span>
-            </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={isUploading}
-              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
-            >
-              {isUploading ? (
-                <>
-                  <Icon name="Loader2" className="animate-spin" size={18} />
-                  <span className="hidden sm:inline">Загрузка...</span>
-                </>
-              ) : (
-                <>
-                  <Icon name="Check" size={18} />
-                  <span className="hidden sm:inline">Сохранить</span>
-                </>
-              )}
-            </Button>
-          </>
+          <Button
+            onClick={handleSave}
+            disabled={isUploading}
+            className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+          >
+            {isUploading ? (
+              <>
+                <Icon name="Loader2" size={18} className="animate-spin" />
+                <span className="hidden sm:inline">Сохранение...</span>
+              </>
+            ) : (
+              <>
+                <Icon name="Save" size={18} />
+                <span className="hidden sm:inline">Сохранить</span>
+              </>
+            )}
+          </Button>
         }
       />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Левая панель - Настройки */}
-        <div className="w-64 border-r border-border bg-white flex flex-col overflow-hidden flex-shrink-0">
-          <div className="p-4 lg:p-6 border-b border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Icon name="Settings" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Настройки</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="templateName">Название шаблона *</Label>
-                <Input
-                  id="templateName"
-                  placeholder="Договор перевозки"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                />
-              </div>
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <FieldMappingsSidebar
+          templateName={templateName}
+          onTemplateNameChange={setTemplateName}
+          fieldMappings={fieldMappings}
+          onRemoveMapping={handleRemoveMapping}
+          onAssignClick={handleAssignClick}
+          hasSelection={hasSelection}
+        />
 
-              <div className="space-y-2">
-                <Label>Файл</Label>
-                <div className="text-sm text-muted-foreground">
-                  {file?.name}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {((file?.size || 0) / 1024).toFixed(1)} КБ
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="p-4 lg:p-6 border-b border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Icon name="Link" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">
-                    Назначенные поля
-                  </h2>
-                </div>
-                <Badge variant="secondary">{fieldMappings.length}</Badge>
-              </div>
-              
-              <Button
-                onClick={() => setShowAssignMenu(true)}
-                className="w-full bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
-              >
-                <Icon name="Plus" size={18} />
-                <span className="hidden sm:inline">Назначить поле</span>
-              </Button>
-            </div>
-
-            <ScrollArea className="flex-1 p-4 lg:p-6">
-              {fieldMappings.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Icon name="MousePointerClick" size={48} className="mx-auto mb-4 opacity-20" />
-                  <p className="text-sm">Поля не назначены</p>
-                  <p className="text-xs mt-1">Выделите текст на PDF для привязки</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {FIELD_GROUPS.map((group) => {
-                    const groupFields = fieldMappings.filter((mapping) => {
-                      const field = DRIVER_FIELDS.find(f => f.value === mapping.fieldName);
-                      return field?.group === group.value;
-                    });
-
-                    if (groupFields.length === 0) return null;
-
-                    return (
-                      <div key={group.value} className="space-y-2">
-                        <h3 className="text-sm font-semibold text-foreground px-1">
-                          {group.label}
-                        </h3>
-                        <div className="space-y-2">
-                          {groupFields.map((mapping) => (
-                            <div
-                              key={mapping.id}
-                              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
-                            >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-sm font-medium truncate block">
-                                    {mapping.fieldLabel}
-                                  </span>
-                                  {mapping.text && (
-                                    <span className="text-xs text-muted-foreground truncate block">
-                                      {mapping.text}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                                onClick={() => handleRemoveMapping(mapping.id)}
-                              >
-                                <Icon name="Trash2" size={14} />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        </div>
-
-        {/* Правая панель - PDF Viewer */}
-        <div className="flex-1 overflow-y-auto bg-slate-50">
-          <div className="p-4 lg:p-6">
-            {file ? (
-              <div 
-                ref={containerRef}
-                className="bg-white rounded-lg border border-border overflow-hidden relative inline-block"
-              >
-                <canvas
-                  ref={canvasRef}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  className="block"
-                />
-                
-                {/* Текущее выделение */}
-                {isSelecting && (
-                  <div
-                    className="absolute border-2 border-dashed border-[#0ea5e9] bg-[#0ea5e9]/10 pointer-events-none"
-                    style={{
-                      left: Math.min(selectionStart.x, selectionEnd.x),
-                      top: Math.min(selectionStart.y, selectionEnd.y),
-                      width: Math.abs(selectionEnd.x - selectionStart.x),
-                      height: Math.abs(selectionEnd.y - selectionStart.y),
-                    }}
-                  />
-                )}
-                
-                {/* Кнопка назначения поля */}
-                {hasSelection && !isSelecting && (
-                  <div
-                    className="absolute"
-                    style={{
-                      left: Math.max(selectionStart.x, selectionEnd.x) + 10,
-                      top: Math.min(selectionStart.y, selectionEnd.y),
-                    }}
-                  >
-                    <Button
-                      onClick={handleAssignClick}
-                      size="sm"
-                      className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white shadow-lg"
-                    >
-                      <Icon name="Plus" size={14} className="mr-1" />
-                      Назначить поле
-                    </Button>
-                  </div>
-                )}
-                
-                {/* Подсветка выделенных текстовых элементов */}
-                {selectedTextItems.map((itemIndex) => {
-                  const item = textItems[itemIndex];
-                  return (
-                    <div
-                      key={itemIndex}
-                      className="absolute bg-[#0ea5e9]/20 pointer-events-none"
-                      style={{
-                        left: item.x,
-                        top: item.y,
-                        width: item.width,
-                        height: item.height,
-                      }}
-                    />
-                  );
-                })}
-                
-                {/* Маркеры назначенных полей */}
-                {fieldMappings.map((mapping) => (
-                  <div
-                    key={mapping.id}
-                    className="absolute pointer-events-none border-2 border-[#0ea5e9] rounded bg-[#0ea5e9]/10"
-                    style={{
-                      left: mapping.x,
-                      top: mapping.y,
-                      width: mapping.width,
-                      height: mapping.height,
-                    }}
-                  >
-                    <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[22px]">
-                      {mapping.fieldLabel}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg border border-border p-20 text-center">
-                <Icon name="FileText" size={48} className="mx-auto mb-4 opacity-20" />
-                <p className="text-muted-foreground">PDF не загружен</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <PdfViewer
+          ref={canvasRef}
+          file={file}
+          scale={scale}
+          fieldMappings={fieldMappings}
+          isSelecting={isSelecting}
+          selectionStart={selectionStart}
+          selectionEnd={selectionEnd}
+          hasSelection={hasSelection}
+          selectedTextItems={selectedTextItems}
+          textItems={textItems}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onAssignClick={handleAssignClick}
+          onTextItemsExtracted={setTextItems}
+        />
       </div>
 
-      {/* Модальное окно назначения поля */}
-      {showAssignMenu && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg border border-border max-w-md w-full p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">Назначить поле</h3>
-              <p className="text-sm text-muted-foreground">
-                Выберите поле из справочника водителей
-              </p>
-            </div>
+      <FieldAssignDialog
+        open={showAssignMenu}
+        onOpenChange={setShowAssignMenu}
+        onAssign={handleAssignField}
+      />
 
-            <Select value={selectedField || ''} onValueChange={setSelectedField}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите поле..." />
-              </SelectTrigger>
-              <SelectContent>
-                {DRIVER_FIELDS.map((field) => (
-                  <SelectItem key={field.value} value={field.value}>
-                    {field.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={() => selectedField && handleAssignField(selectedField)}
-                disabled={!selectedField}
-                className="flex-1 bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white"
-              >
-                <Icon name="Check" className="mr-2 h-4 w-4" />
-                Назначить
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAssignMenu(false);
-                  setSelectedField(null);
-                }}
-              >
-                Отмена
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AlertDialog для подтверждения отмены */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
-              Подтверждение отмены
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base pt-2">
-              Данное действие приведет к потере всех настроек шаблона.
-              Вы уверены, что хотите выйти без сохранения?
+            <AlertDialogTitle>Отменить создание?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Все несохранённые изменения будут потеряны
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCancelDialog(false)}>
-              Продолжить редактирование
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmCancel}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Icon name="LogOut" size={16} className="mr-2" />
-              Выйти без сохранения
+            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-red-600 hover:bg-red-700">
+              Отменить
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
