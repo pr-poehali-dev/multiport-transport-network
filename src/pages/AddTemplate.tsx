@@ -246,7 +246,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
         }
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-row overflow-hidden">
         <FieldMappingsSidebar
           templateName={templateName}
           onTemplateNameChange={setTemplateName}
