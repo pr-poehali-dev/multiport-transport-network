@@ -77,7 +77,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Основная информация */}
           <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+            <div className="flex items-center gap-2">
+              <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -118,7 +121,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
           ) : (
             <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base lg:text-lg font-semibold text-foreground">Паспорт</h2>
+                <div className="flex items-center gap-2">
+                  <Icon name="CreditCard" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Паспорт</h2>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -163,7 +169,10 @@ function AddDriver({ onBack, onMenuClick }: AddDriverProps) {
           ) : (
             <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base lg:text-lg font-semibold text-foreground">Водительское удостоверение</h2>
+                <div className="flex items-center gap-2">
+                  <Icon name="IdCard" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Водительское удостоверение</h2>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
