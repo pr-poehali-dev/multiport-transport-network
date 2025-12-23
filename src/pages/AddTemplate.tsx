@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
+import { createTemplate } from '@/api/templates';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -182,37 +183,22 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     setIsUploading(true);
 
     try {
-      toast({
-        title: 'Сохранение...',
-        description: 'Шаблон сохраняется',
-      });
-
-      // Имитация сохранения - здесь будет вызов бэкенда
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const templateData = {
-        id: `template_${Date.now()}`,
+      const data = await createTemplate({
         name: templateName,
         fileName: file.name,
         fieldMappings,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Сохраняем в localStorage временно
-      const templates = JSON.parse(localStorage.getItem('pdf_templates') || '[]');
-      templates.push(templateData);
-      localStorage.setItem('pdf_templates', JSON.stringify(templates));
+      });
 
       toast({
         title: 'Успех!',
-        description: `Шаблон "${templateName}" успешно сохранён`,
+        description: data.message || `Шаблон "${templateName}" успешно сохранён`,
       });
 
       onBack();
     } catch (error) {
       toast({
         title: 'Ошибка',
-        description: 'Не удалось загрузить шаблон',
+        description: error instanceof Error ? error.message : 'Не удалось сохранить шаблон',
         variant: 'destructive',
       });
     } finally {

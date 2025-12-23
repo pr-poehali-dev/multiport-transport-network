@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import AddTemplate from './AddTemplate';
+import { getTemplates, deleteTemplate, Template } from '@/api/templates';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,13 +31,25 @@ function Templates({ onMenuClick }: TemplatesProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<TemplateFile | null>(null);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
 
-  const loadTemplates = () => {
-    const saved = JSON.parse(localStorage.getItem('pdf_templates') || '[]');
-    setTemplates(saved);
+  const loadTemplates = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getTemplates();
+      setTemplates(data.templates);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список шаблонов'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRefresh = () => {
@@ -84,24 +97,32 @@ function Templates({ onMenuClick }: TemplatesProps) {
     });
   };
 
-  const handleDeleteClick = (templateId: string) => {
+  const handleDeleteClick = (templateId: number) => {
     setTemplateToDelete(templateId);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!templateToDelete) return;
-    
-    const updatedTemplates = templates.filter(t => t.id !== templateToDelete);
-    localStorage.setItem('pdf_templates', JSON.stringify(updatedTemplates));
-    setTemplates(updatedTemplates);
-    setDeleteDialogOpen(false);
-    setTemplateToDelete(null);
-    
-    toast({
-      title: 'Шаблон удалён',
-      description: 'Шаблон успешно удалён из системы',
-    });
+
+    try {
+      const result = await deleteTemplate(templateToDelete);
+      
+      toast({
+        title: 'Шаблон удалён',
+        description: result.message || 'Шаблон успешно удалён из системы',
+      });
+      
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+      loadTemplates();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось удалить шаблон'
+      });
+    }
   };
 
   if (isEditing && selectedFile) {
@@ -144,7 +165,12 @@ function Templates({ onMenuClick }: TemplatesProps) {
       />
 
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
-        {templates.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-20">
+            <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
+            <p className="text-muted-foreground">Загрузка...</p>
+          </div>
+        ) : templates.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Icon name="FileText" size={48} className="mx-auto mb-4 opacity-20" />
             <p>Нажмите "+ Шаблон PDF" для загрузки</p>
