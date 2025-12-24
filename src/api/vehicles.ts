@@ -71,6 +71,8 @@ export async function createVehicle(data: CreateVehicleRequest): Promise<{ id: n
 
   if (!response.ok) {
     const error = await response.json();
+    console.error('Backend error:', error);
+    alert(`Backend error: ${JSON.stringify(error)}`);
     throw new Error(error.error || 'Не удалось создать автомобиль');
   }
 
