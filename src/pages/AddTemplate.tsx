@@ -31,7 +31,7 @@ interface AddTemplateProps {
 
 function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templateId, existingMappings = [] }: AddTemplateProps) {
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const [file, setFile] = useState<File | null>(initialData?.file || null);
   const [templateName, setTemplateName] = useState(initialData?.fileName || '');
@@ -39,97 +39,12 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>(existingMappings);
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
-  const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
   const [hasSelection, setHasSelection] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [textItems, setTextItems] = useState<TextItemData[]>([]);
-  const [selectedTextItems, setSelectedTextItems] = useState<number[]>([]);
 
-  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = event.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    setIsSelecting(true);
-    setSelectionStart({ x, y });
-    setSelectionEnd({ x, y });
-    setHasSelection(false);
-  };
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isSelecting) return;
-    
-    const canvas = event.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    setSelectionEnd({ x, y });
-    
-    // Динамически обновляем выделенные элементы во время протягивания
-    const minX = Math.min(selectionStart.x, x);
-    const minY = Math.min(selectionStart.y, y);
-    const maxX = Math.max(selectionStart.x, x);
-    const maxY = Math.max(selectionStart.y, y);
-    
-    const selected: number[] = [];
-    textItems.forEach((item, index) => {
-      const itemLeft = item.x * scale;
-      const itemTop = item.y * scale;
-      const itemRight = itemLeft + item.width * scale;
-      const itemBottom = itemTop + item.height * scale;
-      
-      if (
-        itemLeft < maxX &&
-        itemRight > minX &&
-        itemTop < maxY &&
-        itemBottom > minY
-      ) {
-        selected.push(index);
-      }
-    });
-    
-    setSelectedTextItems(selected);
-  };
-
-  const handleMouseUp = () => {
-    if (isSelecting) {
-      setIsSelecting(false);
-      
-      // Находим текстовые элементы в выделенной области
-      const minX = Math.min(selectionStart.x, selectionEnd.x);
-      const minY = Math.min(selectionStart.y, selectionEnd.y);
-      const maxX = Math.max(selectionStart.x, selectionEnd.x);
-      const maxY = Math.max(selectionStart.y, selectionEnd.y);
-      
-      const selected: number[] = [];
-      textItems.forEach((item, index) => {
-        const itemLeft = item.x * scale;
-        const itemTop = item.y * scale;
-        const itemRight = itemLeft + item.width * scale;
-        const itemBottom = itemTop + item.height * scale;
-        
-        // Проверяем пересечение
-        if (
-          itemLeft < maxX &&
-          itemRight > minX &&
-          itemTop < maxY &&
-          itemBottom > minY
-        ) {
-          selected.push(index);
-        }
-      });
-      
-      if (selected.length > 0) {
-        setSelectedTextItems(selected);
-        setHasSelection(true);
-      } else {
-        setHasSelection(false);
-      }
-    }
+  const handleSelectionChange = (hasText: boolean) => {
+    setHasSelection(hasText);
   };
 
   const handleAssignClick = () => {
@@ -138,38 +53,40 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
   };
 
   const handleAssignField = (formula: string, usedFields: string[]) => {
-    if (selectedTextItems.length === 0) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
 
-    // Получаем границы выделенных текстовых элементов
-    const selectedItems = selectedTextItems.map(i => textItems[i]);
-    const minX = Math.min(...selectedItems.map(item => item.x));
-    const minY = Math.min(...selectedItems.map(item => item.y));
-    const maxX = Math.max(...selectedItems.map(item => item.x + item.width));
-    const maxY = Math.max(...selectedItems.map(item => item.y + item.height));
-    
-    const firstItem = selectedItems[0];
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const container = containerRef.current;
+    if (!container) return;
 
-    // Используем формулу в качестве fieldName для множественных полей
+    const containerRect = container.getBoundingClientRect();
+    const x = rect.left - containerRect.left;
+    const y = rect.top - containerRect.top;
+    const width = rect.width;
+    const height = rect.height;
+
     const fieldName = usedFields.length === 1 ? usedFields[0] : `formula_${Date.now()}`;
 
     const newMapping: FieldMapping = {
       id: `field_${Date.now()}`,
       fieldName,
       fieldLabel: formula,
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
+      x: x / scale,
+      y: y / scale,
+      width: width / scale,
+      height: height / scale,
       page: 0,
-      fontSize: firstItem.fontSize,
-      fontFamily: firstItem.fontFamily,
+      fontSize: 12,
+      fontFamily: 'Arial',
       text: formula,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
     setShowAssignMenu(false);
     setHasSelection(false);
-    setSelectedTextItems([]);
+    selection.removeAllRanges();
 
     toast({
       title: 'Поле назначено',
@@ -319,21 +236,13 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
         />
 
         <PdfViewer
-          ref={canvasRef}
+          ref={containerRef}
           file={file}
           scale={scale}
           fieldMappings={fieldMappings}
-          isSelecting={isSelecting}
-          selectionStart={selectionStart}
-          selectionEnd={selectionEnd}
-          hasSelection={hasSelection}
-          selectedTextItems={selectedTextItems}
-          textItems={textItems}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
           onAssignClick={handleAssignClick}
           onTextItemsExtracted={setTextItems}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
 

@@ -1,8 +1,8 @@
-import { useRef, useEffect, forwardRef } from 'react';
-import { Button } from '@/components/ui/button';
+import { useRef, useEffect, forwardRef, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { FieldMapping, TextItemData } from './types';
 import * as pdfjsLib from 'pdfjs-dist';
+import 'pdfjs-dist/web/pdf_viewer.css';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -11,49 +11,45 @@ interface PdfViewerProps {
   file: File | null;
   scale: number;
   fieldMappings: FieldMapping[];
-  isSelecting: boolean;
-  selectionStart: { x: number; y: number };
-  selectionEnd: { x: number; y: number };
-  hasSelection: boolean;
-  selectedTextItems: number[];
-  textItems: TextItemData[];
-  onMouseDown: (event: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseMove: (event: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseUp: () => void;
   onAssignClick: () => void;
   onTextItemsExtracted: (items: TextItemData[]) => void;
+  onSelectionChange: (hasSelection: boolean) => void;
 }
 
-const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
+const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
   (
     {
       file,
       scale,
       fieldMappings,
-      isSelecting,
-      selectionStart,
-      selectionEnd,
-      hasSelection,
-      selectedTextItems,
-      textItems,
-      onMouseDown,
-      onMouseMove,
-      onMouseUp,
       onAssignClick,
       onTextItemsExtracted,
+      onSelectionChange,
     },
-    canvasRef
+    containerRef
   ) => {
-    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const textLayerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-      if (file && canvasRef && typeof canvasRef !== 'function') {
+      if (file) {
         loadPdf();
       }
-    }, [file]);
+    }, [file, scale]);
+
+    useEffect(() => {
+      const handleSelectionChange = () => {
+        const selection = window.getSelection();
+        const hasText = selection && selection.toString().length > 0;
+        onSelectionChange(!!hasText);
+      };
+
+      document.addEventListener('selectionchange', handleSelectionChange);
+      return () => document.removeEventListener('selectionchange', handleSelectionChange);
+    }, [onSelectionChange]);
 
     const loadPdf = async () => {
-      if (!file || !canvasRef || typeof canvasRef === 'function' || !canvasRef.current) return;
+      if (!file || !canvasRef.current || !textLayerRef.current) return;
 
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -70,13 +66,19 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
+        // Рендерим PDF на canvas
         await page.render({
           canvasContext: context,
           viewport: viewport,
         }).promise;
 
-        // Извлекаем текстовые элементы
+        // Создаём текстовый слой
         const textContent = await page.getTextContent();
+        const textLayer = textLayerRef.current;
+        textLayer.innerHTML = '';
+        textLayer.style.width = `${viewport.width}px`;
+        textLayer.style.height = `${viewport.height}px`;
+
         const items: TextItemData[] = [];
 
         textContent.items.forEach((item) => {
@@ -91,6 +93,20 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
             const y = viewport.height - ty;
             const width = textItem.width * scale;
             const height = fontSize;
+
+            // Создаём элемент для каждого текстового блока
+            const span = document.createElement('span');
+            span.textContent = textItem.str;
+            span.style.position = 'absolute';
+            span.style.left = `${x}px`;
+            span.style.top = `${y - height}px`;
+            span.style.fontSize = `${fontSize}px`;
+            span.style.fontFamily = fontFamily;
+            span.style.whiteSpace = 'pre';
+            span.style.transformOrigin = 'left bottom';
+            span.style.transform = `scaleX(${textItem.width / (textItem.str.length * fontSize * 0.6)})`;
+            
+            textLayer.appendChild(span);
 
             items.push({
               text: textItem.str,
@@ -132,32 +148,18 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
           >
             <canvas
               ref={canvasRef}
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
               className="block"
             />
 
-
-
-
-
-            {/* Подсветка выделенных текстовых элементов */}
-            {selectedTextItems.map((itemIndex) => {
-              const item = textItems[itemIndex];
-              return (
-                <div
-                  key={itemIndex}
-                  className="absolute bg-[#0ea5e9]/30 pointer-events-none"
-                  style={{
-                    left: item.x * scale,
-                    top: item.y * scale,
-                    width: item.width * scale,
-                    height: item.height * scale,
-                  }}
-                />
-              );
-            })}
+            {/* Текстовый слой для выделения */}
+            <div
+              ref={textLayerRef}
+              className="absolute top-0 left-0 text-transparent select-text"
+              style={{ 
+                mixBlendMode: 'multiply',
+                userSelect: 'text',
+              }}
+            />
 
             {/* Маркеры назначенных полей */}
             {fieldMappings.map((mapping) => (
