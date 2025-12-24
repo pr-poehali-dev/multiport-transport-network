@@ -60,6 +60,7 @@ export async function getVehicle(id: number): Promise<Vehicle> {
 }
 
 export async function createVehicle(data: CreateVehicleRequest): Promise<{ id: number; message: string; createdAt: string }> {
+  console.log('Creating vehicle with data:', data);
   const response = await fetch(`${API_URL}?resource=vehicles`, {
     method: 'POST',
     headers: {
