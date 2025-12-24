@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
+import Vehicles from './Vehicles';
 import Templates from './Templates';
 
 interface Order {
@@ -272,6 +273,8 @@ function Index() {
 
       {activeSection === 'drivers' ? (
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'vehicles' ? (
+        <Vehicles onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'templates' ? (
         <Templates onMenuClick={() => setSidebarOpen(true)} />
       ) : (
