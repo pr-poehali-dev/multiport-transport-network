@@ -138,18 +138,7 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
               className="block"
             />
 
-            {/* Текущее выделение */}
-            {isSelecting && (
-              <div
-                className="absolute border-2 border-dashed border-[#0ea5e9] bg-[#0ea5e9]/10 pointer-events-none"
-                style={{
-                  left: Math.min(selectionStart.x, selectionEnd.x),
-                  top: Math.min(selectionStart.y, selectionEnd.y),
-                  width: Math.abs(selectionEnd.x - selectionStart.x),
-                  height: Math.abs(selectionEnd.y - selectionStart.y),
-                }}
-              />
-            )}
+
 
 
 
@@ -159,12 +148,12 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
               return (
                 <div
                   key={itemIndex}
-                  className="absolute bg-[#0ea5e9]/20 pointer-events-none"
+                  className="absolute bg-[#0ea5e9]/30 pointer-events-none"
                   style={{
-                    left: item.x,
-                    top: item.y,
-                    width: item.width,
-                    height: item.height,
+                    left: item.x * scale,
+                    top: item.y * scale,
+                    width: item.width * scale,
+                    height: item.height * scale,
                   }}
                 />
               );
@@ -176,13 +165,13 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
                 key={mapping.id}
                 className="absolute pointer-events-none border-2 border-[#0ea5e9] rounded bg-[#0ea5e9]/10"
                 style={{
-                  left: mapping.x,
-                  top: mapping.y,
-                  width: mapping.width,
-                  height: mapping.height,
+                  left: mapping.x * scale,
+                  top: mapping.y * scale,
+                  width: mapping.width * scale,
+                  height: mapping.height * scale,
                 }}
               >
-                <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[22px]">
+                <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate" style={{ lineHeight: `${mapping.height * scale}px` }}>
                   {mapping.fieldLabel}
                 </div>
               </div>

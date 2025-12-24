@@ -68,6 +68,31 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
     const y = event.clientY - rect.top;
     
     setSelectionEnd({ x, y });
+    
+    // Динамически обновляем выделенные элементы во время протягивания
+    const minX = Math.min(selectionStart.x, x);
+    const minY = Math.min(selectionStart.y, y);
+    const maxX = Math.max(selectionStart.x, x);
+    const maxY = Math.max(selectionStart.y, y);
+    
+    const selected: number[] = [];
+    textItems.forEach((item, index) => {
+      const itemLeft = item.x * scale;
+      const itemTop = item.y * scale;
+      const itemRight = itemLeft + item.width * scale;
+      const itemBottom = itemTop + item.height * scale;
+      
+      if (
+        itemLeft < maxX &&
+        itemRight > minX &&
+        itemTop < maxY &&
+        itemBottom > minY
+      ) {
+        selected.push(index);
+      }
+    });
+    
+    setSelectedTextItems(selected);
   };
 
   const handleMouseUp = () => {
