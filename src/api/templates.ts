@@ -60,14 +60,14 @@ export async function getTemplates(): Promise<GetTemplatesResponse> {
 
 // Получить один шаблон по ID
 export async function getTemplateById(id: number): Promise<Template> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}&id=${id}`, {
     method: 'GET',
   });
 }
 
 // Обновить шаблон
 export async function updateTemplate(id: number, template: Template): Promise<CreateTemplateResponse> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}&id=${id}`, {
     method: 'PUT',
     body: JSON.stringify(template),
   });
@@ -75,7 +75,7 @@ export async function updateTemplate(id: number, template: Template): Promise<Cr
 
 // Удалить шаблон
 export async function deleteTemplate(id: number): Promise<{ message: string }> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.templates}&id=${id}`, {
     method: 'DELETE',
   });
 }
