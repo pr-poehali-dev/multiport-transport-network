@@ -44,6 +44,8 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     const [editableItems, setEditableItems] = useState<EditableTextItem[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
+    const [textStyles, setTextStyles] = useState<Record<string, { bold?: boolean; italic?: boolean; underline?: boolean; strikethrough?: boolean }>>({});
 
     useEffect(() => {
       if (file) {
@@ -83,6 +85,36 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         items.map(item => (item.id === id ? { ...item, align } : item))
       );
     };
+
+    const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
+      e.preventDefault();
+      setContextMenu({ x: e.clientX, y: e.clientY, itemId });
+    };
+
+    const handleCopyText = () => {
+      const selection = window.getSelection();
+      if (selection) {
+        navigator.clipboard.writeText(selection.toString());
+      }
+      setContextMenu(null);
+    };
+
+    const handleToggleStyle = (itemId: string, style: 'bold' | 'italic' | 'underline' | 'strikethrough') => {
+      setTextStyles(prev => ({
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          [style]: !prev[itemId]?.[style],
+        },
+      }));
+      setContextMenu(null);
+    };
+
+    useEffect(() => {
+      const handleClickOutside = () => setContextMenu(null);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     const loadPdf = async () => {
       if (!file || !canvasRef.current) return;
@@ -204,6 +236,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                   contentEditable
                   suppressContentEditableWarning
                   onInput={(e) => handleTextChange(item.id, e.currentTarget.textContent || '')}
+                  onContextMenu={(e) => handleContextMenu(e, item.id)}
                   className="outline-none px-1 select-text"
                   style={{
                     fontSize: `${item.fontSize}px`,
@@ -212,6 +245,9 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                     lineHeight: `${item.height}px`,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
+                    fontWeight: textStyles[item.id]?.bold ? 'bold' : 'normal',
+                    fontStyle: textStyles[item.id]?.italic ? 'italic' : 'normal',
+                    textDecoration: `${textStyles[item.id]?.underline ? 'underline' : ''} ${textStyles[item.id]?.strikethrough ? 'line-through' : ''}`.trim(),
                   }}
                 >
                   {item.text}
@@ -284,6 +320,81 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                 </div>
               </div>
             ))}
+
+            {/* Контекстное меню */}
+            {contextMenu && (
+              <div
+                className="fixed bg-white border border-border rounded-lg shadow-xl py-1 z-50 min-w-56"
+                style={{ left: contextMenu.x, top: contextMenu.y }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={handleCopyText}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="Copy" size={16} />
+                  Копировать
+                </button>
+                <button
+                  onClick={handleCopyText}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="FileText" size={16} />
+                  Копировать с форматированием
+                </button>
+                <div className="h-px bg-border my-1" />
+                <button
+                  onClick={() => handleToggleStyle(contextMenu.itemId, 'bold')}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="Bold" size={16} />
+                  Полужирный
+                </button>
+                <button
+                  onClick={() => handleToggleStyle(contextMenu.itemId, 'italic')}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="Italic" size={16} />
+                  Курсив
+                </button>
+                <button
+                  onClick={() => handleToggleStyle(contextMenu.itemId, 'underline')}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="Underline" size={16} />
+                  Подчёркнутый
+                </button>
+                <button
+                  onClick={() => handleToggleStyle(contextMenu.itemId, 'strikethrough')}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <Icon name="Strikethrough" size={16} />
+                  Зачеркнутый
+                </button>
+                <div className="h-px bg-border my-1" />
+                <button
+                  onClick={onAssignClick}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2 text-[#0ea5e9]"
+                >
+                  <Icon name="Link" size={16} />
+                  Назначить поле
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                  onClick={() => setContextMenu(null)}
+                >
+                  <Icon name="MessageSquare" size={16} />
+                  Добавить комментарий
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
+                  onClick={() => setContextMenu(null)}
+                >
+                  <Icon name="Bookmark" size={16} />
+                  Добавить закладку
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
