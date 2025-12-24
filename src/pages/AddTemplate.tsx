@@ -74,14 +74,28 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
     if (isSelecting) {
       setIsSelecting(false);
       
-      // Проверяем, есть ли минимальная область выделения (хотя бы 5px)
-      const width = Math.abs(selectionEnd.x - selectionStart.x);
-      const height = Math.abs(selectionEnd.y - selectionStart.y);
+      // Находим все текстовые элементы в выделенной области
+      const minX = Math.min(selectionStart.x, selectionEnd.x);
+      const minY = Math.min(selectionStart.y, selectionEnd.y);
+      const maxX = Math.max(selectionStart.x, selectionEnd.x);
+      const maxY = Math.max(selectionStart.y, selectionEnd.y);
       
-      if (width > 5 && height > 5) {
+      const selected: number[] = [];
+      textItems.forEach((item, index) => {
+        // Проверяем пересечение с выделенной областью
+        if (
+          item.x < maxX / scale &&
+          item.x + item.width > minX / scale &&
+          item.y < maxY / scale &&
+          item.y + item.height > minY / scale
+        ) {
+          selected.push(index);
+        }
+      });
+      
+      if (selected.length > 0) {
+        setSelectedTextItems(selected);
         setHasSelection(true);
-      } else {
-        setHasSelection(false);
       }
     }
   };
@@ -92,13 +106,17 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
   };
 
   const handleAssignField = (formula: string, usedFields: string[]) => {
-    if (!hasSelection) return;
+    if (selectedTextItems.length === 0) return;
 
-    // Используем координаты прямоугольника выделения напрямую
-    const minX = Math.min(selectionStart.x, selectionEnd.x);
-    const minY = Math.min(selectionStart.y, selectionEnd.y);
-    const maxX = Math.max(selectionStart.x, selectionEnd.x);
-    const maxY = Math.max(selectionStart.y, selectionEnd.y);
+    // Получаем границы выделенных текстовых элементов
+    const selectedItems = selectedTextItems.map(i => textItems[i]);
+    const minX = Math.min(...selectedItems.map(item => item.x));
+    const minY = Math.min(...selectedItems.map(item => item.y));
+    const maxX = Math.max(...selectedItems.map(item => item.x + item.width));
+    const maxY = Math.max(...selectedItems.map(item => item.y + item.height));
+    
+    // Берем размер шрифта первого выделенного элемента
+    const firstItem = selectedItems[0];
 
     // Используем формулу в качестве fieldName для множественных полей
     const fieldName = usedFields.length === 1 ? usedFields[0] : `formula_${Date.now()}`;
@@ -107,19 +125,20 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
       id: `field_${Date.now()}`,
       fieldName,
       fieldLabel: formula,
-      x: minX / scale,
-      y: minY / scale,
-      width: (maxX - minX) / scale,
-      height: (maxY - minY) / scale,
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
       page: 0,
-      fontSize: 12,
-      fontFamily: 'Arial',
+      fontSize: firstItem.fontSize,
+      fontFamily: firstItem.fontFamily,
       text: formula,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);
     setShowAssignMenu(false);
     setHasSelection(false);
+    setSelectedTextItems([]);
 
     toast({
       title: 'Поле назначено',
@@ -133,6 +152,12 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
       title: 'Поле удалено',
       description: 'Привязка поля удалена из шаблона',
     });
+  };
+
+  const handleFieldMappingUpdate = (id: string, updates: Partial<FieldMapping>) => {
+    setFieldMappings(fieldMappings.map(m => 
+      m.id === id ? { ...m, ...updates } : m
+    ));
   };
 
   const handleCancel = () => {
@@ -284,6 +309,7 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
           onMouseUp={handleMouseUp}
           onAssignClick={handleAssignClick}
           onTextItemsExtracted={setTextItems}
+          onFieldMappingUpdate={handleFieldMappingUpdate}
         />
       </div>
 
