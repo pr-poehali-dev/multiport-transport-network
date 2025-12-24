@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
-import { createTemplate } from '@/api/templates';
+import { createTemplate, updateTemplate } from '@/api/templates';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,16 +24,19 @@ interface AddTemplateProps {
   onMenuClick: () => void;
   initialData?: TemplateFile;
   onSave?: (templateData: any) => void;
+  editMode?: boolean;
+  templateId?: number;
+  existingMappings?: FieldMapping[];
 }
 
-function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
+function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templateId, existingMappings = [] }: AddTemplateProps) {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const [file, setFile] = useState<File | null>(initialData?.file || null);
   const [templateName, setTemplateName] = useState(initialData?.fileName || '');
   const [isUploading, setIsUploading] = useState(false);
-  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
+  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>(existingMappings);
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -183,7 +186,24 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
     setIsUploading(true);
 
     try {
-      // Читаем PDF как base64
+      // Режим редактирования - только обновляем маппинги, не загружаем файл заново
+      if (editMode && templateId) {
+        const data = await updateTemplate(templateId, {
+          name: templateName,
+          fileName: file.name,
+          fieldMappings,
+        });
+
+        toast({
+          title: 'Успех!',
+          description: data.message || `Шаблон "${templateName}" обновлён`,
+        });
+
+        onBack();
+        return;
+      }
+
+      // Режим создания - читаем PDF как base64
       const reader = new FileReader();
       const fileDataBase64 = await new Promise<string>((resolve, reject) => {
         reader.onload = () => {
@@ -223,7 +243,7 @@ function AddTemplate({ onBack, onMenuClick, initialData }: AddTemplateProps) {
   return (
     <div className="flex-1 flex flex-col">
       <TopBar
-        title="Новый шаблон"
+        title={editMode ? "Редактировать шаблон" : "Новый шаблон"}
         showBackButton
         onBack={handleCancel}
         onMenuClick={onMenuClick}

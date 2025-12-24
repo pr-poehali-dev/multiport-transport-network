@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import AddTemplate from './AddTemplate';
-import { getTemplates, deleteTemplate, Template } from '@/api/templates';
+import { getTemplates, deleteTemplate, getTemplateById, Template } from '@/api/templates';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ function Templates({ onMenuClick }: TemplatesProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const loadTemplates = async () => {
     setIsLoading(true);
@@ -89,12 +90,41 @@ function Templates({ onMenuClick }: TemplatesProps) {
     setIsEditing(true);
   };
 
-  const handleEditTemplate = (template: any) => {
-    // TODO: Implement edit functionality with existing template data
-    toast({
-      title: 'В разработке',
-      description: 'Редактирование шаблона будет доступно в следующей версии',
-    });
+  const handleEditTemplate = async (template: Template) => {
+    try {
+      // Загружаем полную информацию о шаблоне с fileData
+      const fullTemplate = await getTemplateById(template.id!);
+      
+      // Декодируем base64 в Blob и создаём File объект
+      if (!fullTemplate.fileData) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Файл шаблона не найден'
+        });
+        return;
+      }
+      
+      const byteCharacters = atob(fullTemplate.fileData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const file = new File([blob], fullTemplate.fileName, { type: 'application/pdf' });
+      const pdfUrl = URL.createObjectURL(blob);
+      
+      setSelectedFile({ file, pdfUrl, fileName: fullTemplate.name });
+      setEditingTemplate(fullTemplate);
+      setIsEditing(true);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось загрузить шаблон для редактирования'
+      });
+    }
   };
 
   const handleDeleteClick = (templateId: number) => {
@@ -131,10 +161,14 @@ function Templates({ onMenuClick }: TemplatesProps) {
         onBack={() => {
           setIsEditing(false);
           setSelectedFile(null);
+          setEditingTemplate(null);
           loadTemplates();
         }}
         onMenuClick={onMenuClick}
         initialData={selectedFile}
+        editMode={!!editingTemplate}
+        templateId={editingTemplate?.id}
+        existingMappings={editingTemplate?.fieldMappings || []}
       />
     );
   }
