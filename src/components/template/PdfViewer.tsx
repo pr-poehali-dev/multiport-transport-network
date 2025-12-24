@@ -41,11 +41,8 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     containerRef
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [editableItems, setEditableItems] = useState<EditableTextItem[]>([]);
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; itemId: string } | null>(null);
-    const [textStyles, setTextStyles] = useState<Record<string, { bold?: boolean; italic?: boolean; underline?: boolean; strikethrough?: boolean }>>({});
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
     useEffect(() => {
       if (file) {
@@ -54,41 +51,19 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     }, [file, scale]);
 
     useEffect(() => {
-      const handleSelectionChange = () => {
-        const selection = window.getSelection();
-        const hasText = selection && selection.toString().length > 0;
-        onSelectionChange(!!hasText);
-      };
+      const handleClickOutside = () => setContextMenu(null);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
-      document.addEventListener('selectionchange', handleSelectionChange);
-      return () => document.removeEventListener('selectionchange', handleSelectionChange);
-    }, [onSelectionChange]);
-
-    const handleTextChange = (id: string, newText: string) => {
-      setEditableItems(items =>
-        items.map(item => (item.id === id ? { ...item, text: newText } : item))
-      );
-    };
-
-    const handleFontSizeChange = (id: string, delta: number) => {
-      setEditableItems(items =>
-        items.map(item =>
-          item.id === id
-            ? { ...item, fontSize: Math.max(6, item.fontSize + delta), height: Math.max(6, item.fontSize + delta) }
-            : item
-        )
-      );
-    };
-
-    const handleAlignChange = (id: string, align: 'left' | 'center' | 'right') => {
-      setEditableItems(items =>
-        items.map(item => (item.id === id ? { ...item, align } : item))
-      );
-    };
-
-    const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
+    const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
-      setContextMenu({ x: e.clientX, y: e.clientY, itemId });
+      const selection = window.getSelection();
+      const hasSelection = selection && selection.toString().length > 0;
+      onSelectionChange(hasSelection);
+      if (hasSelection) {
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      }
     };
 
     const handleCopyText = () => {
@@ -98,23 +73,6 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
       }
       setContextMenu(null);
     };
-
-    const handleToggleStyle = (itemId: string, style: 'bold' | 'italic' | 'underline' | 'strikethrough') => {
-      setTextStyles(prev => ({
-        ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          [style]: !prev[itemId]?.[style],
-        },
-      }));
-      setContextMenu(null);
-    };
-
-    useEffect(() => {
-      const handleClickOutside = () => setContextMenu(null);
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
 
     const loadPdf = async () => {
       if (!file || !canvasRef.current) return;
@@ -142,10 +100,9 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         }).promise;
 
         const textContent = await page.getTextContent();
-        const items: EditableTextItem[] = [];
         const extractedItems: TextItemData[] = [];
 
-        textContent.items.forEach((item, index) => {
+        textContent.items.forEach((item) => {
           if ('str' in item && 'transform' in item) {
             const textItem = item as any;
             const tx = textItem.transform[4];
@@ -158,19 +115,6 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
             const width = textItem.width * scale;
             const height = fontSize;
 
-            const editableItem: EditableTextItem = {
-              id: `text_${index}`,
-              text: textItem.str,
-              x,
-              y,
-              width,
-              height,
-              fontSize,
-              fontFamily,
-              align: 'left',
-            };
-
-            items.push(editableItem);
             extractedItems.push({
               text: textItem.str,
               x,
@@ -183,7 +127,6 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
           }
         });
 
-        setEditableItems(items);
         onTextItemsExtracted(extractedItems);
       } catch (error) {
         console.error('Error loading PDF:', error);
@@ -208,100 +151,15 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         <div className="p-4 lg:p-6">
           <div
             ref={containerRef}
-            className="bg-white rounded-lg border border-border overflow-hidden relative"
+            className="bg-white rounded-lg border border-border overflow-hidden relative select-text"
             style={{
               width: canvasSize.width || 'auto',
               height: canvasSize.height || 'auto',
               display: canvasSize.width ? 'block' : 'none',
             }}
+            onContextMenu={handleContextMenu}
           >
-            <canvas ref={canvasRef} className="hidden" />
-
-            {/* Редактируемые текстовые элементы */}
-            {editableItems.map((item) => (
-              <div
-                key={item.id}
-                className={`absolute cursor-text transition-all ${
-                  selectedItemId === item.id ? 'ring-2 ring-blue-400 bg-blue-50/50' : ''
-                }`}
-                style={{
-                  left: item.x * scale,
-                  top: item.y * scale,
-                  width: item.width * scale,
-                  minHeight: item.height * scale,
-                }}
-                onClick={() => setSelectedItemId(item.id)}
-              >
-                <div
-                  contentEditable
-                  suppressContentEditableWarning
-                  onInput={(e) => handleTextChange(item.id, e.currentTarget.textContent || '')}
-                  onContextMenu={(e) => handleContextMenu(e, item.id)}
-                  className="outline-none px-1 select-text"
-                  style={{
-                    fontSize: `${item.fontSize}px`,
-                    fontFamily: item.fontFamily,
-                    textAlign: item.align,
-                    lineHeight: `${item.height}px`,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    fontWeight: textStyles[item.id]?.bold ? 'bold' : 'normal',
-                    fontStyle: textStyles[item.id]?.italic ? 'italic' : 'normal',
-                    textDecoration: `${textStyles[item.id]?.underline ? 'underline' : ''} ${textStyles[item.id]?.strikethrough ? 'line-through' : ''}`.trim(),
-                  }}
-                >
-                  {item.text}
-                </div>
-
-                {/* Панель инструментов при выборе */}
-                {selectedItemId === item.id && (
-                  <div className="absolute -top-10 left-0 bg-white border border-border rounded shadow-lg px-2 py-1 flex gap-1 z-10">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={() => handleFontSizeChange(item.id, -1)}
-                    >
-                      <Icon name="Minus" size={14} />
-                    </Button>
-                    <span className="text-xs flex items-center px-1">{Math.round(item.fontSize)}px</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={() => handleFontSizeChange(item.id, 1)}
-                    >
-                      <Icon name="Plus" size={14} />
-                    </Button>
-                    <div className="w-px bg-border mx-1" />
-                    <Button
-                      size="sm"
-                      variant={item.align === 'left' ? 'default' : 'ghost'}
-                      className="h-7 w-7 p-0"
-                      onClick={() => handleAlignChange(item.id, 'left')}
-                    >
-                      <Icon name="AlignLeft" size={14} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={item.align === 'center' ? 'default' : 'ghost'}
-                      className="h-7 w-7 p-0"
-                      onClick={() => handleAlignChange(item.id, 'center')}
-                    >
-                      <Icon name="AlignCenter" size={14} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={item.align === 'right' ? 'default' : 'ghost'}
-                      className="h-7 w-7 p-0"
-                      onClick={() => handleAlignChange(item.id, 'right')}
-                    >
-                      <Icon name="AlignRight" size={14} />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
+            <canvas ref={canvasRef} className="block" />
 
             {/* Маркеры назначенных полей */}
             {fieldMappings.map((mapping) => (
@@ -343,35 +201,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                   Копировать с форматированием
                 </button>
                 <div className="h-px bg-border my-1" />
-                <button
-                  onClick={() => handleToggleStyle(contextMenu.itemId, 'bold')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <Icon name="Bold" size={16} />
-                  Полужирный
-                </button>
-                <button
-                  onClick={() => handleToggleStyle(contextMenu.itemId, 'italic')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <Icon name="Italic" size={16} />
-                  Курсив
-                </button>
-                <button
-                  onClick={() => handleToggleStyle(contextMenu.itemId, 'underline')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <Icon name="Underline" size={16} />
-                  Подчёркнутый
-                </button>
-                <button
-                  onClick={() => handleToggleStyle(contextMenu.itemId, 'strikethrough')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <Icon name="Strikethrough" size={16} />
-                  Зачеркнутый
-                </button>
-                <div className="h-px bg-border my-1" />
+
                 <button
                   onClick={onAssignClick}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2 text-[#0ea5e9]"
