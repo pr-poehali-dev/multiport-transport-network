@@ -22,7 +22,6 @@ interface PdfViewerProps {
   onMouseUp: () => void;
   onAssignClick: () => void;
   onTextItemsExtracted: (items: TextItemData[]) => void;
-  onFieldMappingUpdate?: (id: string, updates: Partial<FieldMapping>) => void;
 }
 
 const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
@@ -42,7 +41,6 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
       onMouseUp,
       onAssignClick,
       onTextItemsExtracted,
-      onFieldMappingUpdate,
     },
     canvasRef
   ) => {
@@ -176,7 +174,7 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
             {fieldMappings.map((mapping) => (
               <div
                 key={mapping.id}
-                className="absolute border-2 border-[#0ea5e9] rounded bg-[#0ea5e9]/10 group"
+                className="absolute pointer-events-none border-2 border-[#0ea5e9] rounded bg-[#0ea5e9]/10"
                 style={{
                   left: mapping.x,
                   top: mapping.y,
@@ -184,35 +182,9 @@ const PdfViewer = forwardRef<HTMLCanvasElement, PdfViewerProps>(
                   height: mapping.height,
                 }}
               >
-                <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[22px] pointer-events-none">
+                <div className="text-xs font-medium text-[#0ea5e9] px-2 truncate leading-[22px]">
                   {mapping.fieldLabel}
                 </div>
-                
-                {/* Ручка для изменения высоты (нижняя граница) */}
-                {onFieldMappingUpdate && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-[#0ea5e9] transition-opacity"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      const startY = e.clientY;
-                      const startHeight = mapping.height;
-                      
-                      const handleMouseMove = (moveEvent: MouseEvent) => {
-                        const deltaY = moveEvent.clientY - startY;
-                        const newHeight = Math.max(10, startHeight + deltaY);
-                        onFieldMappingUpdate(mapping.id, { height: newHeight });
-                      };
-                      
-                      const handleMouseUp = () => {
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
-                      };
-                      
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
-                    }}
-                  />
-                )}
               </div>
             ))}
           </div>
