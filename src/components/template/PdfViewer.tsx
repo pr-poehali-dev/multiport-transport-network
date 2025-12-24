@@ -41,6 +41,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     containerRef
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const textLayerRef = useRef<HTMLDivElement>(null);
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -51,10 +52,22 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     }, [file, scale]);
 
     useEffect(() => {
+      const handleSelectionChange = () => {
+        const selection = window.getSelection();
+        const hasSelection = selection && selection.toString().length > 0;
+        onSelectionChange(hasSelection);
+      };
+
       const handleClickOutside = () => setContextMenu(null);
+      
+      document.addEventListener('selectionchange', handleSelectionChange);
       document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
+      
+      return () => {
+        document.removeEventListener('selectionchange', handleSelectionChange);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }, [onSelectionChange]);
 
     const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -128,6 +141,33 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         });
 
         onTextItemsExtracted(extractedItems);
+
+        // Рендерим текстовый слой для выделения
+        if (textLayerRef.current) {
+          textLayerRef.current.innerHTML = '';
+          textLayerRef.current.style.width = `${viewport.width}px`;
+          textLayerRef.current.style.height = `${viewport.height}px`;
+
+          textContent.items.forEach((item) => {
+            if ('str' in item && 'transform' in item) {
+              const textItem = item as any;
+              const tx = textItem.transform[4];
+              const ty = textItem.transform[5];
+              const fontSize = Math.abs(textItem.transform[0]);
+
+              const textDiv = document.createElement('span');
+              textDiv.textContent = textItem.str;
+              textDiv.style.position = 'absolute';
+              textDiv.style.left = `${tx}px`;
+              textDiv.style.top = `${viewport.height - ty - fontSize}px`;
+              textDiv.style.fontSize = `${fontSize}px`;
+              textDiv.style.fontFamily = textItem.fontName || 'sans-serif';
+              textDiv.style.color = 'transparent';
+              textDiv.style.whiteSpace = 'pre';
+              textLayerRef.current.appendChild(textDiv);
+            }
+          });
+        }
       } catch (error) {
         console.error('Error loading PDF:', error);
       }
@@ -160,6 +200,13 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
             onContextMenu={handleContextMenu}
           >
             <canvas ref={canvasRef} className="block" />
+            
+            {/* Прозрачный текстовый слой для выделения */}
+            <div
+              ref={textLayerRef}
+              className="absolute top-0 left-0 select-text pointer-events-auto"
+              style={{ userSelect: 'text' }}
+            />
 
             {/* Маркеры назначенных полей */}
             {fieldMappings.map((mapping) => (
