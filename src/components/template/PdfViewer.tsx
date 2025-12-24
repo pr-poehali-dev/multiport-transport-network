@@ -183,7 +183,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
               display: canvasSize.width ? 'block' : 'none',
             }}
           >
-            <canvas ref={canvasRef} className="block absolute top-0 left-0 opacity-30 pointer-events-none" />
+            <canvas ref={canvasRef} className="hidden" />
 
             {/* Редактируемые текстовые элементы */}
             {editableItems.map((item) => (
