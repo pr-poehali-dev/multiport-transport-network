@@ -4,17 +4,13 @@ import os
 import base64
 from typing import Dict, Any
 
-# v2.0 - Fixed vehicles routing
-
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     API для управления водителями, автомобилями и PDF шаблонами
-    Args: event - dict с httpMethod, body, queryStringParameters
-          context - объект с атрибутами request_id, function_name
-    Returns: HTTP response dict
     '''
+    print(f"Request: {event.get('httpMethod')} with params: {event.get('queryStringParameters')}")
+    
     method: str = event.get('httpMethod', 'GET')
-    path: str = event.get('path', '')
     
     cors_headers = {
         'Access-Control-Allow-Origin': '*',
@@ -45,9 +41,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
         
-        # Определяем, с чем работаем - drivers, vehicles или templates
         params = event.get('queryStringParameters') or {}
-        resource = params.get('resource', 'drivers')  # По умолчанию drivers
+        resource = params.get('resource', 'drivers')
+        print(f"Resource selected: {resource}")
         
         # === АВТОМОБИЛИ (VEHICLES) ===
         if resource == 'vehicles':

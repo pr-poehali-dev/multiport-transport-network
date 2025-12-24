@@ -1,9 +1,22 @@
 {
+  "version": "1.0",
   "tests": [
+    {
+      "name": "Get drivers",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
     {
       "name": "Get vehicles",
       "method": "GET",
       "path": "/?resource=vehicles",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get templates",
+      "method": "GET",
+      "path": "/?resource=templates",
       "expectedStatus": 200
     }
   ]
