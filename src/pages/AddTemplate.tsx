@@ -81,6 +81,8 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
       fontSize: 12,
       fontFamily: 'Arial',
       text: formula,
+      align: 'center',
+      wordWrap: true,
     };
 
     setFieldMappings([...fieldMappings, newMapping]);

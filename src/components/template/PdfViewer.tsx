@@ -221,15 +221,22 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                   backgroundColor: 'white',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: mapping.align === 'center' ? 'center' : mapping.align === 'right' ? 'flex-end' : 'flex-start',
                   paddingLeft: '4px',
                   paddingRight: '4px',
+                  textAlign: mapping.align || 'left',
+                  flexWrap: mapping.wordWrap ? 'wrap' : 'nowrap',
+                  overflow: 'hidden',
                 }}
               >
                 <span
-                  className="font-medium text-[#0ea5e9] truncate"
+                  className="font-medium text-[#0ea5e9]"
                   style={{
                     fontSize: `${(mapping.fontSize || 12) * scale}px`,
                     fontFamily: mapping.fontFamily || 'Arial',
+                    wordBreak: mapping.wordWrap ? 'break-word' : 'normal',
+                    textAlign: mapping.align || 'left',
+                    width: '100%',
                   }}
                 >
                   &lt;{mapping.fieldLabel}&gt;

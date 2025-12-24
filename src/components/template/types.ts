@@ -12,6 +12,8 @@ export interface FieldMapping {
   fontSize?: number;
   fontFamily?: string;
   text?: string;
+  align?: 'left' | 'center' | 'right';
+  wordWrap?: boolean;
 }
 
 export interface TextItemWithPosition extends TextItem {
