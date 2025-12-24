@@ -43,6 +43,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [editableItems, setEditableItems] = useState<EditableTextItem[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
       if (file) {
@@ -100,6 +101,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
 
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+        setCanvasSize({ width: viewport.width, height: viewport.height });
 
         // Рендерим PDF на canvas
         await page.render({
@@ -174,9 +176,14 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         <div className="p-4 lg:p-6">
           <div
             ref={containerRef}
-            className="bg-white rounded-lg border border-border overflow-hidden relative inline-block"
+            className="bg-white rounded-lg border border-border overflow-hidden relative"
+            style={{
+              width: canvasSize.width || 'auto',
+              height: canvasSize.height || 'auto',
+              display: canvasSize.width ? 'block' : 'none',
+            }}
           >
-            <canvas ref={canvasRef} className="block absolute top-0 left-0 pointer-events-none opacity-30" />
+            <canvas ref={canvasRef} className="block absolute top-0 left-0 opacity-30 pointer-events-none" />
 
             {/* Редактируемые текстовые элементы */}
             {editableItems.map((item) => (
