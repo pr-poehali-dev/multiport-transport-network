@@ -285,15 +285,28 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Отменить изменения?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Все несохранённые данные будут потеряны.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              {isEditMode 
+                ? 'Все несохранённые изменения будут потеряны. Вы уверены, что хотите выйти без сохранения?'
+                : 'Данное действие приведет к потере всех введенных данных. Вы уверены, что хотите выйти без сохранения?'
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancel}>
-              Да, отменить
+            <AlertDialogCancel className="gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
