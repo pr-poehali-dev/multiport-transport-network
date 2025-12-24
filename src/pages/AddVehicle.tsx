@@ -39,6 +39,8 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const isEditMode = !!vehicle;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showCompany, setShowCompany] = useState(false);
+  const [showDriver, setShowDriver] = useState(false);
   
   // Основная информация
   const [brand, setBrand] = useState(vehicle?.brand || '');
@@ -48,6 +50,14 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const [trailerType, setTrailerType] = useState(vehicle?.trailerType || '');
   const [companyId, setCompanyId] = useState(vehicle?.companyId?.toString() || '');
   const [driverId, setDriverId] = useState(vehicle?.driverId?.toString() || '');
+
+  // Показываем секции если есть данные
+  useState(() => {
+    if (vehicle) {
+      setShowCompany(!!vehicle.companyId);
+      setShowDriver(!!vehicle.driverId);
+    }
+  });
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -212,42 +222,88 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
           </div>
 
           {/* Фирма ТК */}
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon name="Building2" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Фирма ТК</h2>
+          {!showCompany ? (
+            <button
+              onClick={() => setShowCompany(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить фирму ТК</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="Building2" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Фирма ТК</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowCompany(false);
+                    setCompanyId('');
+                  }}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyId">Выбор фирмы</Label>
+                <Input 
+                  id="companyId" 
+                  placeholder="Выберите фирму (TODO: заменить на Select)"
+                  value={companyId}
+                  onChange={(e) => setCompanyId(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Пока что введите ID фирмы. Позже будет выпадающий список.</p>
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="companyId">Выбор фирмы</Label>
-              <Input 
-                id="companyId" 
-                placeholder="Выберите фирму (TODO: заменить на Select)"
-                value={companyId}
-                onChange={(e) => setCompanyId(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">Пока что введите ID фирмы. Позже будет выпадающий список.</p>
-            </div>
-          </div>
+          )}
 
           {/* Назначить водителя */}
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Назначить водителя</h2>
+          {!showDriver ? (
+            <button
+              onClick={() => setShowDriver(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Назначить водителя</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Назначить водителя</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowDriver(false);
+                    setDriverId('');
+                  }}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="driverId">Выбор водителя</Label>
+                <Input 
+                  id="driverId" 
+                  placeholder="Выберите водителя (TODO: заменить на Select)"
+                  value={driverId}
+                  onChange={(e) => setDriverId(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Пока что введите ID водителя. Позже будет выпадающий список.</p>
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="driverId">Выбор водителя</Label>
-              <Input 
-                id="driverId" 
-                placeholder="Выберите водителя (TODO: заменить на Select)"
-                value={driverId}
-                onChange={(e) => setDriverId(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">Пока что введите ID водителя. Позже будет выпадающий список.</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
