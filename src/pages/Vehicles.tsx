@@ -167,7 +167,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
           </div>
           {searchQuery && (
             <p className="text-sm text-muted-foreground mt-2">
-              Найдено автомобилей: <span className="font-semibold text-foreground">{filteredVehicles.length}</span>
+              Найдено автомобилей: <span className="font-semibold text-foreground">{filteredVehicles?.length || 0}</span>
             </p>
           )}
         </div>
@@ -178,7 +178,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
             <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
             <p className="text-muted-foreground">Загрузка...</p>
           </div>
-        ) : filteredVehicles.length === 0 ? (
+        ) : !filteredVehicles || filteredVehicles.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Icon name="Car" size={48} className="mx-auto mb-4 opacity-20" />
             <p className="text-lg font-medium mb-2">
