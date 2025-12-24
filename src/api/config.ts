@@ -10,7 +10,7 @@ export const API_CONFIG = {
   
   ENDPOINTS: {
     drivers: FUNC_URLS.zalupa,
-    templates: FUNC_URLS.templates,
+    templates: FUNC_URLS.zalupa + '?resource=templates',
     // В будущем: drivers: `${BASE_URL}/drivers.php`
   }
 };

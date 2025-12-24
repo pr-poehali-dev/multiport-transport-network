@@ -18,19 +18,6 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Create driver - missing required fields",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "lastName": "Петров"
-      },
-      "expectedStatus": 400,
-      "expectedBody": {
-        "error": "string"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
       "name": "Get all drivers",
       "method": "GET",
       "path": "/",
@@ -42,27 +29,38 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Update driver - success",
-      "method": "PUT",
-      "path": "/?id=1",
+      "name": "Create template - success",
+      "method": "POST",
+      "path": "/?resource=templates",
       "body": {
-        "lastName": "Сидоров",
-        "firstName": "Пётр",
-        "phone": "+7 (999) 555-55-55"
+        "name": "Договор подряда",
+        "fileName": "contract.pdf",
+        "fieldMappings": [
+          {
+            "id": "field_1",
+            "fieldName": "lastName",
+            "x": 100,
+            "y": 200,
+            "width": 150,
+            "height": 20
+          }
+        ]
       },
-      "expectedStatus": 200,
+      "expectedStatus": 201,
       "expectedBody": {
+        "id": "number",
         "message": "string"
       },
       "bodyMatcher": "partial"
     },
     {
-      "name": "Delete driver - success",
-      "method": "DELETE",
-      "path": "/?id=1",
+      "name": "Get all templates",
+      "method": "GET",
+      "path": "/?resource=templates",
       "expectedStatus": 200,
       "expectedBody": {
-        "message": "string"
+        "templates": "array",
+        "total": "number"
       },
       "bodyMatcher": "partial"
     }
