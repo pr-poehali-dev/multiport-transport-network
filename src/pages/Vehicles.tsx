@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddVehicle from './AddVehicle';
+import { getVehicles, deleteVehicle, Vehicle } from '@/api/vehicles';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -20,19 +21,6 @@ interface VehiclesProps {
   onMenuClick: () => void;
 }
 
-interface Vehicle {
-  id?: number;
-  brand: string;
-  model: string;
-  registrationNumber: string;
-  vin?: string;
-  year?: number;
-  color?: string;
-  notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 function Vehicles({ onMenuClick }: VehiclesProps) {
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
@@ -47,9 +35,9 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
   const loadVehicles = async () => {
     setIsLoading(true);
     try {
-      // TODO: подключить API для загрузки автомобилей
-      setVehicles([]);
-      setFilteredVehicles([]);
+      const data = await getVehicles();
+      setVehicles(data.vehicles);
+      setFilteredVehicles(data.vehicles);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -73,13 +61,13 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
 
     const query = searchQuery.toLowerCase();
     const filtered = vehicles.filter(vehicle => {
-      const brandModel = `${vehicle.brand} ${vehicle.model}`.toLowerCase();
+      const brandModel = `${vehicle.brand}`.toLowerCase();
       const registration = vehicle.registrationNumber.toLowerCase();
-      const vin = (vehicle.vin || '').toLowerCase();
+      const trailerType = (vehicle.trailerType || '').toLowerCase();
       
       return brandModel.includes(query) || 
              registration.includes(query) || 
-             vin.includes(query);
+             trailerType.includes(query);
     });
 
     setFilteredVehicles(filtered);
@@ -113,11 +101,11 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
     if (!vehicleToDelete) return;
 
     try {
-      // TODO: подключить API для удаления автомобиля
+      const result = await deleteVehicle(vehicleToDelete);
       
       toast({
         title: 'Автомобиль удалён',
-        description: 'Автомобиль успешно удалён из системы',
+        description: result.message || 'Автомобиль успешно удалён из системы',
       });
       
       setDeleteDialogOpen(false);
@@ -214,7 +202,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-base truncate">
-                      {vehicle.brand} {vehicle.model}
+                      {vehicle.brand}
                     </h3>
                     <p className="text-sm text-muted-foreground truncate">{vehicle.registrationNumber}</p>
                   </div>
@@ -240,22 +228,22 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
 
                 {/* Информация */}
                 <div className="space-y-2 text-sm">
-                  {vehicle.year && (
+                  {vehicle.capacity && (
                     <div className="flex items-center gap-2">
-                      <Icon name="Calendar" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{vehicle.year} год</span>
+                      <Icon name="Weight" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{vehicle.capacity} тонн</span>
                     </div>
                   )}
-                  {vehicle.color && (
+                  {vehicle.trailerType && (
                     <div className="flex items-center gap-2">
-                      <Icon name="Palette" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{vehicle.color}</span>
+                      <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{vehicle.trailerType}</span>
                     </div>
                   )}
-                  {vehicle.vin && (
+                  {vehicle.trailerNumber && (
                     <div className="flex items-center gap-2">
                       <Icon name="Hash" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate font-mono text-xs">{vehicle.vin}</span>
+                      <span className="truncate font-mono text-xs">{vehicle.trailerNumber}</span>
                     </div>
                   )}
                 </div>

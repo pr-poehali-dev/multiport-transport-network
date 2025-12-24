@@ -3,9 +3,9 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
+import { createVehicle, updateVehicle, Vehicle } from '@/api/vehicles';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,17 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-interface Vehicle {
-  id?: number;
-  brand: string;
-  registrationNumber: string;
-  capacity?: number;
-  trailerNumber?: string;
-  trailerType?: string;
-  companyId?: number;
-  driverId?: number;
-}
 
 interface AddVehicleProps {
   vehicle?: Vehicle;
@@ -92,11 +81,13 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
         driverId: driverId ? parseInt(driverId) : undefined
       };
 
-      // TODO: подключить API для создания/обновления автомобиля
+      const data = isEditMode 
+        ? await updateVehicle(vehicle.id!, vehicleData)
+        : await createVehicle(vehicleData);
 
       toast({
         title: 'Успешно сохранено',
-        description: isEditMode ? 'Данные автомобиля обновлены' : 'Автомобиль добавлен в базу данных'
+        description: data.message || (isEditMode ? 'Данные автомобиля обновлены' : 'Автомобиль добавлен в базу данных')
       });
 
       onBack();
