@@ -29,6 +29,32 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Create vehicle - success",
+      "method": "POST",
+      "path": "/?resource=vehicles",
+      "body": {
+        "brand": "КамАЗ",
+        "registrationNumber": "А123БВ777"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all vehicles",
+      "method": "GET",
+      "path": "/?resource=vehicles",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "vehicles": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Create template - success",
       "method": "POST",
       "path": "/?resource=templates",
@@ -60,32 +86,6 @@
       "expectedStatus": 200,
       "expectedBody": {
         "templates": "array",
-        "total": "number"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Create vehicle - success",
-      "method": "POST",
-      "path": "/?resource=vehicles",
-      "body": {
-        "brand": "КамАЗ",
-        "registrationNumber": "А123БВ777"
-      },
-      "expectedStatus": 201,
-      "expectedBody": {
-        "id": "number",
-        "message": "string"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Get all vehicles",
-      "method": "GET",
-      "path": "/?resource=vehicles",
-      "expectedStatus": 200,
-      "expectedBody": {
-        "vehicles": "array",
         "total": "number"
       },
       "bodyMatcher": "partial"

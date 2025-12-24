@@ -4,13 +4,14 @@ import os
 import base64
 from typing import Dict, Any
 
+# v2.0 - Fixed vehicles routing
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     API для управления водителями, автомобилями и PDF шаблонами
     Args: event - dict с httpMethod, body, queryStringParameters
           context - объект с атрибутами request_id, function_name
     Returns: HTTP response dict
-    v1.1
     '''
     method: str = event.get('httpMethod', 'GET')
     path: str = event.get('path', '')
@@ -52,11 +53,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if resource == 'vehicles':
             if method == 'POST':
                 body_data = json.loads(event.get('body', '{}'))
-                print(f"DEBUG: Received body_data: {body_data}")
                 
                 brand = body_data.get('brand', '').strip()
                 registration_number = body_data.get('registrationNumber', '').strip()
-                print(f"DEBUG: brand='{brand}', registration_number='{registration_number}'")
                 
                 if not brand or not registration_number:
                     return {
@@ -259,7 +258,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
         
         # === ШАБЛОНЫ (TEMPLATES) ===
-        if resource == 'templates':
+        elif resource == 'templates':
             if method == 'POST':
                 body_data = json.loads(event.get('body', '{}'))
                 
