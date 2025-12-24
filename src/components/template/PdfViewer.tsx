@@ -7,6 +7,13 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
+// Подавляем предупреждения о шрифтах
+const originalConsoleWarn = console.warn;
+console.warn = (...args: any[]) => {
+  if (args[0]?.includes?.('TT: undefined function')) return;
+  originalConsoleWarn(...args);
+};
+
 interface PdfViewerProps {
   file: File | null;
   scale: number;
