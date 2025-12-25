@@ -256,44 +256,44 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
           </div>
 
           {routes.length > 0 ? (
-            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-                <h2 className="text-base lg:text-lg font-semibold text-foreground">Многомаршрутность</h2>
-              </div>
-
-              <div className="space-y-3">
-                {routes.map((route, index) => (
-                  <div key={route.id} className="flex gap-2 items-start">
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label className="text-sm">Откуда (маршрут {index + 1})</Label>
-                        <Input
-                          placeholder="Москва"
-                          value={route.from}
-                          onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm">Куда (маршрут {index + 1})</Label>
-                        <Input
-                          placeholder="Санкт-Петербург"
-                          value={route.to}
-                          onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
-                        />
-                      </div>
+            <div className="space-y-3">
+              {routes.map((route, index) => (
+                <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                      <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveRoute(route.id)}
-                      className="hover:bg-red-50 hover:text-red-600 mt-7"
+                      className="hover:bg-red-50 hover:text-red-600"
                     >
                       <Icon name="Trash2" size={18} />
                     </Button>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Откуда</Label>
+                      <Input
+                        placeholder="Москва"
+                        value={route.from}
+                        onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Куда</Label>
+                      <Input
+                        placeholder="Санкт-Петербург"
+                        value={route.to}
+                        onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
 
               <button
                 onClick={handleAddRoute}
