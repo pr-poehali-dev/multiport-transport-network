@@ -436,11 +436,11 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
               </div>
             )}
 
-            {/* Адреса доставки */}
+            {/* Адреса погрузки/разгрузки */}
             {deliveryAddresses.length > 0 && deliveryAddresses.map((delivery) => (
               <div key={delivery.id} className="space-y-3 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <Label className="font-semibold">Адрес доставки</Label>
+                  <Label className="font-semibold">Адрес погрузки/разгрузки</Label>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -452,7 +452,7 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 </div>
 
                 <Input 
-                  placeholder="Введите адрес доставки"
+                  placeholder="Введите адрес погрузки/разгрузки"
                   value={delivery.address}
                   onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'address', e.target.value)}
                 />
@@ -477,7 +477,7 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
               className="w-full rounded-lg border border-dashed border-border p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <Icon name="Plus" size={18} />
-              <span>Добавить адрес доставки</span>
+              <span>Добавить адрес погрузки/разгрузки</span>
             </button>
           </div>
 
