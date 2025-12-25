@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "Получение данных компании по ИНН",
+      "method": "GET",
+      "path": "/?inn=7707083893",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "name": "string",
+        "inn": "string",
+        "kpp": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Ошибка при отсутствии ИНН",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
