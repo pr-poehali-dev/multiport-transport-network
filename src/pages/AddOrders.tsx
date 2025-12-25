@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,9 +33,21 @@ interface Route {
   to: string;
 }
 
+interface Consignee {
+  id: string;
+  name: string;
+  note: string;
+}
+
 function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [routes, setRoutes] = useState<Route[]>([{ id: '1', from: '', to: '' }]);
+  const [prefix, setPrefix] = useState<string>('EU');
+  const [orderDate, setOrderDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [routeNumber, setRouteNumber] = useState<string>('');
+  const [invoice, setInvoice] = useState<string>('');
+  const [tak, setTak] = useState<string>('');
+  const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -63,6 +82,33 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
       .filter(r => r.from || r.to)
       .map(r => `${r.from} → ${r.to}`)
       .join(' → ');
+  };
+
+  const generateRouteNumber = () => {
+    if (!orderDate) return '';
+    const date = new Date(orderDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${prefix}-${day}${month}${year}-001`;
+  };
+
+  useEffect(() => {
+    setRouteNumber(generateRouteNumber());
+  }, [prefix, orderDate]);
+
+  const handleAddConsignee = () => {
+    setConsignees([...consignees, { id: Date.now().toString(), name: '', note: '' }]);
+  };
+
+  const handleRemoveConsignee = (id: string) => {
+    if (consignees.length > 1) {
+      setConsignees(consignees.filter(c => c.id !== id));
+    }
+  };
+
+  const handleUpdateConsignee = (id: string, field: 'name' | 'note', value: string) => {
+    setConsignees(consignees.map(c => c.id === id ? { ...c, [field]: value } : c));
   };
 
   return (
@@ -117,6 +163,97 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 placeholder="Маршрут будет составлен из точек ниже"
                 className="bg-gray-50"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Префикс</Label>
+                <Select value={prefix} onValueChange={setPrefix}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EU">EU</SelectItem>
+                    <SelectItem value="CH">CH</SelectItem>
+                    <SelectItem value="RF">RF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Дата заказа</Label>
+                <Input
+                  type="date"
+                  value={orderDate}
+                  onChange={(e) => setOrderDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Номер маршрута</Label>
+                <Input
+                  value={routeNumber}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Инвойс</Label>
+                <Input
+                  placeholder="Введите номер инвойса"
+                  value={invoice}
+                  onChange={(e) => setInvoice(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>ТАК</Label>
+                <Input
+                  placeholder="Введите ТАК"
+                  value={tak}
+                  onChange={(e) => setTak(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Грузополучатели</Label>
+              {consignees.map((consignee, index) => (
+                <div key={consignee.id} className="flex gap-2 items-start">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Input
+                      placeholder={`Грузополучатель ${index + 1}`}
+                      value={consignee.name}
+                      onChange={(e) => handleUpdateConsignee(consignee.id, 'name', e.target.value)}
+                    />
+                    <Input
+                      placeholder="Примечание"
+                      value={consignee.note}
+                      onChange={(e) => handleUpdateConsignee(consignee.id, 'note', e.target.value)}
+                    />
+                  </div>
+                  {consignees.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveConsignee(consignee.id)}
+                      className="hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Icon name="Trash2" size={18} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={handleAddConsignee}
+                className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Icon name="Plus" size={16} />
+                <span>Добавить грузополучателя</span>
+              </button>
             </div>
           </div>
 
