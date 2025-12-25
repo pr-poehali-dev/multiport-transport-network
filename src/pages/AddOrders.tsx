@@ -558,7 +558,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 );
               })}
 
-              {(!isDirect || routes.length < 2) && lockedRoutes.size > 0 && (
+              {(!isDirect || routes.length < 2) && lockedRoutes.size === 0 && (
                 <button
                   onClick={handleAddRoute}
                   className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
