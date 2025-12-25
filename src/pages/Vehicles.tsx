@@ -210,31 +210,33 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
                       <Icon name="Car" size={24} className="text-[#0ea5e9]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base truncate">
-                        {vehicle.brand}
-                      </h3>
-                      <p className="text-sm text-muted-foreground truncate">{vehicle.registrationNumber}</p>
-                      {vehicle.trailerNumber && (
-                        <p className="text-xs text-muted-foreground truncate font-mono">{vehicle.trailerNumber}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                        onClick={() => handleEditVehicle(vehicle)}
-                      >
-                        <Icon name="Pencil" size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                        onClick={() => handleDeleteClick(vehicle.id!)}
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-base truncate">
+                          {vehicle.brand}
+                        </h3>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                            onClick={() => handleEditVehicle(vehicle)}
+                          >
+                            <Icon name="Pencil" size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => handleDeleteClick(vehicle.id!)}
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {vehicle.registrationNumber}
+                        {vehicle.trailerNumber && ` / ${vehicle.trailerNumber}`}
+                      </p>
                     </div>
                   </div>
 
