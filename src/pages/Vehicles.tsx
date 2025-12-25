@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddVehicle from './AddVehicle';
 import { getVehicles, deleteVehicle, Vehicle } from '@/api/vehicles';
+import { getDrivers, Driver } from '@/api/drivers';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -27,6 +28,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
   const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -35,9 +37,13 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
   const loadVehicles = async () => {
     setIsLoading(true);
     try {
-      const data = await getVehicles();
-      setVehicles(data.vehicles);
-      setFilteredVehicles(data.vehicles);
+      const [vehiclesData, driversData] = await Promise.all([
+        getVehicles(),
+        getDrivers()
+      ]);
+      setVehicles(vehiclesData.vehicles);
+      setFilteredVehicles(vehiclesData.vehicles);
+      setDrivers(driversData.drivers || []);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -190,77 +196,65 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredVehicles.map((vehicle) => (
-              <div
-                key={vehicle.id}
-                className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
-              >
-                {/* Заголовок */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
-                    <Icon name="Car" size={24} className="text-[#0ea5e9]" />
+            {filteredVehicles.map((vehicle) => {
+              const driver = drivers.find(d => d.id === vehicle.driverId);
+              
+              return (
+                <div
+                  key={vehicle.id}
+                  className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
+                >
+                  {/* Заголовок */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
+                      <Icon name="Car" size={24} className="text-[#0ea5e9]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate">
+                        {vehicle.brand}
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate">{vehicle.registrationNumber}</p>
+                      {vehicle.trailerNumber && (
+                        <p className="text-xs text-muted-foreground truncate font-mono">{vehicle.trailerNumber}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                        onClick={() => handleEditVehicle(vehicle)}
+                      >
+                        <Icon name="Pencil" size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleDeleteClick(vehicle.id!)}
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">
-                      {vehicle.brand}
-                    </h3>
-                    <p className="text-sm text-muted-foreground truncate">{vehicle.registrationNumber}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                      onClick={() => handleEditVehicle(vehicle)}
-                    >
-                      <Icon name="Pencil" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => handleDeleteClick(vehicle.id!)}
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </Button>
-                  </div>
-                </div>
 
-                {/* Информация */}
-                <div className="space-y-2 text-sm">
-                  {vehicle.trailerNumber && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate font-mono text-xs">{vehicle.trailerNumber}</span>
-                    </div>
-                  )}
-                  {vehicle.capacity && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="Weight" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{vehicle.capacity} тонн</span>
-                    </div>
-                  )}
-                  {vehicle.trailerType && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="Package" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{vehicle.trailerType}</span>
-                    </div>
-                  )}
-                  {vehicle.driverId && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="UserCircle" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">Водитель #{vehicle.driverId}</span>
-                    </div>
-                  )}
-                  {vehicle.companyId && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="Building2" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">Фирма #{vehicle.companyId}</span>
-                    </div>
-                  )}
+                  {/* Информация */}
+                  <div className="space-y-2.5 text-sm border-t pt-3">
+                    {driver && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="UserCircle" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">Водитель #{vehicle.driverId}</span>
+                      </div>
+                    )}
+                    {vehicle.companyId && (
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-medium">фирма ТК</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
