@@ -34,6 +34,24 @@ def handle_drivers(method: str, event: Dict[str, Any], cursor, conn, cors_header
         license_issued = body_data.get('licenseIssued', '').strip() or None
         company_id = body_data.get('companyId')
         
+        # Проверка на дубликат (ФИО + телефон)
+        cursor.execute('''
+            SELECT id FROM drivers 
+            WHERE last_name = %s 
+              AND first_name = %s 
+              AND COALESCE(middle_name, '') = %s 
+              AND phone = %s
+        ''', (last_name, first_name, middle_name, phone))
+        
+        existing = cursor.fetchone()
+        if existing:
+            return {
+                'statusCode': 409,
+                'headers': cors_headers,
+                'body': json.dumps({'error': f'Водитель {last_name} {first_name} с телефоном {phone} уже существует'}),
+                'isBase64Encoded': False
+            }
+        
         cursor.execute('''
             INSERT INTO drivers (
                 last_name, first_name, middle_name, phone, phone_extra,
