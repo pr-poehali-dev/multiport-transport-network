@@ -10,6 +10,8 @@ import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
 import Vehicles from './Vehicles';
 import Templates from './Templates';
+import AddDriver from './AddDriver';
+import AddVehicle from './AddVehicle';
 
 interface Order {
   id: string;
@@ -34,6 +36,8 @@ function Index() {
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAddDriver, setShowAddDriver] = useState(false);
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -76,6 +80,18 @@ function Index() {
 
   const handleRefreshDashboard = () => {
     console.log('Обновление дашборда...');
+  };
+
+  const handleBackFromAddDriver = () => {
+    setShowAddDriver(false);
+    setActiveSection('drivers');
+    setReferencesOpen(true);
+  };
+
+  const handleBackFromAddVehicle = () => {
+    setShowAddVehicle(false);
+    setActiveSection('vehicles');
+    setReferencesOpen(true);
   };
 
   return (
@@ -271,7 +287,11 @@ function Index() {
         </div>
       </aside>
 
-      {activeSection === 'drivers' ? (
+      {showAddDriver ? (
+        <AddDriver onBack={handleBackFromAddDriver} onMenuClick={() => setSidebarOpen(true)} />
+      ) : showAddVehicle ? (
+        <AddVehicle onBack={handleBackFromAddVehicle} onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'drivers' ? (
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'vehicles' ? (
         <Vehicles onMenuClick={() => setSidebarOpen(true)} />
@@ -302,7 +322,7 @@ function Index() {
                   ].map((item) => (
                     <Card 
                       key={item.id}
-                      className="cursor-pointer hover:shadow-lg transition-shadow border-border hover:border-[#0ea5e9]"
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-border hover:border-[#0ea5e9] relative group"
                       onClick={() => {
                         setActiveSection(item.id);
                         setReferencesOpen(true);
@@ -311,10 +331,27 @@ function Index() {
                       }}
                     >
                       <CardContent className="p-6">
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="bg-[#0ea5e9]/10 rounded-lg p-2">
                             <Icon name={item.icon as any} size={24} className="text-[#0ea5e9]" />
                           </div>
+                          {(item.id === 'drivers' || item.id === 'vehicles') && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9] opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (item.id === 'drivers') {
+                                  setShowAddDriver(true);
+                                } else if (item.id === 'vehicles') {
+                                  setShowAddVehicle(true);
+                                }
+                              }}
+                            >
+                              <Icon name="Plus" size={16} />
+                            </Button>
+                          )}
                         </div>
                         <h3 className="font-semibold text-foreground mb-1">{item.label}</h3>
                         <p className="text-sm text-muted-foreground">{item.description}</p>
