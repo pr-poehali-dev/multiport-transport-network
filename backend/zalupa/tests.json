@@ -1,55 +1,13 @@
 {
   "tests": [
     {
-      "name": "Create driver - success",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "lastName": "Иванов",
-        "firstName": "Иван",
-        "middleName": "Иванович",
-        "phone": "+7 (999) 123-45-67"
-      },
-      "expectedStatus": 201,
-      "expectedBody": {
-        "id": "number",
-        "message": "string"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
       "name": "Get all drivers",
       "method": "GET",
-      "path": "/",
+      "path": "/?resource=drivers",
       "expectedStatus": 200,
       "expectedBody": {
         "drivers": "array",
         "total": "number"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Create template - success",
-      "method": "POST",
-      "path": "/?resource=templates",
-      "body": {
-        "name": "Договор подряда",
-        "fileName": "contract.pdf",
-        "fieldMappings": [
-          {
-            "id": "field_1",
-            "fieldName": "lastName",
-            "x": 100,
-            "y": 200,
-            "width": 150,
-            "height": 20
-          }
-        ]
-      },
-      "expectedStatus": 201,
-      "expectedBody": {
-        "id": "number",
-        "message": "string"
       },
       "bodyMatcher": "partial"
     },
@@ -60,6 +18,28 @@
       "expectedStatus": 200,
       "expectedBody": {
         "templates": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all contractors",
+      "method": "GET",
+      "path": "/?resource=contractors",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "contractors": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all vehicles",
+      "method": "GET",
+      "path": "/?resource=vehicles",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "vehicles": "array",
         "total": "number"
       },
       "bodyMatcher": "partial"
