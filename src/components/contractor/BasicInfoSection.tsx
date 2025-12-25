@@ -20,6 +20,9 @@ interface BasicInfoSectionProps {
   setOgrn: (value: string) => void;
   director: string;
   setDirector: (value: string) => void;
+  onNameBlur?: (value: string) => void;
+  onInnBlur?: (value: string) => void;
+  isLoadingDadata?: boolean;
 }
 
 function BasicInfoSection({
@@ -38,7 +41,10 @@ function BasicInfoSection({
   ogrn,
   setOgrn,
   director,
-  setDirector
+  setDirector,
+  onNameBlur,
+  onInnBlur,
+  isLoadingDadata
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
@@ -49,12 +55,21 @@ function BasicInfoSection({
       
       <div className="space-y-2">
         <Label htmlFor="name">Наименование *</Label>
-        <Input 
-          id="name" 
-          placeholder="ООО «ФЛАУЭР МАСТЕР»" 
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <div className="relative">
+          <Input 
+            id="name" 
+            placeholder="ООО «ФЛАУЭР МАСТЕР» или введите ИНН" 
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={(e) => onNameBlur?.(e.target.value)}
+            disabled={isLoadingDadata}
+          />
+          {isLoadingDadata && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Icon name="Loader2" size={16} className="animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -105,12 +120,21 @@ function BasicInfoSection({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="inn">ИНН *</Label>
-          <Input 
-            id="inn" 
-            placeholder="7724449594"
-            value={inn}
-            onChange={(e) => setInn(e.target.value)}
-          />
+          <div className="relative">
+            <Input 
+              id="inn" 
+              placeholder="7724449594"
+              value={inn}
+              onChange={(e) => setInn(e.target.value)}
+              onBlur={(e) => onInnBlur?.(e.target.value)}
+              disabled={isLoadingDadata}
+            />
+            {isLoadingDadata && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Icon name="Loader2" size={16} className="animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="kpp">КПП</Label>

@@ -60,6 +60,7 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
   const [isSeller, setIsSeller] = useState(contractor?.isSeller || false);
   const [isBuyer, setIsBuyer] = useState(contractor?.isBuyer || false);
   const [isCarrier, setIsCarrier] = useState(contractor?.isCarrier || false);
+  const [isLoadingDadata, setIsLoadingDadata] = useState(false);
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(contractor?.bankAccounts || []);
   const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>(contractor?.deliveryAddresses || []);
@@ -70,6 +71,59 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
       setShowPostalAddress(!!contractor.postalAddress);
     }
   }, [contractor]);
+
+  const fetchCompanyByInn = async (innValue: string) => {
+    const cleanInn = innValue.replace(/\D/g, '');
+    
+    if (cleanInn.length !== 10 && cleanInn.length !== 12) {
+      return;
+    }
+
+    setIsLoadingDadata(true);
+
+    try {
+      const API_URL = 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a';
+      const response = await fetch(`${API_URL}?resource=dadata&inn=${cleanInn}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        setName(data.name || '');
+        setInn(data.inn || '');
+        setKpp(data.kpp || '');
+        setOgrn(data.ogrn || '');
+        setDirector(data.director || '');
+        setLegalAddress(data.legalAddress || '');
+        
+        toast({
+          title: 'Данные загружены',
+          description: 'Реквизиты компании успешно заполнены из DaData'
+        });
+      } else if (response.status === 404) {
+        toast({
+          variant: 'destructive',
+          title: 'Компания не найдена',
+          description: 'По указанному ИНН не найдена информация'
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки данных DaData:', error);
+    } finally {
+      setIsLoadingDadata(false);
+    }
+  };
+
+  const handleNameBlur = (value: string) => {
+    const cleanValue = value.replace(/\D/g, '');
+    
+    if (cleanValue.length === 10 || cleanValue.length === 12) {
+      fetchCompanyByInn(cleanValue);
+    }
+  };
+
+  const handleInnBlur = (value: string) => {
+    fetchCompanyByInn(value);
+  };
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -265,6 +319,9 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
             setOgrn={setOgrn}
             director={director}
             setDirector={setDirector}
+            onNameBlur={handleNameBlur}
+            onInnBlur={handleInnBlur}
+            isLoadingDadata={isLoadingDadata}
           />
 
           <AddressesSection
