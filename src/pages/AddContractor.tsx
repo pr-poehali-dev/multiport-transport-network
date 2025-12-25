@@ -300,15 +300,16 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
             </div>
           </div>
 
-          {/* Юридический адрес */}
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+          {/* Адреса */}
+          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-6">
             <div className="flex items-center gap-2">
               <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Юридический адрес</h2>
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Адреса</h2>
             </div>
             
+            {/* Юридический адрес */}
             <div className="space-y-2">
-              <Label htmlFor="legalAddress">Адрес</Label>
+              <Label htmlFor="legalAddress" className="font-semibold">Юридический адрес</Label>
               <Input 
                 id="legalAddress" 
                 placeholder="111024, Город Москва, вн.тер. г. Муниципальный Округ Лефортово..."
@@ -316,59 +317,53 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 onChange={(e) => setLegalAddress(e.target.value)}
               />
             </div>
-          </div>
 
-          {/* Фактический адрес */}
-          {!showActualAddress ? (
-            <button
-              onClick={() => setShowActualAddress(true)}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <Icon name="Plus" size={20} />
-              <span>Добавить фактический адрес</span>
-            </button>
-          ) : (
-            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Фактический адрес</h2>
+            {/* Фактический адрес */}
+            {!showActualAddress ? (
+              <button
+                onClick={() => setShowActualAddress(true)}
+                className="w-full rounded-lg border border-dashed border-border p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Icon name="Plus" size={18} />
+                <span>Добавить фактический адрес</span>
+              </button>
+            ) : (
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">Фактический адрес</Label>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowActualAddress(false);
+                      setActualAddress('');
+                      setActualSameAsLegal(false);
+                    }}
+                    className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Icon name="Trash2" size={16} />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowActualAddress(false);
-                    setActualAddress('');
-                    setActualSameAsLegal(false);
-                  }}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Icon name="Trash2" size={18} />
-                </Button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="actualSameAsLegal"
-                  checked={actualSameAsLegal}
-                  onCheckedChange={(checked) => {
-                    setActualSameAsLegal(checked as boolean);
-                    if (checked) {
-                      setActualAddress(legalAddress);
-                    }
-                  }}
-                />
-                <Label 
-                  htmlFor="actualSameAsLegal"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Совпадает с юридическим адресом
-                </Label>
-              </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="actualSameAsLegal"
+                    checked={actualSameAsLegal}
+                    onCheckedChange={(checked) => {
+                      setActualSameAsLegal(checked as boolean);
+                      if (checked) {
+                        setActualAddress(legalAddress);
+                      }
+                    }}
+                  />
+                  <Label 
+                    htmlFor="actualSameAsLegal"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Совпадает с юридическим адресом
+                  </Label>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="actualAddress">Адрес</Label>
                 <Input 
                   id="actualAddress" 
                   placeholder="Введите фактический адрес"
@@ -380,60 +375,54 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   disabled={actualSameAsLegal}
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Почтовый адрес */}
-          {!showPostalAddress ? (
-            <button
-              onClick={() => setShowPostalAddress(true)}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <Icon name="Plus" size={20} />
-              <span>Добавить почтовый адрес</span>
-            </button>
-          ) : (
-            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="Mail" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Почтовый адрес</h2>
+            {/* Почтовый адрес */}
+            {!showPostalAddress ? (
+              <button
+                onClick={() => setShowPostalAddress(true)}
+                className="w-full rounded-lg border border-dashed border-border p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Icon name="Plus" size={18} />
+                <span>Добавить почтовый адрес</span>
+              </button>
+            ) : (
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">Почтовый адрес</Label>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowPostalAddress(false);
+                      setPostalAddress('');
+                      setPostalSameAsLegal(false);
+                    }}
+                    className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Icon name="Trash2" size={16} />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowPostalAddress(false);
-                    setPostalAddress('');
-                    setPostalSameAsLegal(false);
-                  }}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Icon name="Trash2" size={18} />
-                </Button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="postalSameAsLegal"
-                  checked={postalSameAsLegal}
-                  onCheckedChange={(checked) => {
-                    setPostalSameAsLegal(checked as boolean);
-                    if (checked) {
-                      setPostalAddress(legalAddress);
-                    }
-                  }}
-                />
-                <Label 
-                  htmlFor="postalSameAsLegal"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Совпадает с юридическим адресом
-                </Label>
-              </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="postalSameAsLegal"
+                    checked={postalSameAsLegal}
+                    onCheckedChange={(checked) => {
+                      setPostalSameAsLegal(checked as boolean);
+                      if (checked) {
+                        setPostalAddress(legalAddress);
+                      }
+                    }}
+                  />
+                  <Label 
+                    htmlFor="postalSameAsLegal"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Совпадает с юридическим адресом
+                  </Label>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="postalAddress">Адрес</Label>
                 <Input 
                   id="postalAddress" 
                   placeholder="Введите почтовый адрес"
@@ -445,8 +434,8 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   disabled={postalSameAsLegal}
                 />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Банковские счета */}
           {bankAccounts.length > 0 && bankAccounts.map((bank) => (
