@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getVehicles, Vehicle } from '@/api/vehicles';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -32,6 +34,7 @@ interface Route {
   id: string;
   from: string;
   to: string;
+  vehicleId: string;
 }
 
 interface Consignee {
@@ -41,6 +44,7 @@ interface Consignee {
 }
 
 function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
+  const { toast } = useToast();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [prefix, setPrefix] = useState<string>('EU');
@@ -50,6 +54,11 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [trak, setTrak] = useState<string>('');
   const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
   const [isDirect, setIsDirect] = useState<boolean>(false);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
+  const [searchVehicle, setSearchVehicle] = useState<Record<string, string>>({});
+  const [showVehicleList, setShowVehicleList] = useState<Record<string, boolean>>({});
+  const vehicleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -69,7 +78,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     if (isDirect && routes.length >= 2) {
       return;
     }
-    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '' }]);
+    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '' }]);
   };
 
   const handleRemoveRoute = (id: string) => {
@@ -79,7 +88,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     }
   };
 
-  const handleUpdateRoute = (id: string, field: 'from' | 'to', value: string) => {
+  const handleUpdateRoute = (id: string, field: 'from' | 'to' | 'vehicleId', value: string) => {
     setRoutes(routes.map(r => r.id === id ? { ...r, [field]: value } : r));
   };
 
@@ -115,6 +124,42 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
 
   const handleUpdateConsignee = (id: string, field: 'name' | 'note', value: string) => {
     setConsignees(consignees.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
+  useEffect(() => {
+    if (routes.length > 0 && vehicles.length === 0) {
+      loadVehiclesList();
+    }
+  }, [routes.length]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      Object.entries(vehicleInputRefs.current).forEach(([routeId, ref]) => {
+        if (ref && !ref.parentElement?.contains(target)) {
+          setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
+        }
+      });
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadVehiclesList = async () => {
+    setLoadingVehicles(true);
+    try {
+      const data = await getVehicles();
+      setVehicles(data.vehicles || []);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список автомобилей'
+      });
+    } finally {
+      setLoadingVehicles(false);
+    }
   };
 
   return (
@@ -316,6 +361,62 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                         onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2 relative">
+                    <Label>Автомобиль</Label>
+                    <div className="relative" ref={(el) => vehicleInputRefs.current[route.id] = el}>
+                      <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+                      <Input
+                        placeholder="Начните вводить марку или гос. номер..."
+                        value={searchVehicle[route.id] || ''}
+                        onChange={(e) => {
+                          setSearchVehicle({ ...searchVehicle, [route.id]: e.target.value });
+                          setShowVehicleList({ ...showVehicleList, [route.id]: true });
+                        }}
+                        onFocus={() => setShowVehicleList({ ...showVehicleList, [route.id]: true })}
+                        className="pl-9"
+                      />
+                      {loadingVehicles && (
+                        <Icon name="Loader2" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      )}
+                      
+                      {showVehicleList[route.id] && vehicles.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {vehicles
+                            .filter(v => {
+                              const searchStr = (searchVehicle[route.id] || '').toLowerCase();
+                              const vehicleStr = `${v.brand} ${v.registrationNumber}`.toLowerCase();
+                              return vehicleStr.includes(searchStr);
+                            })
+                            .map(vehicle => (
+                              <button
+                                key={vehicle.id}
+                                type="button"
+                                onClick={() => {
+                                  handleUpdateRoute(route.id, 'vehicleId', vehicle.id?.toString() || '');
+                                  setSearchVehicle({ ...searchVehicle, [route.id]: `${vehicle.brand} - ${vehicle.registrationNumber}` });
+                                  setShowVehicleList({ ...showVehicleList, [route.id]: false });
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                              >
+                                <Icon name="Truck" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {vehicle.brand} - {vehicle.registrationNumber}
+                                  </p>
+                                  {vehicle.capacity && (
+                                    <p className="text-xs text-muted-foreground">Грузоподъемность: {vehicle.capacity} т</p>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Выберите автомобиль для этого маршрута
+                    </p>
                   </div>
                 </div>
               ))}
