@@ -66,6 +66,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [searchVehicle, setSearchVehicle] = useState<Record<string, string>>({});
   const [showVehicleList, setShowVehicleList] = useState<Record<string, boolean>>({});
   const vehicleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [isLocked, setIsLocked] = useState(false);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -79,6 +80,23 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const handleSave = () => {
     // Логика сохранения
     onBack();
+  };
+
+  const handleSaveAndGo = () => {
+    if (routes.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Добавьте хотя бы один маршрут'
+      });
+      return;
+    }
+
+    setIsLocked(true);
+    toast({
+      title: 'Сохранено',
+      description: 'Заказ и маршрут заблокированы. Можно добавлять дополнительные маршруты.'
+    });
   };
 
   const handleAddRoute = () => {
@@ -258,13 +276,14 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 readOnly
                 placeholder="Маршрут будет составлен из точек ниже"
                 className="bg-gray-50"
+                disabled={isLocked}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Префикс</Label>
-                <Select value={prefix} onValueChange={setPrefix}>
+                <Select value={prefix} onValueChange={setPrefix} disabled={isLocked}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -282,6 +301,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   type="date"
                   value={orderDate}
                   onChange={(e) => setOrderDate(e.target.value)}
+                  disabled={isLocked}
                 />
               </div>
 
@@ -291,6 +311,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   value={routeNumber}
                   readOnly
                   className="bg-gray-50"
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -302,6 +323,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   placeholder="Введите номер инвойса"
                   value={invoice}
                   onChange={(e) => setInvoice(e.target.value)}
+                  disabled={isLocked}
                 />
               </div>
 
@@ -311,6 +333,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   placeholder="Введите TRAK"
                   value={trak}
                   onChange={(e) => setTrak(e.target.value)}
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -324,14 +347,16 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                       placeholder={`Грузополучатель ${index + 1}`}
                       value={consignee.name}
                       onChange={(e) => handleUpdateConsignee(consignee.id, 'name', e.target.value)}
+                      disabled={isLocked}
                     />
                     <Input
                       placeholder="Примечание"
                       value={consignee.note}
                       onChange={(e) => handleUpdateConsignee(consignee.id, 'note', e.target.value)}
+                      disabled={isLocked}
                     />
                   </div>
-                  {consignees.length > 1 && (
+                  {consignees.length > 1 && !isLocked && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -343,27 +368,35 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   )}
                 </div>
               ))}
-              <button
-                onClick={handleAddConsignee}
-                className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <Icon name="Plus" size={16} />
-                <span>Добавить грузополучателя</span>
-              </button>
+              {!isLocked && (
+                <button
+                  onClick={handleAddConsignee}
+                  className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Icon name="Plus" size={16} />
+                  <span>Добавить грузополучателя</span>
+                </button>
+              )}
             </div>
           </div>
 
           {routes.length > 0 ? (
             <div className="space-y-3">
-              {routes.map((route, index) => (
+              {routes.map((route, index) => {
+                const isFirstRoute = index === 0;
+                const isRouteDisabled = isLocked && isFirstRoute;
+                return (
                 <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
                         <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
+                        {isRouteDisabled && (
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">Заблокирован</span>
+                        )}
                       </div>
-                      {index === 0 && (
+                      {index === 0 && !isLocked && (
                         <div className="flex items-center gap-2">
                           <Checkbox
                             id="direct-route"
@@ -379,14 +412,16 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                         </div>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveRoute(route.id)}
-                      className="hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Icon name="Trash2" size={18} />
-                    </Button>
+                    {!isRouteDisabled && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveRoute(route.id)}
+                        className="hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Icon name="Trash2" size={18} />
+                      </Button>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -396,6 +431,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                         placeholder="Москва"
                         value={route.from}
                         onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
+                        disabled={isRouteDisabled}
                       />
                     </div>
                     <div className="space-y-2">
@@ -404,6 +440,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                         placeholder="Санкт-Петербург"
                         value={route.to}
                         onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
+                        disabled={isRouteDisabled}
                       />
                     </div>
                   </div>
@@ -421,6 +458,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                         }}
                         onFocus={() => setShowVehicleList({ ...showVehicleList, [route.id]: true })}
                         className="pl-9"
+                        disabled={isRouteDisabled}
                       />
                       {loadingVehicles && (
                         <Icon name="Loader2" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -473,6 +511,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                             <Select 
                               value={stop.type} 
                               onValueChange={(value) => handleUpdateStop(route.id, stop.id, 'type', value)}
+                              disabled={isRouteDisabled}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -486,32 +525,47 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                               placeholder="Адрес"
                               value={stop.address}
                               onChange={(e) => handleUpdateStop(route.id, stop.id, 'address', e.target.value)}
+                              disabled={isRouteDisabled}
                             />
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveStop(route.id, stop.id)}
-                            className="hover:bg-red-50 hover:text-red-600"
-                          >
-                            <Icon name="Trash2" size={18} />
-                          </Button>
+                          {!isRouteDisabled && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveStop(route.id, stop.id)}
+                              className="hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Icon name="Trash2" size={18} />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <button
-                    onClick={() => handleAddStop(route.id)}
-                    className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <Icon name="Plus" size={16} />
-                    <span>Дополнительный пункт</span>
-                  </button>
-                </div>
-              ))}
+                  {!isRouteDisabled && (
+                    <button
+                      onClick={() => handleAddStop(route.id)}
+                      className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <Icon name="Plus" size={16} />
+                      <span>Дополнительный пункт</span>
+                    </button>
+                  )}
 
-              {(!isDirect || routes.length < 2) && (
+                  {isFirstRoute && !isLocked && (
+                    <Button
+                      onClick={handleSaveAndGo}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                    >
+                      <Icon name="Lock" size={18} />
+                      <span>Сохранить и поехали!</span>
+                    </Button>
+                  )}
+                </div>
+              );})}
+
+              {(!isDirect || routes.length < 2) && isLocked && (
                 <button
                   onClick={handleAddRoute}
                   className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
