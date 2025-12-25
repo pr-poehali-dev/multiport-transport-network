@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { createVehicle, updateVehicle, Vehicle } from '@/api/vehicles';
@@ -18,6 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import VehicleInfoSection from '@/components/vehicle/VehicleInfoSection';
+import CompanySection from '@/components/vehicle/CompanySection';
+import DriverSection from '@/components/vehicle/DriverSection';
 
 interface AddVehicleProps {
   vehicle?: Vehicle;
@@ -235,235 +236,49 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Основная информация */}
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon name="Car" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Транспортное средство</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="brand">Марка ТС *</Label>
-                <Input 
-                  id="brand" 
-                  placeholder="КамАЗ 5320" 
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Номер ТС *</Label>
-                <Input 
-                  id="registrationNumber" 
-                  placeholder="А123БВ777"
-                  value={registrationNumber}
-                  onChange={(e) => setRegistrationNumber(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="capacity">Грузоподъемность (тонн)</Label>
-                <Input 
-                  id="capacity" 
-                  type="number"
-                  placeholder="20"
-                  value={capacity}
-                  onChange={(e) => setCapacity(e.target.value)}
-                  step="0.1"
-                  min="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="trailerNumber">Номер прицепа</Label>
-                <Input 
-                  id="trailerNumber" 
-                  placeholder="В456ГД777"
-                  value={trailerNumber}
-                  onChange={(e) => setTrailerNumber(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="trailerType">Тип прицепа</Label>
-                <Input 
-                  id="trailerType" 
-                  placeholder="рефрижератор, тент, борт и т.д."
-                  value={trailerType}
-                  onChange={(e) => setTrailerType(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <VehicleInfoSection
+            brand={brand}
+            setBrand={setBrand}
+            registrationNumber={registrationNumber}
+            setRegistrationNumber={setRegistrationNumber}
+            capacity={capacity}
+            setCapacity={setCapacity}
+            trailerNumber={trailerNumber}
+            setTrailerNumber={setTrailerNumber}
+            trailerType={trailerType}
+            setTrailerType={setTrailerType}
+          />
 
           {/* Фирма ТК */}
-          {!showCompany ? (
-            <button
-              onClick={() => setShowCompany(true)}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <Icon name="Plus" size={20} />
-              <span>Добавить фирму ТК</span>
-            </button>
-          ) : (
-            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="Building2" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Фирма ТК</h2>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowCompany(false);
-                    setCompanyId('');
-                  }}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Icon name="Trash2" size={18} />
-                </Button>
-              </div>
+          <CompanySection
+            showCompany={showCompany}
+            setShowCompany={setShowCompany}
+            searchContractor={searchContractor}
+            setSearchContractor={setSearchContractor}
+            showContractorList={showContractorList}
+            setShowContractorList={setShowContractorList}
+            contractors={contractors}
+            loadingContractors={loadingContractors}
+            contractorInputRef={contractorInputRef}
+            setCompanyId={setCompanyId}
+          />
 
-              <div className="space-y-2 relative">
-                <Label htmlFor="contractor">Фирма ТК</Label>
-                <div className="relative" ref={contractorInputRef}>
-                  <Input
-                    id="contractor"
-                    placeholder="Начните вводить название фирмы..."
-                    value={searchContractor}
-                    onChange={(e) => {
-                      setSearchContractor(e.target.value);
-                      setShowContractorList(true);
-                    }}
-                    onFocus={() => setShowContractorList(true)}
-                  />
-                  {loadingContractors && (
-                    <Icon name="Loader2" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
-                  )}
-                  
-                  {showContractorList && contractors.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {contractors
-                        .filter(c => c.name.toLowerCase().includes(searchContractor.toLowerCase()))
-                        .map(contractor => (
-                          <button
-                            key={contractor.id}
-                            type="button"
-                            onClick={() => {
-                              setCompanyId(contractor.id?.toString() || '');
-                              setSearchContractor(contractor.name);
-                              setShowContractorList(false);
-                            }}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
-                          >
-                            <Icon name="Building2" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{contractor.name}</p>
-                              {contractor.inn && (
-                                <p className="text-xs text-muted-foreground">ИНН: {contractor.inn}</p>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Назначить водителя */}
-          {!showDriver ? (
-            <button
-              onClick={() => setShowDriver(true)}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <Icon name="Plus" size={20} />
-              <span>Назначить водителя</span>
-            </button>
-          ) : (
-            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Назначить водителя</h2>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowDriver(false);
-                    setDriverId('');
-                    setSearchDriver('');
-                  }}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Icon name="Trash2" size={18} />
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="driverId">Водитель</Label>
-                {loadingDrivers ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border border-input rounded-md">
-                    <Icon name="Loader2" size={16} className="animate-spin" />
-                    <span>Загрузка водителей...</span>
-                  </div>
-                ) : drivers.length === 0 ? (
-                  <div className="text-sm text-muted-foreground p-3 border border-input rounded-md">Нет доступных водителей</div>
-                ) : (
-                  <div className="relative">
-                    <Input
-                      ref={driverInputRef}
-                      placeholder="Начните вводить имя водителя..."
-                      value={searchDriver}
-                      onChange={(e) => {
-                        setSearchDriver(e.target.value);
-                        setShowDriverList(true);
-                      }}
-                      onFocus={() => setShowDriverList(true)}
-                    />
-                    {showDriverList && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
-                        {drivers
-                          .filter((driver) => {
-                            if (!searchDriver) return true;
-                            const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
-                            return fullName.includes(searchDriver.toLowerCase());
-                          })
-                          .map((driver) => (
-                            <button
-                              key={driver.id}
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm cursor-pointer"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setDriverId(driver.id?.toString() || '');
-                                setSearchDriver(`${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim());
-                                setShowDriverList(false);
-                              }}
-                            >
-                              {driver.lastName} {driver.firstName} {driver.middleName || ''}
-                            </button>
-                          ))}
-                        {searchDriver && drivers.filter((driver) => {
-                          const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
-                          return fullName.includes(searchDriver.toLowerCase());
-                        }).length === 0 && (
-                          <div className="px-3 py-2 text-sm text-muted-foreground">Водитель не найден</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Водитель */}
+          <DriverSection
+            showDriver={showDriver}
+            setShowDriver={setShowDriver}
+            searchDriver={searchDriver}
+            setSearchDriver={setSearchDriver}
+            showDriverList={showDriverList}
+            setShowDriverList={setShowDriverList}
+            drivers={drivers}
+            loadingDrivers={loadingDrivers}
+            driverInputRef={driverInputRef}
+            setDriverId={setDriverId}
+          />
         </div>
       </div>
 
-      {/* Диалог отмены */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
