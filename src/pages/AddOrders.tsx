@@ -4,6 +4,7 @@ import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -48,6 +49,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [invoice, setInvoice] = useState<string>('');
   const [trak, setTrak] = useState<string>('');
   const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
+  const [isDirect, setIsDirect] = useState<boolean>(false);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -64,11 +66,17 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleAddRoute = () => {
+    if (isDirect && routes.length >= 2) {
+      return;
+    }
     setRoutes([...routes, { id: Date.now().toString(), from: '', to: '' }]);
   };
 
   const handleRemoveRoute = (id: string) => {
     setRoutes(routes.filter(r => r.id !== id));
+    if (routes.filter(r => r.id !== id).length < 2) {
+      setIsDirect(false);
+    }
   };
 
   const handleUpdateRoute = (id: string, field: 'from' | 'to', value: string) => {
@@ -260,9 +268,26 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
               {routes.map((route, index) => (
                 <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-                      <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                        <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
+                      </div>
+                      {index === 0 && (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="direct-route"
+                            checked={isDirect}
+                            onCheckedChange={(checked) => {
+                              setIsDirect(checked as boolean);
+                              if (checked && routes.length > 2) {
+                                setRoutes(routes.slice(0, 2));
+                              }
+                            }}
+                          />
+                          <Label htmlFor="direct-route" className="text-sm cursor-pointer">Прямой</Label>
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -295,13 +320,15 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 </div>
               ))}
 
-              <button
-                onClick={handleAddRoute}
-                className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-              >
-                <Icon name="Plus" size={18} />
-                <span>Добавить маршрут</span>
-              </button>
+              {(!isDirect || routes.length < 2) && (
+                <button
+                  onClick={handleAddRoute}
+                  className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Icon name="Plus" size={18} />
+                  <span>Добавить маршрут</span>
+                </button>
+              )}
             </div>
           ) : (
             <button
