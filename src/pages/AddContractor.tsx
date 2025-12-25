@@ -125,6 +125,57 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
     setIsSaving(true);
 
     try {
+      const API_URL = 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a';
+      
+      const contractorData = {
+        name,
+        inn,
+        kpp: kpp || null,
+        ogrn: ogrn || null,
+        director: director || null,
+        legalAddress: legalAddress || null,
+        actualAddress: actualAddress || null,
+        postalAddress: postalAddress || null,
+        isSeller,
+        isBuyer,
+        isCarrier,
+        bankAccounts: bankAccounts.map(acc => ({
+          accountNumber: acc.accountNumber,
+          bik: acc.bik,
+          bankName: acc.bankName,
+          corrAccount: acc.corrAccount
+        })),
+        deliveryAddresses: deliveryAddresses.map(addr => ({
+          address: addr.address,
+          phone: addr.phone,
+          contact: addr.contact
+        }))
+      };
+
+      if (isEditMode && contractor) {
+        const response = await fetch(`${API_URL}?resource=contractors&id=${contractor.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contractorData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Ошибка при обновлении контрагента');
+        }
+      } else {
+        const response = await fetch(`${API_URL}?resource=contractors`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contractorData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Ошибка при создании контрагента');
+        }
+      }
+
       toast({
         title: 'Успешно сохранено',
         description: isEditMode ? 'Данные контрагента обновлены' : 'Контрагент добавлен в базу данных'
