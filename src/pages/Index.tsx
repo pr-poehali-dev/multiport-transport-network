@@ -15,6 +15,7 @@ import Templates from './Templates';
 import AddDriver from './AddDriver';
 import AddVehicle from './AddVehicle';
 import AddContractor from './AddContractor';
+import AddOrders from './AddOrders';
 
 interface Order {
   id: string;
@@ -42,6 +43,7 @@ function Index() {
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showAddContractor, setShowAddContractor] = useState(false);
+  const [showAddOrders, setShowAddOrders] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -101,6 +103,12 @@ function Index() {
   const handleBackFromAddContractor = () => {
     setShowAddContractor(false);
     setActiveSection('contractors');
+    setReferencesOpen(true);
+  };
+
+  const handleBackFromAddOrders = () => {
+    setShowAddOrders(false);
+    setActiveSection('orders');
     setReferencesOpen(true);
   };
 
@@ -303,6 +311,8 @@ function Index() {
         <AddVehicle onBack={handleBackFromAddVehicle} onMenuClick={() => setSidebarOpen(true)} />
       ) : showAddContractor ? (
         <AddContractor onBack={handleBackFromAddContractor} onMenuClick={() => setSidebarOpen(true)} />
+      ) : showAddOrders ? (
+        <AddOrders onBack={handleBackFromAddOrders} onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'orders' ? (
         <Orders onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'drivers' ? (
@@ -351,14 +361,16 @@ function Index() {
                           <div className="bg-[#0ea5e9]/10 rounded-lg p-2">
                             <Icon name={item.icon as any} size={24} className="text-[#0ea5e9]" />
                           </div>
-                          {(item.id === 'drivers' || item.id === 'vehicles' || item.id === 'contractors') && (
+                          {(item.id === 'orders' || item.id === 'drivers' || item.id === 'vehicles' || item.id === 'contractors') && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (item.id === 'drivers') {
+                                if (item.id === 'orders') {
+                                  setShowAddOrders(true);
+                                } else if (item.id === 'drivers') {
                                   setShowAddDriver(true);
                                 } else if (item.id === 'vehicles') {
                                   setShowAddVehicle(true);
