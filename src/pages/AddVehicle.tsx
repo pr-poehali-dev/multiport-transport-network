@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { createVehicle, updateVehicle, Vehicle } from '@/api/vehicles';
 import { getDrivers, Driver } from '@/api/drivers';
-import { Combobox } from '@/components/ui/combobox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +33,9 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const [showDriver, setShowDriver] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [searchDriver, setSearchDriver] = useState('');
+  const [showDriverList, setShowDriverList] = useState(false);
+  const driverInputRef = useRef<HTMLInputElement>(null);
   
   // Основная информация
   const [brand, setBrand] = useState(vehicle?.brand || '');
@@ -49,14 +51,31 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
     if (vehicle) {
       setShowCompany(!!vehicle.companyId);
       setShowDriver(!!vehicle.driverId);
+      if (vehicle.driverId) {
+        const driver = drivers.find(d => d.id?.toString() === vehicle.driverId?.toString());
+        if (driver) {
+          setSearchDriver(`${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim());
+        }
+      }
     }
-  }, [vehicle]);
+  }, [vehicle, drivers]);
 
   useEffect(() => {
     if (showDriver && drivers.length === 0) {
       loadDriversList();
     }
   }, [showDriver]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (driverInputRef.current && !driverInputRef.current.contains(event.target as Node)) {
+        setShowDriverList(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadDriversList = async () => {
     setLoadingDrivers(true);
@@ -302,6 +321,7 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                   onClick={() => {
                     setShowDriver(false);
                     setDriverId('');
+                    setSearchDriver('');
                   }}
                   className="hover:bg-red-50 hover:text-red-600"
                 >
@@ -319,17 +339,47 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                 ) : drivers.length === 0 ? (
                   <div className="text-sm text-muted-foreground p-3 border border-input rounded-md">Нет доступных водителей</div>
                 ) : (
-                  <Combobox
-                    options={drivers.map((driver) => ({
-                      value: driver.id?.toString() || '',
-                      label: `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim()
-                    }))}
-                    value={driverId}
-                    onValueChange={setDriverId}
-                    placeholder="Выберите водителя"
-                    searchPlaceholder="Поиск водителя..."
-                    emptyText="Водитель не найден"
-                  />
+                  <div className="relative">
+                    <Input
+                      ref={driverInputRef}
+                      placeholder="Начните вводить имя водителя..."
+                      value={searchDriver}
+                      onChange={(e) => {
+                        setSearchDriver(e.target.value);
+                        setShowDriverList(true);
+                      }}
+                      onFocus={() => setShowDriverList(true)}
+                    />
+                    {showDriverList && searchDriver && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+                        {drivers
+                          .filter((driver) => {
+                            const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
+                            return fullName.includes(searchDriver.toLowerCase());
+                          })
+                          .map((driver) => (
+                            <button
+                              key={driver.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                              onClick={() => {
+                                setDriverId(driver.id?.toString() || '');
+                                setSearchDriver(`${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim());
+                                setShowDriverList(false);
+                              }}
+                            >
+                              {driver.lastName} {driver.firstName} {driver.middleName || ''}
+                            </button>
+                          ))}
+                        {drivers.filter((driver) => {
+                          const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
+                          return fullName.includes(searchDriver.toLowerCase());
+                        }).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">Водитель не найден</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
