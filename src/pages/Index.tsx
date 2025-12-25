@@ -339,7 +339,7 @@ function Index() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9] opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (item.id === 'drivers') {
