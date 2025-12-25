@@ -228,6 +228,12 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
 
                 {/* Информация */}
                 <div className="space-y-2 text-sm">
+                  {vehicle.trailerNumber && (
+                    <div className="flex items-center gap-2">
+                      <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate font-mono text-xs">{vehicle.trailerNumber}</span>
+                    </div>
+                  )}
                   {vehicle.capacity && (
                     <div className="flex items-center gap-2">
                       <Icon name="Weight" size={16} className="text-muted-foreground flex-shrink-0" />
@@ -236,14 +242,20 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
                   )}
                   {vehicle.trailerType && (
                     <div className="flex items-center gap-2">
-                      <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <Icon name="Package" size={16} className="text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{vehicle.trailerType}</span>
                     </div>
                   )}
-                  {vehicle.trailerNumber && (
+                  {vehicle.driverId && (
                     <div className="flex items-center gap-2">
-                      <Icon name="Hash" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate font-mono text-xs">{vehicle.trailerNumber}</span>
+                      <Icon name="UserCircle" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">Водитель #{vehicle.driverId}</span>
+                    </div>
+                  )}
+                  {vehicle.companyId && (
+                    <div className="flex items-center gap-2">
+                      <Icon name="Building2" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">Фирма #{vehicle.companyId}</span>
                     </div>
                   )}
                 </div>
