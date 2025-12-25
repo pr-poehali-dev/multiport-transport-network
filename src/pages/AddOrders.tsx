@@ -30,11 +30,18 @@ interface AddOrdersProps {
   onMenuClick: () => void;
 }
 
+interface AdditionalStop {
+  id: string;
+  type: 'loading' | 'unloading';
+  address: string;
+}
+
 interface Route {
   id: string;
   from: string;
   to: string;
   vehicleId: string;
+  additionalStops: AdditionalStop[];
 }
 
 interface Consignee {
@@ -78,7 +85,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     if (isDirect && routes.length >= 2) {
       return;
     }
-    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '' }]);
+    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '', additionalStops: [] }]);
   };
 
   const handleRemoveRoute = (id: string) => {
@@ -90,6 +97,44 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
 
   const handleUpdateRoute = (id: string, field: 'from' | 'to' | 'vehicleId', value: string) => {
     setRoutes(routes.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  const handleAddStop = (routeId: string) => {
+    setRoutes(routes.map(r => {
+      if (r.id === routeId) {
+        return {
+          ...r,
+          additionalStops: [...r.additionalStops, { id: Date.now().toString(), type: 'loading', address: '' }]
+        };
+      }
+      return r;
+    }));
+  };
+
+  const handleRemoveStop = (routeId: string, stopId: string) => {
+    setRoutes(routes.map(r => {
+      if (r.id === routeId) {
+        return {
+          ...r,
+          additionalStops: r.additionalStops.filter(s => s.id !== stopId)
+        };
+      }
+      return r;
+    }));
+  };
+
+  const handleUpdateStop = (routeId: string, stopId: string, field: 'type' | 'address', value: string) => {
+    setRoutes(routes.map(r => {
+      if (r.id === routeId) {
+        return {
+          ...r,
+          additionalStops: r.additionalStops.map(s => 
+            s.id === stopId ? { ...s, [field]: value } : s
+          )
+        };
+      }
+      return r;
+    }));
   };
 
   const getFullRoute = () => {
@@ -418,6 +463,51 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                       Выберите автомобиль для этого маршрута
                     </p>
                   </div>
+
+                  {route.additionalStops.length > 0 && (
+                    <div className="space-y-3 pt-2 border-t border-border">
+                      <Label className="text-sm text-muted-foreground">Дополнительные пункты</Label>
+                      {route.additionalStops.map((stop) => (
+                        <div key={stop.id} className="flex gap-2 items-start">
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Select 
+                              value={stop.type} 
+                              onValueChange={(value) => handleUpdateStop(route.id, stop.id, 'type', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="loading">Погрузка</SelectItem>
+                                <SelectItem value="unloading">Разгрузка</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              placeholder="Адрес"
+                              value={stop.address}
+                              onChange={(e) => handleUpdateStop(route.id, stop.id, 'address', e.target.value)}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveStop(route.id, stop.id)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Icon name="Trash2" size={18} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => handleAddStop(route.id)}
+                    className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    <Icon name="Plus" size={16} />
+                    <span>Дополнительный пункт</span>
+                  </button>
                 </div>
               ))}
 
