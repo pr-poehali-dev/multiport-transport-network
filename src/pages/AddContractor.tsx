@@ -72,6 +72,40 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
     }
   }, [contractor]);
 
+  const shortenCompanyName = (fullName: string): string => {
+    const replacements: Record<string, string> = {
+      'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ': 'ООО',
+      'ОТКРЫТОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО': 'ОАО',
+      'ЗАКРЫТОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО': 'ЗАО',
+      'ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО': 'ПАО',
+      'НЕПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО': 'НПАО',
+      'АКЦИОНЕРНОЕ ОБЩЕСТВО': 'АО',
+      'ИНДИВИДУАЛЬНЫЙ ПРЕДПРИНИМАТЕЛЬ': 'ИП',
+      'ПРОИЗВОДСТВЕННЫЙ КООПЕРАТИВ': 'ПК',
+      'ПОТРЕБИТЕЛЬСКИЙ КООПЕРАТИВ': 'ПотК',
+      'ТОВАРИЩЕСТВО СОБСТВЕННИКОВ ЖИЛЬЯ': 'ТСЖ',
+      'САДОВОДЧЕСКОЕ НЕКОММЕРЧЕСКОЕ ТОВАРИЩЕСТВО': 'СНТ',
+      'МУНИЦИПАЛЬНОЕ УНИТАРНОЕ ПРЕДПРИЯТИЕ': 'МУП',
+      'ГОСУДАРСТВЕННОЕ УНИТАРНОЕ ПРЕДПРИЯТИЕ': 'ГУП',
+      'ФЕДЕРАЛЬНОЕ ГОСУДАРСТВЕННОЕ УНИТАРНОЕ ПРЕДПРИЯТИЕ': 'ФГУП',
+      'АВТОНОМНАЯ НЕКОММЕРЧЕСКАЯ ОРГАНИЗАЦИЯ': 'АНО',
+      'НЕКОММЕРЧЕСКОЕ ПАРТНЕРСТВО': 'НП',
+      'ФОНД': 'Фонд'
+    };
+
+    let shortened = fullName;
+    
+    for (const [full, short] of Object.entries(replacements)) {
+      const regex = new RegExp(`^${full}\\s+`, 'i');
+      if (regex.test(shortened)) {
+        shortened = shortened.replace(regex, `${short} `);
+        break;
+      }
+    }
+
+    return shortened;
+  };
+
   const fetchCompanyByInn = async (innValue: string) => {
     const cleanInn = innValue.replace(/\D/g, '');
     
@@ -88,7 +122,9 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
       if (response.ok) {
         const data = await response.json();
         
-        setName(data.name || '');
+        const shortenedName = data.name ? shortenCompanyName(data.name) : '';
+        
+        setName(shortenedName);
         setInn(data.inn || '');
         setKpp(data.kpp || '');
         setOgrn(data.ogrn || '');
