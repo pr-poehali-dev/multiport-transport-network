@@ -80,10 +80,10 @@ function AddressesSection({
           <span>Добавить фактический адрес</span>
         </button>
       ) : (
-        <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Label className="font-semibold">Фактический адрес</Label>
+              <Label htmlFor="actualAddress" className="font-semibold">Фактический адрес</Label>
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="actualSameAsLegal"
@@ -116,7 +116,6 @@ function AddressesSection({
               <Icon name="Trash2" size={16} />
             </Button>
           </div>
-
           <Input 
             id="actualAddress" 
             placeholder="Введите фактический адрес"
@@ -140,10 +139,10 @@ function AddressesSection({
           <span>Добавить почтовый адрес</span>
         </button>
       ) : (
-        <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Label className="font-semibold">Почтовый адрес</Label>
+              <Label htmlFor="postalAddress" className="font-semibold">Почтовый адрес</Label>
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="postalSameAsLegal"
@@ -176,7 +175,6 @@ function AddressesSection({
               <Icon name="Trash2" size={16} />
             </Button>
           </div>
-
           <Input 
             id="postalAddress" 
             placeholder="Введите почтовый адрес"
@@ -192,7 +190,7 @@ function AddressesSection({
 
       {/* Адреса погрузки/разгрузки */}
       {deliveryAddresses.length > 0 && deliveryAddresses.map((delivery) => (
-        <div key={delivery.id} className="space-y-3 p-4 bg-gray-50 rounded-lg">
+        <div key={delivery.id} className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="font-semibold">Адрес погрузки/разгрузки</Label>
             <Button
@@ -204,14 +202,12 @@ function AddressesSection({
               <Icon name="Trash2" size={16} />
             </Button>
           </div>
-
           <Input 
             placeholder="Введите адрес погрузки/разгрузки"
             value={delivery.address}
             onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'address', e.target.value)}
           />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input 
               placeholder="+7 (999) 123-45-67"
               value={delivery.phone}
