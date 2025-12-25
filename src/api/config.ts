@@ -3,6 +3,7 @@
 
 // Текущий хостинг: poehali.dev Cloud Functions
 import FUNC_URLS from '../../backend/func2url.json';
+import { logError } from '@/utils/errorLogger';
 
 export const API_CONFIG = {
   // При миграции на jino.ru замени на: 'https://your-domain.jino.ru/api'
@@ -31,14 +32,26 @@ export async function apiRequest(url: string, options?: RequestInit) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Ошибка запроса');
+      const errorMsg = data.error || 'Ошибка запроса';
+      logError(`API Error: ${errorMsg}`, undefined, {
+        url,
+        status: response.status,
+        method: options?.method || 'GET',
+        responseData: data,
+      });
+      throw new Error(errorMsg);
     }
 
     return data;
   } catch (error) {
     if (error instanceof Error) {
+      logError(`API Request Failed: ${error.message}`, error, {
+        url,
+        method: options?.method || 'GET',
+      });
       throw error;
     }
+    logError('Неизвестная ошибка API', undefined, { url });
     throw new Error('Неизвестная ошибка');
   }
 }

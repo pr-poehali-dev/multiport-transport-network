@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
+import ErrorLogsViewer from '@/components/ErrorLogsViewer';
 
 interface TopBarProps {
   title: string;
@@ -29,6 +30,7 @@ function TopBar({ title, onMenuClick, onRefresh, leftButton, rightButtons }: Top
           <h1 className="text-base lg:text-xl font-semibold text-foreground">{title}</h1>
         </div>
         <div className="flex items-center gap-2 lg:gap-3">
+          <ErrorLogsViewer />
           {onRefresh && (
             <Button 
               onClick={onRefresh}
