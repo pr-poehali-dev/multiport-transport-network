@@ -68,7 +68,8 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (driverInputRef.current && !driverInputRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      if (driverInputRef.current && !driverInputRef.current.parentElement?.contains(target)) {
         setShowDriverList(false);
       }
     };
@@ -361,8 +362,9 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                             <button
                               key={driver.id}
                               type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                              onClick={() => {
+                              className="w-full text-left px-3 py-2 hover:bg-accent text-sm cursor-pointer"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
                                 setDriverId(driver.id?.toString() || '');
                                 setSearchDriver(`${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim());
                                 setShowDriverList(false);
