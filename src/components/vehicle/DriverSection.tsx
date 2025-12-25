@@ -65,6 +65,7 @@ function DriverSection({
       <div className="space-y-2 relative">
         <Label htmlFor="driver">Выбор водителя</Label>
         <div className="relative" ref={driverInputRef}>
+          <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
           <Input
             id="driver"
             placeholder="Начните вводить ФИО водителя..."
@@ -74,6 +75,7 @@ function DriverSection({
               setShowDriverList(true);
             }}
             onFocus={() => setShowDriverList(true)}
+            className="pl-9"
           />
           {loadingDrivers && (
             <Icon name="Loader2" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
