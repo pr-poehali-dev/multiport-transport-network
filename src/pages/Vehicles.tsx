@@ -243,7 +243,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
                     {driver && (
                       <div className="flex items-center gap-2">
                         <Icon name="UserCircle" size={16} className="text-muted-foreground flex-shrink-0" />
-                        <span className="truncate">Водитель #{vehicle.driverId}</span>
+                        <span className="truncate">{driver.lastName} {driver.firstName} {driver.middleName || ''}</span>
                       </div>
                     )}
                     {vehicle.companyId && (
