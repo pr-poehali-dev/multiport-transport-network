@@ -15,20 +15,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { getContractors, deleteContractor, Contractor } from '@/api/contractors';
 
 interface ContractorsProps {
   onMenuClick: () => void;
 }
 
-export interface Contractor {
-  id?: number;
-  name: string;
-  inn?: string;
-  phone?: string;
-  email?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type { Contractor };
 
 function Contractors({ onMenuClick }: ContractorsProps) {
   const { toast } = useToast();
@@ -44,9 +37,9 @@ function Contractors({ onMenuClick }: ContractorsProps) {
   const loadContractors = async () => {
     setIsLoading(true);
     try {
-      // TODO: Подключить API
-      setContractors([]);
-      setFilteredContractors([]);
+      const response = await getContractors();
+      setContractors(response.contractors);
+      setFilteredContractors(response.contractors);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -72,13 +65,13 @@ function Contractors({ onMenuClick }: ContractorsProps) {
     const filtered = contractors.filter(contractor => {
       const name = contractor.name.toLowerCase();
       const inn = (contractor.inn || '').toLowerCase();
-      const phone = (contractor.phone || '').toLowerCase();
-      const email = (contractor.email || '').toLowerCase();
+      const kpp = (contractor.kpp || '').toLowerCase();
+      const director = (contractor.director || '').toLowerCase();
       
       return name.includes(query) || 
              inn.includes(query) || 
-             phone.includes(query) ||
-             email.includes(query);
+             kpp.includes(query) ||
+             director.includes(query);
     });
 
     setFilteredContractors(filtered);
@@ -112,7 +105,7 @@ function Contractors({ onMenuClick }: ContractorsProps) {
     if (!contractorToDelete) return;
 
     try {
-      // TODO: Подключить API deleteContractor
+      await deleteContractor(contractorToDelete);
       
       toast({
         title: 'Контрагент удалён',
@@ -162,7 +155,7 @@ function Contractors({ onMenuClick }: ContractorsProps) {
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" 
             />
             <Input
-              placeholder="Поиск по названию, ИНН, телефону, email..."
+              placeholder="Поиск по названию, ИНН, КПП, руководителю..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-10"
@@ -246,16 +239,29 @@ function Contractors({ onMenuClick }: ContractorsProps) {
 
                   {/* Информация */}
                   <div className="space-y-2 text-sm">
-                    {contractor.phone && (
-                      <div className="flex items-center gap-2">
-                        <Icon name="Phone" size={16} className="text-muted-foreground flex-shrink-0" />
-                        <span className="truncate">{contractor.phone}</span>
+                    {(contractor.isSeller || contractor.isBuyer || contractor.isCarrier) && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {contractor.isSeller && (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Продавец</span>
+                        )}
+                        {contractor.isBuyer && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">Покупатель</span>
+                        )}
+                        {contractor.isCarrier && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">Перевозчик</span>
+                        )}
                       </div>
                     )}
-                    {contractor.email && (
+                    {contractor.director && (
                       <div className="flex items-center gap-2">
-                        <Icon name="Mail" size={16} className="text-muted-foreground flex-shrink-0" />
-                        <span className="truncate">{contractor.email}</span>
+                        <Icon name="User" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{contractor.director}</span>
+                      </div>
+                    )}
+                    {contractor.legalAddress && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="MapPin" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{contractor.legalAddress}</span>
                       </div>
                     )}
                   </div>
