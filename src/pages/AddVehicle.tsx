@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,14 @@ import { Label } from '@/components/ui/label';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { createVehicle, updateVehicle, Vehicle } from '@/api/vehicles';
+import { getDrivers, Driver } from '@/api/drivers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +38,8 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showCompany, setShowCompany] = useState(false);
   const [showDriver, setShowDriver] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
   
   // Основная информация
   const [brand, setBrand] = useState(vehicle?.brand || '');
@@ -41,12 +51,34 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const [driverId, setDriverId] = useState(vehicle?.driverId?.toString() || '');
 
   // Показываем секции если есть данные
-  useState(() => {
+  useEffect(() => {
     if (vehicle) {
       setShowCompany(!!vehicle.companyId);
       setShowDriver(!!vehicle.driverId);
     }
-  });
+  }, [vehicle]);
+
+  useEffect(() => {
+    if (showDriver && drivers.length === 0) {
+      loadDriversList();
+    }
+  }, [showDriver]);
+
+  const loadDriversList = async () => {
+    setLoadingDrivers(true);
+    try {
+      const data = await getDrivers();
+      setDrivers(data.drivers || []);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список водителей'
+      });
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -284,14 +316,28 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="driverId">Выбор водителя</Label>
-                <Input 
-                  id="driverId" 
-                  placeholder="Выберите водителя (TODO: заменить на Select)"
-                  value={driverId}
-                  onChange={(e) => setDriverId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Пока что введите ID водителя. Позже будет выпадающий список.</p>
+                <Label htmlFor="driverId">Водитель</Label>
+                {loadingDrivers ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border border-input rounded-md">
+                    <Icon name="Loader2" size={16} className="animate-spin" />
+                    <span>Загрузка водителей...</span>
+                  </div>
+                ) : drivers.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-3 border border-input rounded-md">Нет доступных водителей</div>
+                ) : (
+                  <Select value={driverId} onValueChange={setDriverId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите водителя" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((driver) => (
+                        <SelectItem key={driver.id} value={driver.id?.toString() || ''}>
+                          {driver.lastName} {driver.firstName} {driver.middleName || ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           )}
