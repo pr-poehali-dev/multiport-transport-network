@@ -351,10 +351,11 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                       }}
                       onFocus={() => setShowDriverList(true)}
                     />
-                    {showDriverList && searchDriver && (
+                    {showDriverList && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
                         {drivers
                           .filter((driver) => {
+                            if (!searchDriver) return true;
                             const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
                             return fullName.includes(searchDriver.toLowerCase());
                           })
@@ -373,7 +374,7 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                               {driver.lastName} {driver.firstName} {driver.middleName || ''}
                             </button>
                           ))}
-                        {drivers.filter((driver) => {
+                        {searchDriver && drivers.filter((driver) => {
                           const fullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.toLowerCase();
                           return fullName.includes(searchDriver.toLowerCase());
                         }).length === 0 && (
