@@ -41,7 +41,7 @@ interface Consignee {
 
 function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [routes, setRoutes] = useState<Route[]>([{ id: '1', from: '', to: '' }]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [prefix, setPrefix] = useState<string>('EU');
   const [orderDate, setOrderDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [routeNumber, setRouteNumber] = useState<string>('');
@@ -68,9 +68,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleRemoveRoute = (id: string) => {
-    if (routes.length > 1) {
-      setRoutes(routes.filter(r => r.id !== id));
-    }
+    setRoutes(routes.filter(r => r.id !== id));
   };
 
   const handleUpdateRoute = (id: string, field: 'from' | 'to', value: string) => {
@@ -257,34 +255,34 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Многомаршрутность</h2>
-            </div>
+          {routes.length > 0 ? (
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Многомаршрутность</h2>
+              </div>
 
-            <div className="space-y-3">
-              {routes.map((route, index) => (
-                <div key={route.id} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm">Откуда (маршрут {index + 1})</Label>
-                      <Input
-                        placeholder="Москва"
-                        value={route.from}
-                        onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
-                      />
+              <div className="space-y-3">
+                {routes.map((route, index) => (
+                  <div key={route.id} className="flex gap-2 items-start">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Откуда (маршрут {index + 1})</Label>
+                        <Input
+                          placeholder="Москва"
+                          value={route.from}
+                          onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Куда (маршрут {index + 1})</Label>
+                        <Input
+                          placeholder="Санкт-Петербург"
+                          value={route.to}
+                          onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Куда (маршрут {index + 1})</Label>
-                      <Input
-                        placeholder="Санкт-Петербург"
-                        value={route.to}
-                        onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {routes.length > 1 && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -293,19 +291,27 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                     >
                       <Icon name="Trash2" size={18} />
                     </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
 
+              <button
+                onClick={handleAddRoute}
+                className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <Icon name="Plus" size={18} />
+                <span>Добавить маршрут</span>
+              </button>
+            </div>
+          ) : (
             <button
               onClick={handleAddRoute}
-              className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
             >
-              <Icon name="Plus" size={18} />
+              <Icon name="Plus" size={20} />
               <span>Добавить маршрут</span>
             </button>
-          </div>
+          )}
         </div>
       </div>
 
