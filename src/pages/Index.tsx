@@ -9,9 +9,11 @@ import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
 import Vehicles from './Vehicles';
+import Contractors from './Contractors';
 import Templates from './Templates';
 import AddDriver from './AddDriver';
 import AddVehicle from './AddVehicle';
+import AddContractor from './AddContractor';
 
 interface Order {
   id: string;
@@ -38,6 +40,7 @@ function Index() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showAddContractor, setShowAddContractor] = useState(false);
 
   const orders: Order[] = [
     { id: 'ORD-2847', route: 'Москва → Владивосток', status: 'В пути', carrier: 'TransLog Express', progress: 65, eta: '2 дня' },
@@ -91,6 +94,12 @@ function Index() {
   const handleBackFromAddVehicle = () => {
     setShowAddVehicle(false);
     setActiveSection('vehicles');
+    setReferencesOpen(true);
+  };
+
+  const handleBackFromAddContractor = () => {
+    setShowAddContractor(false);
+    setActiveSection('contractors');
     setReferencesOpen(true);
   };
 
@@ -291,10 +300,14 @@ function Index() {
         <AddDriver onBack={handleBackFromAddDriver} onMenuClick={() => setSidebarOpen(true)} />
       ) : showAddVehicle ? (
         <AddVehicle onBack={handleBackFromAddVehicle} onMenuClick={() => setSidebarOpen(true)} />
+      ) : showAddContractor ? (
+        <AddContractor onBack={handleBackFromAddContractor} onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'drivers' ? (
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'vehicles' ? (
         <Vehicles onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'contractors' ? (
+        <Contractors onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'templates' ? (
         <Templates onMenuClick={() => setSidebarOpen(true)} />
       ) : (
@@ -335,7 +348,7 @@ function Index() {
                           <div className="bg-[#0ea5e9]/10 rounded-lg p-2">
                             <Icon name={item.icon as any} size={24} className="text-[#0ea5e9]" />
                           </div>
-                          {(item.id === 'drivers' || item.id === 'vehicles') && (
+                          {(item.id === 'drivers' || item.id === 'vehicles' || item.id === 'contractors') && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -346,6 +359,8 @@ function Index() {
                                   setShowAddDriver(true);
                                 } else if (item.id === 'vehicles') {
                                   setShowAddVehicle(true);
+                                } else if (item.id === 'contractors') {
+                                  setShowAddContractor(true);
                                 }
                               }}
                             >
