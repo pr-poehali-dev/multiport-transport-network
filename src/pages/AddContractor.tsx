@@ -330,7 +330,27 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
             ) : (
               <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <Label className="font-semibold">Фактический адрес</Label>
+                  <div className="flex items-center gap-3">
+                    <Label className="font-semibold">Фактический адрес</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="actualSameAsLegal"
+                        checked={actualSameAsLegal}
+                        onCheckedChange={(checked) => {
+                          setActualSameAsLegal(checked as boolean);
+                          if (checked) {
+                            setActualAddress(legalAddress);
+                          }
+                        }}
+                      />
+                      <Label 
+                        htmlFor="actualSameAsLegal"
+                        className="text-sm font-normal cursor-pointer text-muted-foreground"
+                      >
+                        совпадает с юридическим
+                      </Label>
+                    </div>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -343,25 +363,6 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   >
                     <Icon name="Trash2" size={16} />
                   </Button>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="actualSameAsLegal"
-                    checked={actualSameAsLegal}
-                    onCheckedChange={(checked) => {
-                      setActualSameAsLegal(checked as boolean);
-                      if (checked) {
-                        setActualAddress(legalAddress);
-                      }
-                    }}
-                  />
-                  <Label 
-                    htmlFor="actualSameAsLegal"
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Совпадает с юридическим адресом
-                  </Label>
                 </div>
 
                 <Input 
@@ -389,7 +390,27 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
             ) : (
               <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <Label className="font-semibold">Почтовый адрес</Label>
+                  <div className="flex items-center gap-3">
+                    <Label className="font-semibold">Почтовый адрес</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="postalSameAsLegal"
+                        checked={postalSameAsLegal}
+                        onCheckedChange={(checked) => {
+                          setPostalSameAsLegal(checked as boolean);
+                          if (checked) {
+                            setPostalAddress(legalAddress);
+                          }
+                        }}
+                      />
+                      <Label 
+                        htmlFor="postalSameAsLegal"
+                        className="text-sm font-normal cursor-pointer text-muted-foreground"
+                      >
+                        совпадает с юридическим
+                      </Label>
+                    </div>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -402,25 +423,6 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   >
                     <Icon name="Trash2" size={16} />
                   </Button>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="postalSameAsLegal"
-                    checked={postalSameAsLegal}
-                    onCheckedChange={(checked) => {
-                      setPostalSameAsLegal(checked as boolean);
-                      if (checked) {
-                        setPostalAddress(legalAddress);
-                      }
-                    }}
-                  />
-                  <Label 
-                    htmlFor="postalSameAsLegal"
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Совпадает с юридическим адресом
-                  </Label>
                 </div>
 
                 <Input 
