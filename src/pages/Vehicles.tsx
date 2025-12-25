@@ -207,7 +207,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
                   {/* Заголовок */}
                   <div className="flex items-start gap-3 mb-4">
                     <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
-                      <Icon name="Car" size={24} className="text-[#0ea5e9]" />
+                      <Icon name="Truck" size={24} className="text-[#0ea5e9]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
