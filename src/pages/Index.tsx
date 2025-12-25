@@ -10,6 +10,7 @@ import TopBar from '@/components/TopBar';
 import Drivers from './Drivers';
 import Vehicles from './Vehicles';
 import Contractors from './Contractors';
+import Orders from './Orders';
 import Templates from './Templates';
 import AddDriver from './AddDriver';
 import AddVehicle from './AddVehicle';
@@ -302,6 +303,8 @@ function Index() {
         <AddVehicle onBack={handleBackFromAddVehicle} onMenuClick={() => setSidebarOpen(true)} />
       ) : showAddContractor ? (
         <AddContractor onBack={handleBackFromAddContractor} onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'orders' ? (
+        <Orders onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'drivers' ? (
         <Drivers onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'vehicles' ? (
