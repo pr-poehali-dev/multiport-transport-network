@@ -18,6 +18,7 @@ export interface Driver {
   licenseNumber?: string;
   licenseDate?: string;
   licenseIssued?: string;
+  companyId?: number;
   createdAt?: string;
   updatedAt?: string;
 }

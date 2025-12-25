@@ -6,6 +6,7 @@ import TopBar from '@/components/TopBar';
 import AddVehicle from './AddVehicle';
 import { getVehicles, deleteVehicle, Vehicle } from '@/api/vehicles';
 import { getDrivers, Driver } from '@/api/drivers';
+import { getContractors, Contractor } from '@/api/contractors';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,6 +30,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -37,13 +39,15 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
   const loadVehicles = async () => {
     setIsLoading(true);
     try {
-      const [vehiclesData, driversData] = await Promise.all([
+      const [vehiclesData, driversData, contractorsData] = await Promise.all([
         getVehicles(),
-        getDrivers()
+        getDrivers(),
+        getContractors()
       ]);
       setVehicles(vehiclesData.vehicles);
       setFilteredVehicles(vehiclesData.vehicles);
       setDrivers(driversData.drivers || []);
+      setContractors(contractorsData.contractors || []);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -198,6 +202,7 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredVehicles.map((vehicle) => {
               const driver = drivers.find(d => d.id === vehicle.driverId);
+              const contractor = contractors.find(c => c.id === vehicle.companyId);
               
               return (
                 <div
@@ -242,15 +247,16 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
 
                   {/* Информация */}
                   <div className="space-y-2.5 text-sm border-t pt-3">
+                    {contractor && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="Building2" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{contractor.name}</span>
+                      </div>
+                    )}
                     {driver && (
                       <div className="flex items-center gap-2">
                         <Icon name="UserCircle" size={16} className="text-muted-foreground flex-shrink-0" />
                         <span className="truncate">{driver.lastName} {driver.firstName} {driver.middleName || ''}</span>
-                      </div>
-                    )}
-                    {vehicle.companyId && (
-                      <div className="flex items-center gap-2">
-                        <span className="truncate font-medium">фирма ТК</span>
                       </div>
                     )}
                   </div>

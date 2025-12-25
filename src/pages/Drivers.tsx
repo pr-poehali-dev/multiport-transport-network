@@ -6,6 +6,7 @@ import TopBar from '@/components/TopBar';
 import AddDriver from './AddDriver';
 import { getDrivers, deleteDriver, Driver } from '@/api/drivers';
 import { getVehicles, Vehicle } from '@/api/vehicles';
+import { getContractors, Contractor } from '@/api/contractors';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,6 +30,7 @@ function Drivers({ onMenuClick }: DriversProps) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -37,13 +39,15 @@ function Drivers({ onMenuClick }: DriversProps) {
   const loadDrivers = async () => {
     setIsLoading(true);
     try {
-      const [driversData, vehiclesData] = await Promise.all([
+      const [driversData, vehiclesData, contractorsData] = await Promise.all([
         getDrivers(),
-        getVehicles()
+        getVehicles(),
+        getContractors()
       ]);
       setDrivers(driversData.drivers);
       setFilteredDrivers(driversData.drivers);
       setVehicles(vehiclesData.vehicles || []);
+      setContractors(contractorsData.contractors || []);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -198,6 +202,7 @@ function Drivers({ onMenuClick }: DriversProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredDrivers.map((driver) => {
               const driverVehicle = vehicles.find(v => v.driverId === driver.id);
+              const contractor = contractors.find(c => c.id === driver.companyId);
               
               return (
                 <div
@@ -253,8 +258,14 @@ function Drivers({ onMenuClick }: DriversProps) {
                     )}
                   </div>
 
-                  {/* Авто */}
+                  {/* Авто и фирма */}
                   <div className="space-y-2.5 text-sm border-t pt-3 mt-3">
+                    {contractor && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="Building2" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{contractor.name}</span>
+                      </div>
+                    )}
                     {driverVehicle && (
                       <div className="flex items-center gap-2">
                         <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />

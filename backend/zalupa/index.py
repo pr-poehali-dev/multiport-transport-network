@@ -746,18 +746,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 license_number = body_data.get('licenseNumber', '').strip() or None
                 license_date = body_data.get('licenseDate', '').strip() or None
                 license_issued = body_data.get('licenseIssued', '').strip() or None
+                company_id = body_data.get('companyId')
                 
                 cursor.execute('''
                     INSERT INTO drivers (
                         last_name, first_name, middle_name, phone, phone_extra,
                         passport_series, passport_number, passport_date, passport_issued,
-                        license_series, license_number, license_date, license_issued
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        license_series, license_number, license_date, license_issued, company_id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id, created_at
                 ''', (
                     last_name, first_name, middle_name, phone, phone_extra,
                     passport_series, passport_number, passport_date, passport_issued,
-                    license_series, license_number, license_date, license_issued
+                    license_series, license_number, license_date, license_issued, company_id
                 ))
                 
                 result = cursor.fetchone()
@@ -805,7 +806,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'licenseDate': row[12].isoformat() if row[12] else None,
                         'licenseIssued': row[13],
                         'createdAt': row[14].isoformat() if row[14] else None,
-                        'updatedAt': row[15].isoformat() if row[15] else None
+                        'updatedAt': row[15].isoformat() if row[15] else None,
+                        'companyId': row[16]
                     }
                     
                     return {
@@ -836,7 +838,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'licenseDate': row[12].isoformat() if row[12] else None,
                             'licenseIssued': row[13],
                             'createdAt': row[14].isoformat() if row[14] else None,
-                            'updatedAt': row[15].isoformat() if row[15] else None
+                            'updatedAt': row[15].isoformat() if row[15] else None,
+                            'companyId': row[16]
                         })
                     
                     return {
@@ -881,6 +884,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 license_number = body_data.get('licenseNumber', '').strip() or None
                 license_date = body_data.get('licenseDate', '').strip() or None
                 license_issued = body_data.get('licenseIssued', '').strip() or None
+                company_id = body_data.get('companyId')
                 
                 cursor.execute('''
                     UPDATE drivers SET
@@ -897,13 +901,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         license_number = %s,
                         license_date = %s,
                         license_issued = %s,
+                        company_id = %s,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = %s
                     RETURNING id, updated_at
                 ''', (
                     last_name, first_name, middle_name, phone, phone_extra,
                     passport_series, passport_number, passport_date, passport_issued,
-                    license_series, license_number, license_date, license_issued,
+                    license_series, license_number, license_date, license_issued, company_id,
                     driver_id
                 ))
                 
