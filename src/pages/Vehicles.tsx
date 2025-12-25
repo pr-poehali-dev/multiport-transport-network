@@ -265,14 +265,25 @@ function Vehicles({ onMenuClick }: VehiclesProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить автомобиль?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Это действие нельзя отменить. Автомобиль будет удалён из системы.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение удаления
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Вы действительно хотите удалить этот автомобиль?
+              Это действие нельзя будет отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отменить</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel className="gap-2">
+              <Icon name="X" size={16} />
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="Trash2" size={16} />
               Удалить
             </AlertDialogAction>
           </AlertDialogFooter>
