@@ -435,6 +435,50 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 />
               </div>
             )}
+
+            {/* Адреса доставки */}
+            {deliveryAddresses.length > 0 && deliveryAddresses.map((delivery) => (
+              <div key={delivery.id} className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">Адрес доставки</Label>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveDeliveryAddress(delivery.id)}
+                    className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Icon name="Trash2" size={16} />
+                  </Button>
+                </div>
+
+                <Input 
+                  placeholder="Введите адрес доставки"
+                  value={delivery.address}
+                  onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'address', e.target.value)}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input 
+                    placeholder="+7 (999) 123-45-67"
+                    value={delivery.phone}
+                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'phone', e.target.value)}
+                  />
+                  <Input 
+                    placeholder="ФИО контактного лица"
+                    value={delivery.contact}
+                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'contact', e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+
+            <button
+              onClick={handleAddDeliveryAddress}
+              className="w-full rounded-lg border border-dashed border-border p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={18} />
+              <span>Добавить адрес доставки</span>
+            </button>
           </div>
 
           {/* Банковские счета */}
@@ -500,62 +544,6 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
           >
             <Icon name="Plus" size={20} />
             <span>Добавить банк</span>
-          </button>
-
-          {/* Адреса доставки */}
-          {deliveryAddresses.length > 0 && deliveryAddresses.map((delivery) => (
-            <div key={delivery.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="MapPinned" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Адрес доставки</h2>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveDeliveryAddress(delivery.id)}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Icon name="Trash2" size={18} />
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Адрес доставки</Label>
-                <Input 
-                  placeholder="Введите адрес доставки"
-                  value={delivery.address}
-                  onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'address', e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Телефон</Label>
-                  <Input 
-                    placeholder="+7 (999) 123-45-67"
-                    value={delivery.phone}
-                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'phone', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Контакт</Label>
-                  <Input 
-                    placeholder="ФИО контактного лица"
-                    value={delivery.contact}
-                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'contact', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-
-          <button
-            onClick={handleAddDeliveryAddress}
-            className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Icon name="Plus" size={20} />
-            <span>Добавить адрес доставки</span>
           </button>
         </div>
       </div>
