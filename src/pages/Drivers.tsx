@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddDriver from './AddDriver';
 import { getDrivers, deleteDriver, Driver } from '@/api/drivers';
+import { getVehicles, Vehicle } from '@/api/vehicles';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -27,6 +28,7 @@ function Drivers({ onMenuClick }: DriversProps) {
   const [driverToEdit, setDriverToEdit] = useState<Driver | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -35,9 +37,13 @@ function Drivers({ onMenuClick }: DriversProps) {
   const loadDrivers = async () => {
     setIsLoading(true);
     try {
-      const data = await getDrivers();
-      setDrivers(data.drivers);
-      setFilteredDrivers(data.drivers);
+      const [driversData, vehiclesData] = await Promise.all([
+        getDrivers(),
+        getVehicles()
+      ]);
+      setDrivers(driversData.drivers);
+      setFilteredDrivers(driversData.drivers);
+      setVehicles(vehiclesData.vehicles || []);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -190,90 +196,77 @@ function Drivers({ onMenuClick }: DriversProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredDrivers.map((driver) => (
-              <div
-                key={driver.id}
-                className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
-              >
-                {/* Заголовок досье */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
-                    <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
+            {filteredDrivers.map((driver) => {
+              const driverVehicle = vehicles.find(v => v.driverId === driver.id);
+              
+              return (
+                <div
+                  key={driver.id}
+                  className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
+                >
+                  {/* Заголовок */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
+                      <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-base truncate">
+                          {driver.lastName}
+                        </h3>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                            onClick={() => handleEditDriver(driver)}
+                          >
+                            <Icon name="Pencil" size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => handleDeleteClick(driver.id!)}
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {driver.firstName} {driver.middleName || ''}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">
-                      {driver.lastName} {driver.firstName}
-                    </h3>
-                    {driver.middleName && (
-                      <p className="text-sm text-muted-foreground truncate">{driver.middleName}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                      onClick={() => handleEditDriver(driver)}
-                    >
-                      <Icon name="Pencil" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => handleDeleteClick(driver.id!)}
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </Button>
-                  </div>
-                </div>
 
-                {/* Информация */}
-                <div className="space-y-2 text-sm">
-                  {/* Телефон */}
-                  <div className="flex items-center gap-2">
-                    <Icon name="Phone" size={16} className="text-muted-foreground flex-shrink-0" />
-                    <span className="truncate">{driver.phone}</span>
-                  </div>
-                  {driver.phoneExtra && (
+                  {/* Информация */}
+                  <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <Icon name="Phone" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{driver.phoneExtra}</span>
+                      <span className="truncate">{driver.phone}</span>
                     </div>
-                  )}
+                    {driver.phoneExtra && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="Phone" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{driver.phoneExtra}</span>
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Паспорт */}
-                  {(driver.passportSeries || driver.passportNumber) && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="CreditCard" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">
-                        {driver.passportSeries} {driver.passportNumber}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Водительское */}
-                  {(driver.licenseSeries || driver.licenseNumber) && (
-                    <div className="flex items-center gap-2">
-                      <Icon name="IdCard" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">
-                        {driver.licenseSeries} {driver.licenseNumber}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Дата добавления */}
-                <div className="mt-4 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Добавлен</span>
-                    <span>
-                      {driver.createdAt ? new Date(driver.createdAt).toLocaleDateString('ru-RU') : '—'}
-                    </span>
+                  {/* Авто */}
+                  <div className="space-y-2.5 text-sm border-t pt-3 mt-3">
+                    {driverVehicle && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="Truck" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">
+                          {driverVehicle.brand} • {driverVehicle.registrationNumber}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
