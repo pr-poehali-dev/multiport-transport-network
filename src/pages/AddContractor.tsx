@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { Contractor } from './Contractors';
@@ -45,6 +46,8 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
   const [isSaving, setIsSaving] = useState(false);
   const [showActualAddress, setShowActualAddress] = useState(false);
   const [showPostalAddress, setShowPostalAddress] = useState(false);
+  const [actualSameAsLegal, setActualSameAsLegal] = useState(false);
+  const [postalSameAsLegal, setPostalSameAsLegal] = useState(false);
 
   const [name, setName] = useState('');
   const [inn, setInn] = useState('');
@@ -289,6 +292,7 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   onClick={() => {
                     setShowActualAddress(false);
                     setActualAddress('');
+                    setActualSameAsLegal(false);
                   }}
                   className="hover:bg-red-50 hover:text-red-600"
                 >
@@ -296,13 +300,36 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 </Button>
               </div>
               
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="actualSameAsLegal"
+                  checked={actualSameAsLegal}
+                  onCheckedChange={(checked) => {
+                    setActualSameAsLegal(checked as boolean);
+                    if (checked) {
+                      setActualAddress(legalAddress);
+                    }
+                  }}
+                />
+                <Label 
+                  htmlFor="actualSameAsLegal"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Совпадает с юридическим адресом
+                </Label>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="actualAddress">Адрес</Label>
                 <Input 
                   id="actualAddress" 
                   placeholder="Введите фактический адрес"
                   value={actualAddress}
-                  onChange={(e) => setActualAddress(e.target.value)}
+                  onChange={(e) => {
+                    setActualAddress(e.target.value);
+                    setActualSameAsLegal(false);
+                  }}
+                  disabled={actualSameAsLegal}
                 />
               </div>
             </div>
@@ -330,6 +357,7 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                   onClick={() => {
                     setShowPostalAddress(false);
                     setPostalAddress('');
+                    setPostalSameAsLegal(false);
                   }}
                   className="hover:bg-red-50 hover:text-red-600"
                 >
@@ -337,13 +365,36 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 </Button>
               </div>
               
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="postalSameAsLegal"
+                  checked={postalSameAsLegal}
+                  onCheckedChange={(checked) => {
+                    setPostalSameAsLegal(checked as boolean);
+                    if (checked) {
+                      setPostalAddress(legalAddress);
+                    }
+                  }}
+                />
+                <Label 
+                  htmlFor="postalSameAsLegal"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Совпадает с юридическим адресом
+                </Label>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="postalAddress">Адрес</Label>
                 <Input 
                   id="postalAddress" 
                   placeholder="Введите почтовый адрес"
                   value={postalAddress}
-                  onChange={(e) => setPostalAddress(e.target.value)}
+                  onChange={(e) => {
+                    setPostalAddress(e.target.value);
+                    setPostalSameAsLegal(false);
+                  }}
+                  disabled={postalSameAsLegal}
                 />
               </div>
             </div>
