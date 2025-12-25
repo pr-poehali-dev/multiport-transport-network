@@ -380,13 +380,14 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             </div>
           </div>
 
-          {routes.length > 0 ? (
-            <div className="space-y-3">
-              {routes.map((route, index) => {
-                const isFirstRoute = index === 0;
-                const isRouteDisabled = isLocked && isFirstRoute;
-                return (
-                <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+          {routes.length > 0 && (
+            isLocked ? (
+              <div className="space-y-3">
+                {routes.map((route, index) => {
+                  const isFirstRoute = index === 0;
+                  const isRouteDisabled = isLocked && isFirstRoute;
+                  return (
+                  <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
@@ -543,7 +544,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                     </div>
                   )}
 
-                  {!isRouteDisabled && (
+                  {!isRouteDisabled && isLocked && (
                     <button
                       onClick={() => handleAddStop(route.id)}
                       className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -565,17 +566,146 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 </div>
               );})}
 
-              {(!isDirect || routes.length < 2) && isLocked && (
-                <button
-                  onClick={handleAddRoute}
-                  className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Icon name="Plus" size={18} />
-                  <span>Добавить маршрут</span>
-                </button>
-              )}
-            </div>
-          ) : (
+                {(!isDirect || routes.length < 2) && isLocked && (
+                  <button
+                    onClick={handleAddRoute}
+                    className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <Icon name="Plus" size={18} />
+                    <span>Добавить маршрут</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {routes.map((route, index) => {
+                  const isFirstRoute = index === 0;
+                  return (
+                    <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                            <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
+                          </div>
+                          {isFirstRoute && (
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="direct-route"
+                                checked={isDirect}
+                                onCheckedChange={(checked) => {
+                                  setIsDirect(checked as boolean);
+                                  if (checked && routes.length > 2) {
+                                    setRoutes(routes.slice(0, 2));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor="direct-route" className="text-sm cursor-pointer">Прямой</Label>
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveRoute(route.id)}
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Icon name="Trash2" size={18} />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Откуда</Label>
+                          <Input
+                            placeholder="Москва"
+                            value={route.from}
+                            onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Куда</Label>
+                          <Input
+                            placeholder="Санкт-Петербург"
+                            value={route.to}
+                            onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 relative">
+                        <Label>Автомобиль</Label>
+                        <div className="relative" ref={(el) => vehicleInputRefs.current[route.id] = el}>
+                          <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+                          <Input
+                            placeholder="Начните вводить марку или гос. номер..."
+                            value={searchVehicle[route.id] || ''}
+                            onChange={(e) => {
+                              setSearchVehicle({ ...searchVehicle, [route.id]: e.target.value });
+                              setShowVehicleList({ ...showVehicleList, [route.id]: true });
+                            }}
+                            onFocus={() => setShowVehicleList({ ...showVehicleList, [route.id]: true })}
+                            className="pl-9"
+                          />
+                          {loadingVehicles && (
+                            <Icon name="Loader2" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
+                          )}
+                          
+                          {showVehicleList[route.id] && vehicles.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {vehicles
+                                .filter(v => {
+                                  const searchStr = (searchVehicle[route.id] || '').toLowerCase();
+                                  const vehicleStr = `${v.brand} ${v.registrationNumber}`.toLowerCase();
+                                  return vehicleStr.includes(searchStr);
+                                })
+                                .map(vehicle => (
+                                  <button
+                                    key={vehicle.id}
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateRoute(route.id, 'vehicleId', vehicle.id?.toString() || '');
+                                      setSearchVehicle({ ...searchVehicle, [route.id]: `${vehicle.brand} - ${vehicle.registrationNumber}` });
+                                      setShowVehicleList({ ...showVehicleList, [route.id]: false });
+                                    }}
+                                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                                  >
+                                    <Icon name="Truck" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm truncate">
+                                        {vehicle.brand} - {vehicle.registrationNumber}
+                                      </p>
+                                      {vehicle.capacity && (
+                                        <p className="text-xs text-muted-foreground">Грузоподъемность: {vehicle.capacity} т</p>
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Выберите автомобиль для этого маршрута
+                        </p>
+                      </div>
+
+                      {isFirstRoute && (
+                        <Button
+                          onClick={handleSaveAndGo}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                        >
+                          <Icon name="Lock" size={18} />
+                          <span>Сохранить и поехали!</span>
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {routes.length === 0 && (
             <button
               onClick={handleAddRoute}
               className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
