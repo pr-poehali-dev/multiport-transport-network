@@ -50,14 +50,14 @@ export async function getDrivers(): Promise<GetDriversResponse> {
 
 // Получить одного водителя по ID
 export async function getDriverById(id: number): Promise<Driver> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}&id=${id}`, {
     method: 'GET',
   });
 }
 
 // Обновить водителя
 export async function updateDriver(id: number, driver: Driver): Promise<CreateDriverResponse> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}&id=${id}`, {
     method: 'PUT',
     body: JSON.stringify(driver),
   });
@@ -65,7 +65,7 @@ export async function updateDriver(id: number, driver: Driver): Promise<CreateDr
 
 // Удалить водителя
 export async function deleteDriver(id: number): Promise<{ message: string }> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}?id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.drivers}&id=${id}`, {
     method: 'DELETE',
   });
 }

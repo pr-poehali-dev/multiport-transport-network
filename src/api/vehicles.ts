@@ -1,6 +1,4 @@
-import func2url from '../../backend/func2url.json';
-
-const API_URL = func2url.zalupa;
+import { API_CONFIG, apiRequest } from './config';
 
 export interface Vehicle {
   id?: number;
@@ -28,83 +26,27 @@ export interface CreateVehicleRequest {
 export interface UpdateVehicleRequest extends CreateVehicleRequest {}
 
 export async function getVehicles(): Promise<{ vehicles: Vehicle[]; total: number }> {
-  const response = await fetch(`${API_URL}?resource=vehicles`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Не удалось загрузить список автомобилей');
-  }
-
-  return response.json();
+  return apiRequest(API_CONFIG.ENDPOINTS.vehicles, { method: 'GET' });
 }
 
 export async function getVehicle(id: number): Promise<Vehicle> {
-  const response = await fetch(`${API_URL}?resource=vehicles&id=${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Не удалось загрузить автомобиль');
-  }
-
-  return response.json();
+  return apiRequest(`${API_CONFIG.ENDPOINTS.vehicles}&id=${id}`, { method: 'GET' });
 }
 
 export async function createVehicle(data: CreateVehicleRequest): Promise<{ id: number; message: string; createdAt: string }> {
-  const response = await fetch(`${API_URL}?resource=vehicles`, {
+  return apiRequest(API_CONFIG.ENDPOINTS.vehicles, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Не удалось создать автомобиль');
-  }
-
-  return response.json();
 }
 
 export async function updateVehicle(id: number, data: UpdateVehicleRequest): Promise<{ id: number; message: string; updatedAt: string }> {
-  const response = await fetch(`${API_URL}?resource=vehicles&id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.vehicles}&id=${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Не удалось обновить автомобиль');
-  }
-
-  return response.json();
 }
 
 export async function deleteVehicle(id: number): Promise<{ message: string }> {
-  const response = await fetch(`${API_URL}?resource=vehicles&id=${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Не удалось удалить автомобиль');
-  }
-
-  return response.json();
+  return apiRequest(`${API_CONFIG.ENDPOINTS.vehicles}&id=${id}`, { method: 'DELETE' });
 }

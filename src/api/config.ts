@@ -9,8 +9,10 @@ export const API_CONFIG = {
   BASE_URL: '',
   
   ENDPOINTS: {
-    drivers: FUNC_URLS.zalupa,
+    drivers: FUNC_URLS.zalupa + '?resource=drivers',
+    vehicles: FUNC_URLS.zalupa + '?resource=vehicles',
     templates: FUNC_URLS.zalupa + '?resource=templates',
+    contractors: FUNC_URLS.zalupa + '?resource=contractors',
     // В будущем: drivers: `${BASE_URL}/drivers.php`
   }
 };
