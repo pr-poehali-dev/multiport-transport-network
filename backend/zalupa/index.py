@@ -3,10 +3,11 @@ import psycopg2
 import os
 import base64
 from typing import Dict, Any
+from dadata_service import get_company_by_inn
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    API для управления водителями, автомобилями, PDF шаблонами и контрагентами
+    API для управления водителями, автомобилями, PDF шаблонами, контрагентами и DaData
     Args: event - dict с httpMethod, body, queryStringParameters
           context - объект с атрибутами request_id, function_name
     Returns: HTTP response dict
@@ -30,6 +31,47 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    params = event.get('queryStringParameters') or {}
+    resource = params.get('resource', 'drivers')
+    
+    # === DADATA ===
+    if resource == 'dadata':
+        inn = params.get('inn', '').strip()
+        
+        if not inn:
+            return {
+                'statusCode': 400,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'Параметр inn обязателен'}),
+                'isBase64Encoded': False
+            }
+        
+        try:
+            company_data = get_company_by_inn(inn)
+            
+            if not company_data:
+                return {
+                    'statusCode': 404,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': 'Компания не найдена'}),
+                    'isBase64Encoded': False
+                }
+            
+            return {
+                'statusCode': 200,
+                'headers': cors_headers,
+                'body': json.dumps(company_data),
+                'isBase64Encoded': False
+            }
+            
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': cors_headers,
+                'body': json.dumps({'error': str(e)}),
+                'isBase64Encoded': False
+            }
+    
     db_url = os.environ.get('DATABASE_URL')
     if not db_url:
         return {
@@ -42,10 +84,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
-        
-        # Определяем, с чем работаем - drivers, vehicles, templates или contractors
-        params = event.get('queryStringParameters') or {}
-        resource = params.get('resource', 'drivers')  # По умолчанию drivers
         
         # === АВТОМОБИЛИ (VEHICLES) ===
         if resource == 'vehicles':
