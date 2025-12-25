@@ -7,10 +7,12 @@ from typing import Dict, Any
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     API для управления водителями, автомобилями и PDF шаблонами
+    Args: event - dict с httpMethod, body, queryStringParameters
+          context - объект с атрибутами request_id, function_name
+    Returns: HTTP response dict
     '''
-    print(f"Request: {event.get('httpMethod')} with params: {event.get('queryStringParameters')}")
-    
     method: str = event.get('httpMethod', 'GET')
+    path: str = event.get('path', '')
     
     cors_headers = {
         'Access-Control-Allow-Origin': '*',
@@ -41,9 +43,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
         
+        # Определяем, с чем работаем - drivers, vehicles или templates
         params = event.get('queryStringParameters') or {}
-        resource = params.get('resource', 'drivers')
-        print(f"Resource selected: {resource}")
+        resource = params.get('resource', 'drivers')  # По умолчанию drivers
         
         # === АВТОМОБИЛИ (VEHICLES) ===
         if resource == 'vehicles':
@@ -254,7 +256,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
         
         # === ШАБЛОНЫ (TEMPLATES) ===
-        elif resource == 'templates':
+        if resource == 'templates':
             if method == 'POST':
                 body_data = json.loads(event.get('body', '{}'))
                 
