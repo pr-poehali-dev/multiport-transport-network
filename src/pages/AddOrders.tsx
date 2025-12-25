@@ -46,7 +46,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [orderDate, setOrderDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [routeNumber, setRouteNumber] = useState<string>('');
   const [invoice, setInvoice] = useState<string>('');
-  const [tak, setTak] = useState<string>('');
+  const [trak, setTrak] = useState<string>('');
   const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
 
   const handleCancel = () => {
@@ -208,11 +208,11 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>ТАК</Label>
+                <Label>TRAK</Label>
                 <Input
-                  placeholder="Введите ТАК"
-                  value={tak}
-                  onChange={(e) => setTak(e.target.value)}
+                  placeholder="Введите TRAK"
+                  value={trak}
+                  onChange={(e) => setTrak(e.target.value)}
                 />
               </div>
             </div>
