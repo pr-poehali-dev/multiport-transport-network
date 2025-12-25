@@ -45,6 +45,17 @@ def handle_templates(method: str, event: Dict[str, Any], cursor, conn, cors_head
                     'isBase64Encoded': False
                 }
         
+        # Проверка на дубликат шаблона по названию
+        cursor.execute('SELECT id FROM templates WHERE name = %s', (name,))
+        existing = cursor.fetchone()
+        if existing:
+            return {
+                'statusCode': 409,
+                'headers': cors_headers,
+                'body': json.dumps({'error': f'Шаблон с названием "{name}" уже существует'}),
+                'isBase64Encoded': False
+            }
+        
         cursor.execute('''
             INSERT INTO templates (name, file_name, file_url, field_mappings, file_data)
             VALUES (%s, %s, %s, %s, %s)
