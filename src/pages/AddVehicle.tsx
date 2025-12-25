@@ -7,13 +7,7 @@ import TopBar from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { createVehicle, updateVehicle, Vehicle } from '@/api/vehicles';
 import { getDrivers, Driver } from '@/api/drivers';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -325,18 +319,17 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
                 ) : drivers.length === 0 ? (
                   <div className="text-sm text-muted-foreground p-3 border border-input rounded-md">Нет доступных водителей</div>
                 ) : (
-                  <Select value={driverId} onValueChange={setDriverId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите водителя" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id?.toString() || ''}>
-                          {driver.lastName} {driver.firstName} {driver.middleName || ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={drivers.map((driver) => ({
+                      value: driver.id?.toString() || '',
+                      label: `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim()
+                    }))}
+                    value={driverId}
+                    onValueChange={setDriverId}
+                    placeholder="Выберите водителя"
+                    searchPlaceholder="Поиск водителя..."
+                    emptyText="Водитель не найден"
+                  />
                 )}
               </div>
             </div>
