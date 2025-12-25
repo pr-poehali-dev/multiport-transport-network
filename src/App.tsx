@@ -6,11 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { errorLogger } from "@/utils/errorLogger";
+import { platformLogger } from "@/utils/platformLogger";
 
 const queryClient = new QueryClient();
 
-errorLogger;
+if (typeof window !== 'undefined') {
+  (window as any).platformLogger = platformLogger;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
