@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,11 +23,47 @@ interface AddContractorProps {
   onMenuClick: () => void;
 }
 
+interface BankAccount {
+  id: string;
+  accountNumber: string;
+  bik: string;
+  bankName: string;
+  corrAccount: string;
+}
+
+interface DeliveryAddress {
+  id: string;
+  address: string;
+  phone: string;
+  contact: string;
+}
+
 function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) {
   const { toast } = useToast();
   const isEditMode = !!contractor;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showActualAddress, setShowActualAddress] = useState(false);
+  const [showPostalAddress, setShowPostalAddress] = useState(false);
+
+  const [name, setName] = useState('');
+  const [inn, setInn] = useState('');
+  const [kpp, setKpp] = useState('');
+  const [ogrn, setOgrn] = useState('');
+  const [director, setDirector] = useState('');
+  const [legalAddress, setLegalAddress] = useState('');
+  const [actualAddress, setActualAddress] = useState('');
+  const [postalAddress, setPostalAddress] = useState('');
+
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>([]);
+
+  useEffect(() => {
+    if (contractor) {
+      setShowActualAddress(!!contractor.inn);
+      setShowPostalAddress(!!contractor.email);
+    }
+  }, [contractor]);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -38,13 +74,58 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
     onBack();
   };
 
+  const handleAddBank = () => {
+    setBankAccounts([...bankAccounts, {
+      id: Date.now().toString(),
+      accountNumber: '',
+      bik: '',
+      bankName: '',
+      corrAccount: ''
+    }]);
+  };
+
+  const handleRemoveBank = (id: string) => {
+    setBankAccounts(bankAccounts.filter(b => b.id !== id));
+  };
+
+  const handleUpdateBank = (id: string, field: keyof BankAccount, value: string) => {
+    setBankAccounts(bankAccounts.map(b => 
+      b.id === id ? { ...b, [field]: value } : b
+    ));
+  };
+
+  const handleAddDeliveryAddress = () => {
+    setDeliveryAddresses([...deliveryAddresses, {
+      id: Date.now().toString(),
+      address: '',
+      phone: '',
+      contact: ''
+    }]);
+  };
+
+  const handleRemoveDeliveryAddress = (id: string) => {
+    setDeliveryAddresses(deliveryAddresses.filter(d => d.id !== id));
+  };
+
+  const handleUpdateDeliveryAddress = (id: string, field: keyof DeliveryAddress, value: string) => {
+    setDeliveryAddresses(deliveryAddresses.map(d => 
+      d.id === id ? { ...d, [field]: value } : d
+    ));
+  };
+
   const handleSave = async () => {
-    // TODO: Валидация и сохранение
+    if (!name.trim() || !inn.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Заполните обязательные поля: Наименование, ИНН'
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      // TODO: Подключить API createContractor / updateContractor
-      
       toast({
         title: 'Успешно сохранено',
         description: isEditMode ? 'Данные контрагента обновлены' : 'Контрагент добавлен в базу данных'
@@ -110,15 +191,284 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
 
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
-          {/* TODO: Добавить формы */}
+          {/* Основная информация */}
           <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
             <div className="flex items-center gap-2">
               <Icon name="Building2" size={20} className="text-[#0ea5e9]" />
               <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
             </div>
             
-            <p className="text-sm text-muted-foreground">Формы будут добавлены позже</p>
+            <div className="space-y-2">
+              <Label htmlFor="name">Наименование *</Label>
+              <Input 
+                id="name" 
+                placeholder="ООО «ФЛАУЭР МАСТЕР»" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="inn">ИНН *</Label>
+                <Input 
+                  id="inn" 
+                  placeholder="7724449594"
+                  value={inn}
+                  onChange={(e) => setInn(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="kpp">КПП</Label>
+                <Input 
+                  id="kpp" 
+                  placeholder="772201001"
+                  value={kpp}
+                  onChange={(e) => setKpp(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ogrn">ОГРН</Label>
+                <Input 
+                  id="ogrn" 
+                  placeholder="1187746741566"
+                  value={ogrn}
+                  onChange={(e) => setOgrn(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="director">ФИО руководителя</Label>
+              <Input 
+                id="director" 
+                placeholder="Знаменский М.А"
+                value={director}
+                onChange={(e) => setDirector(e.target.value)}
+              />
+            </div>
           </div>
+
+          {/* Юридический адрес */}
+          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Юридический адрес</h2>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="legalAddress">Адрес</Label>
+              <Input 
+                id="legalAddress" 
+                placeholder="111024, Город Москва, вн.тер. г. Муниципальный Округ Лефортово..."
+                value={legalAddress}
+                onChange={(e) => setLegalAddress(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Фактический адрес */}
+          {!showActualAddress ? (
+            <button
+              onClick={() => setShowActualAddress(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить фактический адрес</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Фактический адрес</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowActualAddress(false);
+                    setActualAddress('');
+                  }}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="actualAddress">Адрес</Label>
+                <Input 
+                  id="actualAddress" 
+                  placeholder="Введите фактический адрес"
+                  value={actualAddress}
+                  onChange={(e) => setActualAddress(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Почтовый адрес */}
+          {!showPostalAddress ? (
+            <button
+              onClick={() => setShowPostalAddress(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить почтовый адрес</span>
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="Mail" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Почтовый адрес</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowPostalAddress(false);
+                    setPostalAddress('');
+                  }}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="postalAddress">Адрес</Label>
+                <Input 
+                  id="postalAddress" 
+                  placeholder="Введите почтовый адрес"
+                  value={postalAddress}
+                  onChange={(e) => setPostalAddress(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Банковские счета */}
+          {bankAccounts.length > 0 && bankAccounts.map((bank) => (
+            <div key={bank.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="Landmark" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Банковский счет</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveBank(bank.id)}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Расчетный счет</Label>
+                  <Input 
+                    placeholder="40702810600010002373"
+                    value={bank.accountNumber}
+                    onChange={(e) => handleUpdateBank(bank.id, 'accountNumber', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>БИК</Label>
+                  <Input 
+                    placeholder="044525273"
+                    value={bank.bik}
+                    onChange={(e) => handleUpdateBank(bank.id, 'bik', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Наименование банка</Label>
+                <Input 
+                  placeholder="АО «ТелеПорт Банк» г. Москва"
+                  value={bank.bankName}
+                  onChange={(e) => handleUpdateBank(bank.id, 'bankName', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Корр.счет</Label>
+                <Input 
+                  placeholder="30101810545250000273"
+                  value={bank.corrAccount}
+                  onChange={(e) => handleUpdateBank(bank.id, 'corrAccount', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={handleAddBank}
+            className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Icon name="Plus" size={20} />
+            <span>Добавить банк</span>
+          </button>
+
+          {/* Адреса доставки */}
+          {deliveryAddresses.length > 0 && deliveryAddresses.map((delivery) => (
+            <div key={delivery.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="MapPinned" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Адрес доставки</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveDeliveryAddress(delivery.id)}
+                  className="hover:bg-red-50 hover:text-red-600"
+                >
+                  <Icon name="Trash2" size={18} />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Адрес доставки</Label>
+                <Input 
+                  placeholder="Введите адрес доставки"
+                  value={delivery.address}
+                  onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'address', e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Телефон</Label>
+                  <Input 
+                    placeholder="+7 (999) 123-45-67"
+                    value={delivery.phone}
+                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'phone', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Контакт</Label>
+                  <Input 
+                    placeholder="ФИО контактного лица"
+                    value={delivery.contact}
+                    onChange={(e) => handleUpdateDeliveryAddress(delivery.id, 'contact', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={handleAddDeliveryAddress}
+            className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Icon name="Plus" size={20} />
+            <span>Добавить адрес доставки</span>
+          </button>
         </div>
       </div>
 
