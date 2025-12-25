@@ -1,6 +1,17 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AddOrdersProps {
   onBack: () => void;
@@ -8,6 +19,22 @@ interface AddOrdersProps {
 }
 
 function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onBack();
+  };
+
+  const handleSave = () => {
+    // Логика сохранения
+    onBack();
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full">
       <TopBar
@@ -17,11 +44,30 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={onBack}
+            onClick={handleCancel}
             className="hover:bg-gray-100"
           >
             <Icon name="ArrowLeft" size={20} />
           </Button>
+        }
+        rightButtons={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="gap-2"
+            >
+              <Icon name="X" size={16} />
+              Отмена
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="gap-2 bg-[#0ea5e9] hover:bg-[#0284c7]"
+            >
+              <Icon name="Check" size={16} />
+              Сохранить
+            </Button>
+          </div>
         }
       />
 
@@ -34,6 +80,23 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Отменить изменения?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Все несохраненные данные будут потеряны. Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-destructive hover:bg-destructive/90">
+              Отменить изменения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
