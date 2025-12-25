@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
@@ -49,20 +49,27 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
   const [actualSameAsLegal, setActualSameAsLegal] = useState(false);
   const [postalSameAsLegal, setPostalSameAsLegal] = useState(false);
 
-  const [name, setName] = useState('');
-  const [inn, setInn] = useState('');
-  const [kpp, setKpp] = useState('');
-  const [ogrn, setOgrn] = useState('');
-  const [director, setDirector] = useState('');
-  const [legalAddress, setLegalAddress] = useState('');
-  const [actualAddress, setActualAddress] = useState('');
-  const [postalAddress, setPostalAddress] = useState('');
-  const [isSeller, setIsSeller] = useState(false);
-  const [isBuyer, setIsBuyer] = useState(false);
-  const [isCarrier, setIsCarrier] = useState(false);
+  const [name, setName] = useState(contractor?.name || '');
+  const [inn, setInn] = useState(contractor?.inn || '');
+  const [kpp, setKpp] = useState(contractor?.kpp || '');
+  const [ogrn, setOgrn] = useState(contractor?.ogrn || '');
+  const [director, setDirector] = useState(contractor?.director || '');
+  const [legalAddress, setLegalAddress] = useState(contractor?.legalAddress || '');
+  const [actualAddress, setActualAddress] = useState(contractor?.actualAddress || '');
+  const [postalAddress, setPostalAddress] = useState(contractor?.postalAddress || '');
+  const [isSeller, setIsSeller] = useState(contractor?.isSeller || false);
+  const [isBuyer, setIsBuyer] = useState(contractor?.isBuyer || false);
+  const [isCarrier, setIsCarrier] = useState(contractor?.isCarrier || false);
 
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(contractor?.bankAccounts || []);
+  const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>(contractor?.deliveryAddresses || []);
+
+  useEffect(() => {
+    if (contractor) {
+      setShowActualAddress(!!contractor.actualAddress);
+      setShowPostalAddress(!!contractor.postalAddress);
+    }
+  }, [contractor]);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
