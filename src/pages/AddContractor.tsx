@@ -57,6 +57,9 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
   const [legalAddress, setLegalAddress] = useState('');
   const [actualAddress, setActualAddress] = useState('');
   const [postalAddress, setPostalAddress] = useState('');
+  const [isSeller, setIsSeller] = useState(false);
+  const [isBuyer, setIsBuyer] = useState(false);
+  const [isCarrier, setIsCarrier] = useState(false);
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>([]);
@@ -209,6 +212,51 @@ function AddContractor({ contractor, onBack, onMenuClick }: AddContractorProps) 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Роль</Label>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isSeller"
+                    checked={isSeller}
+                    onCheckedChange={(checked) => setIsSeller(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="isSeller"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Продавец
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isBuyer"
+                    checked={isBuyer}
+                    onCheckedChange={(checked) => setIsBuyer(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="isBuyer"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Покупатель
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isCarrier"
+                    checked={isCarrier}
+                    onCheckedChange={(checked) => setIsCarrier(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="isCarrier"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Перевозчик
+                  </Label>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
