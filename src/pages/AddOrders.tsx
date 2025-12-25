@@ -273,14 +273,14 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                 readOnly
                 placeholder="Маршрут будет составлен из точек ниже"
                 className="bg-gray-50"
-                disabled={isLocked}
+                disabled={lockedRoutes.size > 0}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Префикс</Label>
-                <Select value={prefix} onValueChange={setPrefix} disabled={isLocked}>
+                <Select value={prefix} onValueChange={setPrefix} disabled={lockedRoutes.size > 0}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -298,7 +298,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   type="date"
                   value={orderDate}
                   onChange={(e) => setOrderDate(e.target.value)}
-                  disabled={isLocked}
+                  disabled={lockedRoutes.size > 0}
                 />
               </div>
 
@@ -308,7 +308,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   value={routeNumber}
                   readOnly
                   className="bg-gray-50"
-                  disabled={isLocked}
+                  disabled={lockedRoutes.size > 0}
                 />
               </div>
             </div>
@@ -320,7 +320,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   placeholder="Введите номер инвойса"
                   value={invoice}
                   onChange={(e) => setInvoice(e.target.value)}
-                  disabled={isLocked}
+                  disabled={lockedRoutes.size > 0}
                 />
               </div>
 
@@ -330,7 +330,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                   placeholder="Введите TRAK"
                   value={trak}
                   onChange={(e) => setTrak(e.target.value)}
-                  disabled={isLocked}
+                  disabled={lockedRoutes.size > 0}
                 />
               </div>
             </div>
@@ -344,13 +344,13 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
                       placeholder={`Грузополучатель ${index + 1}`}
                       value={consignee.name}
                       onChange={(e) => handleUpdateConsignee(consignee.id, 'name', e.target.value)}
-                      disabled={isLocked}
+                      disabled={lockedRoutes.size > 0}
                     />
                     <Input
                       placeholder="Примечание"
                       value={consignee.note}
                       onChange={(e) => handleUpdateConsignee(consignee.id, 'note', e.target.value)}
-                      disabled={isLocked}
+                      disabled={lockedRoutes.size > 0}
                     />
                   </div>
                   {consignees.length > 1 && lockedRoutes.size === 0 && (
