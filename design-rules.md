@@ -152,10 +152,23 @@ interface TopBarProps {
   - `UserCircle` — Основная информация
   - `CreditCard` — Паспорт
   - `IdCard` — Водительское удостоверение
+  - `Car` — Транспортное средство
+  - `Building2` — Фирма ТК
+  - `Truck` — Автомобиль
 
 ### Опциональные секции (добавить/удалить)
 - Кнопка добавления: пунктирная рамка `border-dashed`, иконка `Plus`
 - Кнопка удаления: иконка `Trash2` с hover-эффектом `hover:bg-red-50 hover:text-red-600`
+
+### Поля с автокомплитом (поиск)
+- Иконка поиска слева: `<Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />`
+- Input с отступом для иконки: `className="pl-9"`
+- Лоадер справа при загрузке: `<Icon name="Loader2" className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" />`
+- Выпадающий список:
+  - Позиция: `absolute z-50 w-full mt-1`
+  - Стили: `bg-white border border-border rounded-lg shadow-lg`
+  - Высота: `max-h-60 overflow-y-auto`
+  - Элементы: `px-4 py-3 hover:bg-gray-50 flex items-start gap-3`
 
 ## Иконки
 
@@ -220,10 +233,17 @@ interface TopBarProps {
    - Защита от ошибок при неверном имени иконки
    - Поддержка fallback иконок
 
+3. **Секции форм** (vehicle/, driver/ и т.д.) — декомпозированные части больших форм
+   - **VehicleInfoSection.tsx** — основная информация о ТС
+   - **CompanySection.tsx** — выбор фирмы ТК с автокомплитом
+   - **DriverSection.tsx** — назначение водителя с автокомплитом
+   - Все секции — чистые presentational компоненты
+   - Вся логика (state, effects, handlers) остаётся в родительском компоненте
+
 ### Структура страниц
 - **Index.tsx** — главная страница с сайдбаром и роутингом страниц
   - Содержит: сайдбар, логику навигации, мобильный overlay
-  - Рендерит: дашборд или подключает другие страницы (Drivers, и т.д.)
+  - Рендерит: дашборд или подключает другие страницы (Drivers, Vehicles и т.д.)
   
 - **Drivers.tsx** — страница списка водителей
   - Использует: TopBar с кнопкой "Обновить" и "Добавить"
@@ -232,3 +252,23 @@ interface TopBarProps {
 - **AddDriver.tsx** — форма добавления водителя
   - Использует: TopBar с кнопкой "Назад" и кнопками "Отменить/Сохранить"
   - Модальное окно подтверждения отмены
+
+- **Vehicles.tsx** — страница списка автомобилей
+  - Отображает: карточки автомобилей с фирмой ТК и водителем
+  - Использует: TopBar с кнопкой "Обновить" и "Добавить"
+  - Переключается на: AddVehicle.tsx при добавлении
+
+- **AddVehicle.tsx** — форма добавления автомобиля
+  - Декомпозирована на 3 секции: VehicleInfoSection, CompanySection, DriverSection
+  - Вся логика в главном компоненте, секции получают props
+  - Модальное окно подтверждения отмены
+
+### Принципы декомпозиции
+1. **Большие формы** (>300 строк) декомпозируются на секции
+2. **Секции** — чистые presentational компоненты без side effects
+3. **Логика** остаётся в родительском компоненте:
+   - useState, useEffect
+   - API calls
+   - Handlers (onChange, onClick)
+4. **Props** передаются явно — value + setValue паттерн
+5. **Refs** передаются для click-outside detection в автокомплитах
