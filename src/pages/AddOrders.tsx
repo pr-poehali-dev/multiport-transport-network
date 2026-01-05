@@ -100,7 +100,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
           to: r.to,
           vehicleId: r.vehicleId ? parseInt(r.vehicleId) : undefined,
           driverName: r.driverName,
-          loadingDate: r.loadingDate,
+          loadingDate: r.loadingDate || undefined,
           position: idx,
           additionalStops: r.additionalStops.map((s, sIdx) => ({
             type: s.type,
