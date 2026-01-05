@@ -7,11 +7,12 @@ from drivers import handle_drivers
 from vehicles import handle_vehicles
 from contractors import handle_contractors
 from templates import handle_templates
+from orders import handle_orders
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    API для управления водителями, автомобилями, PDF шаблонами, контрагентами и DaData
+    API для управления водителями, автомобилями, PDF шаблонами, контрагентами, заказами и DaData
     Args: event - dict с httpMethod, body, queryStringParameters
           context - объект с атрибутами request_id, function_name
     Returns: HTTP response dict
@@ -95,6 +96,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = handle_contractors(method, event, cursor, conn, cors_headers)
         elif resource == 'templates':
             result = handle_templates(method, event, cursor, conn, cors_headers)
+        elif resource == 'orders':
+            result = handle_orders(method, event, cursor, conn, cors_headers)
         else:
             result = {
                 'statusCode': 400,

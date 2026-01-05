@@ -5,6 +5,7 @@ import TopBar from '@/components/TopBar';
 import { getVehicles, Vehicle } from '@/api/vehicles';
 import { getContractors, Contractor } from '@/api/contractors';
 import { getDrivers, Driver } from '@/api/drivers';
+import { createOrder } from '@/api/orders';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -58,7 +59,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     onBack();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Проверка: заказ должен быть заблокирован
     if (!isOrderLocked) {
       toast({
@@ -79,12 +80,51 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
       return;
     }
 
-    // Успешное сохранение
-    toast({
-      title: 'Готово',
-      description: 'Заказ успешно создан'
-    });
-    onBack();
+    try {
+      const orderData = {
+        prefix,
+        orderDate,
+        routeNumber,
+        invoice,
+        trak,
+        weight: weight ? parseFloat(weight) : undefined,
+        fullRoute: getFullRoute(),
+        consignees: consignees.map((c, idx) => ({
+          contractorId: c.contractorId,
+          name: c.name,
+          note: c.note,
+          position: idx
+        })),
+        routes: routes.map((r, idx) => ({
+          from: r.from,
+          to: r.to,
+          vehicleId: r.vehicleId ? parseInt(r.vehicleId) : undefined,
+          driverName: r.driverName,
+          loadingDate: r.loadingDate,
+          position: idx,
+          additionalStops: r.additionalStops.map((s, sIdx) => ({
+            type: s.type,
+            address: s.address,
+            note: s.note,
+            position: sIdx
+          }))
+        }))
+      };
+
+      await createOrder(orderData);
+
+      toast({
+        title: 'Готово',
+        description: 'Заказ успешно создан и сохранен в базу данных'
+      });
+      onBack();
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось сохранить заказ в базу данных',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSaveOrder = () => {
