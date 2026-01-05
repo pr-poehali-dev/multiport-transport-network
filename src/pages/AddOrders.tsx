@@ -57,7 +57,31 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleSave = () => {
-    // Логика сохранения заказа
+    // Проверка: заказ должен быть заблокирован
+    if (!isOrderLocked) {
+      toast({
+        title: 'Ошибка',
+        description: 'Сначала нужно сохранить заказ',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Проверка: все маршруты должны быть заблокированы
+    if (routes.length > 0 && routes.some(r => !r.isLocked)) {
+      toast({
+        title: 'Ошибка',
+        description: 'Все маршруты должны быть сохранены',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Успешное сохранение
+    toast({
+      title: 'Готово',
+      description: 'Заказ успешно создан'
+    });
     onBack();
   };
 
