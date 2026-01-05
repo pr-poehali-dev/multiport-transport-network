@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getVehicles, Vehicle } from '@/api/vehicles';
+import { getContractors, Contractor } from '@/api/contractors';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -49,6 +50,7 @@ interface Consignee {
   id: string;
   name: string;
   note: string;
+  contractorId?: number;
 }
 
 function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
@@ -66,6 +68,10 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [searchVehicle, setSearchVehicle] = useState<Record<string, string>>({});
   const [showVehicleList, setShowVehicleList] = useState<Record<string, boolean>>({});
+  const [contractors, setContractors] = useState<Contractor[]>([]);
+  const [loadingContractors, setLoadingContractors] = useState(false);
+  const [searchConsignee, setSearchConsignee] = useState<Record<string, string>>({});
+  const [showConsigneeList, setShowConsigneeList] = useState<Record<string, boolean>>({});
   const vehicleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [lockedRoutes, setLockedRoutes] = useState<Set<string>>(new Set());
   const [isOrderLocked, setIsOrderLocked] = useState(false);
@@ -195,6 +201,41 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     setConsignees(consignees.map(c => c.id === id ? { ...c, [field]: value } : c));
   };
 
+  const handleSelectConsignee = (consigneeId: string, contractor: Contractor) => {
+    setConsignees(consignees.map(c => 
+      c.id === consigneeId 
+        ? { ...c, name: contractor.name, contractorId: contractor.id } 
+        : c
+    ));
+    setShowConsigneeList(prev => ({ ...prev, [consigneeId]: false }));
+    setSearchConsignee(prev => ({ ...prev, [consigneeId]: contractor.name }));
+  };
+
+  const loadContractorsList = async () => {
+    if (loadingContractors || contractors.length > 0) return;
+    
+    setLoadingContractors(true);
+    try {
+      const response = await getContractors();
+      setContractors(response.contractors || []);
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список контрагентов',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingContractors(false);
+    }
+  };
+
+  const getFilteredContractors = (consigneeId: string) => {
+    const search = searchConsignee[consigneeId]?.toLowerCase() || '';
+    return contractors.filter(c => 
+      c.name.toLowerCase().includes(search)
+    );
+  };
+
   useEffect(() => {
     if (routes.length > 0 && vehicles.length === 0) {
       loadVehiclesList();
@@ -202,11 +243,28 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   }, [routes.length]);
 
   useEffect(() => {
+    if (consignees.length > 0 && contractors.length === 0) {
+      loadContractorsList();
+    }
+  }, [consignees.length]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      
+      // Close vehicle lists
       Object.entries(vehicleInputRefs.current).forEach(([routeId, ref]) => {
         if (ref && !ref.parentElement?.contains(target)) {
           setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
+        }
+      });
+
+      // Close consignee lists
+      const consigneeInputs = document.querySelectorAll('[data-consignee-id]');
+      consigneeInputs.forEach((input) => {
+        const consigneeId = input.getAttribute('data-consignee-id');
+        if (consigneeId && !input.parentElement?.contains(target)) {
+          setShowConsigneeList(prev => ({ ...prev, [consigneeId]: false }));
         }
       });
     };
@@ -349,12 +407,42 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
               {consignees.map((consignee, index) => (
                 <div key={consignee.id} className="flex gap-2 items-start">
                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Input
-                      placeholder={`Грузополучатель ${index + 1}`}
-                      value={consignee.name}
-                      onChange={(e) => handleUpdateConsignee(consignee.id, 'name', e.target.value)}
-                      disabled={isOrderLocked}
-                    />
+                    <div className="relative">
+                      <Input
+                        data-consignee-id={consignee.id}
+                        placeholder={`Грузополучатель ${index + 1}`}
+                        value={searchConsignee[consignee.id] || consignee.name}
+                        onChange={(e) => {
+                          setSearchConsignee(prev => ({ ...prev, [consignee.id]: e.target.value }));
+                          handleUpdateConsignee(consignee.id, 'name', e.target.value);
+                          setShowConsigneeList(prev => ({ ...prev, [consignee.id]: true }));
+                        }}
+                        onFocus={() => setShowConsigneeList(prev => ({ ...prev, [consignee.id]: true }))}
+                        disabled={isOrderLocked}
+                      />
+                      {showConsigneeList[consignee.id] && !isOrderLocked && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {loadingContractors ? (
+                            <div className="p-3 text-sm text-muted-foreground text-center">Загрузка...</div>
+                          ) : getFilteredContractors(consignee.id).length > 0 ? (
+                            getFilteredContractors(consignee.id).map((contractor) => (
+                              <button
+                                key={contractor.id}
+                                onClick={() => handleSelectConsignee(consignee.id, contractor)}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
+                              >
+                                <div className="font-medium text-sm">{contractor.name}</div>
+                                {contractor.inn && (
+                                  <div className="text-xs text-muted-foreground">ИНН: {contractor.inn}</div>
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-3 text-sm text-muted-foreground text-center">Контрагенты не найдены</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <Input
                       placeholder="Примечание"
                       value={consignee.note}
