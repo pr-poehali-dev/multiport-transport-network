@@ -419,15 +419,26 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Отменить создание заказа?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Все несохраненные данные будут потеряны
-            </AlertDialogDescription>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                <Icon name="AlertTriangle" size={18} className="text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <AlertDialogTitle className="text-left">Подтверждение отмены</AlertDialogTitle>
+                <AlertDialogDescription className="text-left mt-2">
+                  Данное действие приведет к потере всех введенных данных. Вы уверены, что хотите выйти без сохранения?
+                </AlertDialogDescription>
+              </div>
+            </div>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancel} className="bg-red-600 hover:bg-red-700">
-              Отменить
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="m-0 gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="m-0 bg-red-600 hover:bg-red-700 gap-2">
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
