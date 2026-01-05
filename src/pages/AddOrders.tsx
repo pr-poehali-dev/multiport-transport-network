@@ -111,7 +111,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     if (isDirect && routes.length >= 2) {
       return;
     }
-    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '', additionalStops: [], isLocked: false }]);
+    setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '', driverName: '', loadingDate: '', additionalStops: [], isLocked: false }]);
   };
 
   const handleRemoveRoute = (id: string) => {
@@ -121,7 +121,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     }
   };
 
-  const handleUpdateRoute = (id: string, field: 'from' | 'to' | 'vehicleId', value: string) => {
+  const handleUpdateRoute = (id: string, field: 'from' | 'to' | 'vehicleId' | 'driverName' | 'loadingDate', value: string) => {
     setRoutes(routes.map(r => r.id === id ? { ...r, [field]: value } : r));
   };
 
@@ -296,7 +296,8 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
 
   const handleSelectVehicle = (routeId: string, vehicle: Vehicle) => {
     handleUpdateRoute(routeId, 'vehicleId', vehicle.id?.toString() || '');
-    setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.driverName} / ${vehicle.truckNumber}` }));
+    handleUpdateRoute(routeId, 'driverName', vehicle.driverName || '');
+    setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.truckNumber} / ${vehicle.trailerNumber}` }));
     setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
   };
 

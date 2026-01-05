@@ -9,6 +9,8 @@ export interface Route {
   from: string;
   to: string;
   vehicleId: string;
+  driverName: string;
+  loadingDate: string;
   additionalStops: AdditionalStop[];
   isLocked: boolean;
 }
