@@ -288,15 +288,17 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const getFilteredVehicles = (routeId: string) => {
     const search = searchVehicle[routeId]?.toLowerCase() || '';
     return vehicles.filter(v => 
-      v.driverName?.toLowerCase().includes(search) ||
       v.truckNumber?.toLowerCase().includes(search) ||
       v.trailerNumber?.toLowerCase().includes(search)
     );
   };
 
   const handleSelectVehicle = (routeId: string, vehicle: Vehicle) => {
-    handleUpdateRoute(routeId, 'vehicleId', vehicle.id?.toString() || '');
-    handleUpdateRoute(routeId, 'driverName', vehicle.driverName || '');
+    setRoutes(routes.map(r => 
+      r.id === routeId 
+        ? { ...r, vehicleId: vehicle.id?.toString() || '', driverName: vehicle.driverName || '' }
+        : r
+    ));
     setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.truckNumber} / ${vehicle.trailerNumber}` }));
     setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
   };
