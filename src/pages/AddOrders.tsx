@@ -314,7 +314,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             <Icon name="X" size={20} />
           </Button>
         }
-        rightButton={
+        rightButtons={
           <Button
             onClick={handleSave}
             className="gap-2 bg-[#0ea5e9] hover:bg-[#0284c7]"
