@@ -44,6 +44,8 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   const [searchContractor, setSearchContractor] = useState('');
   const [showContractorList, setShowContractorList] = useState(false);
   const contractorInputRef = useRef<HTMLInputElement>(null);
+  const contractorSectionRef = useRef<HTMLDivElement>(null);
+  const driverSectionRef = useRef<HTMLDivElement>(null);
   
   // Основная информация
   const [brand, setBrand] = useState(vehicle?.brand || '');
@@ -89,10 +91,10 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (driverInputRef.current && !driverInputRef.current.parentElement?.contains(target)) {
+      if (driverSectionRef.current && !driverSectionRef.current.contains(target)) {
         setShowDriverList(false);
       }
-      if (contractorInputRef.current && !contractorInputRef.current.parentElement?.contains(target)) {
+      if (contractorSectionRef.current && !contractorSectionRef.current.contains(target)) {
         setShowContractorList(false);
       }
     };
@@ -260,6 +262,7 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
             contractors={contractors}
             loadingContractors={loadingContractors}
             contractorInputRef={contractorInputRef}
+            contractorSectionRef={contractorSectionRef}
             setCompanyId={setCompanyId}
           />
 
@@ -274,6 +277,7 @@ function AddVehicle({ vehicle, onBack, onMenuClick }: AddVehicleProps) {
             drivers={drivers}
             loadingDrivers={loadingDrivers}
             driverInputRef={driverInputRef}
+            driverSectionRef={driverSectionRef}
             setDriverId={setDriverId}
           />
         </div>

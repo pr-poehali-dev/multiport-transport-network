@@ -15,6 +15,7 @@ interface DriverSectionProps {
   drivers: Driver[];
   loadingDrivers: boolean;
   driverInputRef: RefObject<HTMLInputElement>;
+  driverSectionRef?: RefObject<HTMLDivElement>;
   setDriverId: (value: string) => void;
 }
 
@@ -28,22 +29,25 @@ function DriverSection({
   drivers,
   loadingDrivers,
   driverInputRef,
+  driverSectionRef,
   setDriverId
 }: DriverSectionProps) {
   if (!showDriver) {
     return (
-      <button
-        onClick={() => setShowDriver(true)}
-        className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-      >
-        <Icon name="Plus" size={20} />
-        <span>Назначить водителя</span>
-      </button>
+      <div ref={driverSectionRef}>
+        <button
+          onClick={() => setShowDriver(true)}
+          className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Icon name="Plus" size={20} />
+          <span>Назначить водителя</span>
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+    <div ref={driverSectionRef} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />

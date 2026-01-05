@@ -15,6 +15,7 @@ interface CompanySectionProps {
   contractors: Contractor[];
   loadingContractors: boolean;
   contractorInputRef: RefObject<HTMLInputElement>;
+  contractorSectionRef?: RefObject<HTMLDivElement>;
   setCompanyId: (value: string) => void;
 }
 
@@ -28,22 +29,25 @@ function CompanySection({
   contractors,
   loadingContractors,
   contractorInputRef,
+  contractorSectionRef,
   setCompanyId
 }: CompanySectionProps) {
   if (!showCompany) {
     return (
-      <button
-        onClick={() => setShowCompany(true)}
-        className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-      >
-        <Icon name="Plus" size={20} />
-        <span>Добавить фирму ТК</span>
-      </button>
+      <div ref={contractorSectionRef}>
+        <button
+          onClick={() => setShowCompany(true)}
+          className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Icon name="Plus" size={20} />
+          <span>Добавить фирму ТК</span>
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+    <div ref={contractorSectionRef} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon name="Building2" size={20} className="text-[#0ea5e9]" />
