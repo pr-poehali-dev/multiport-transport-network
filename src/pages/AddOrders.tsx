@@ -36,7 +36,6 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [trak, setTrak] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
-  const [isDirect, setIsDirect] = useState<boolean>(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -127,17 +126,11 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleAddRoute = () => {
-    if (isDirect && routes.length >= 2) {
-      return;
-    }
     setRoutes([...routes, { id: Date.now().toString(), from: '', to: '', vehicleId: '', driverName: '', loadingDate: '', additionalStops: [], isLocked: false }]);
   };
 
   const handleRemoveRoute = (id: string) => {
     setRoutes(routes.filter(r => r.id !== id));
-    if (routes.filter(r => r.id !== id).length < 2) {
-      setIsDirect(false);
-    }
   };
 
   const handleUpdateRoute = (id: string, field: 'from' | 'to' | 'vehicleId' | 'driverName' | 'loadingDate', value: string) => {
@@ -390,8 +383,6 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
 
           <RouteSection
             routes={routes}
-            isDirect={isDirect}
-            setIsDirect={setIsDirect}
             isOrderLocked={isOrderLocked}
             handleAddRoute={handleAddRoute}
             handleRemoveRoute={handleRemoveRoute}

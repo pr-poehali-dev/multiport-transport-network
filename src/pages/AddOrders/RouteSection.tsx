@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import {
   Select,
   SelectContent,
@@ -16,8 +16,6 @@ import { Route } from './types';
 
 interface RouteSectionProps {
   routes: Route[];
-  isDirect: boolean;
-  setIsDirect: (value: boolean) => void;
   isOrderLocked: boolean;
   handleAddRoute: () => void;
   handleRemoveRoute: (id: string) => void;
@@ -41,8 +39,6 @@ interface RouteSectionProps {
 
 export default function RouteSection({
   routes,
-  isDirect,
-  setIsDirect,
   isOrderLocked,
   handleAddRoute,
   handleRemoveRoute,
@@ -86,26 +82,9 @@ export default function RouteSection({
         return (
           <div key={route.id} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
-                </div>
-                {index === 1 && !isRouteDisabled && (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id={`direct-${route.id}`}
-                      checked={isDirect}
-                      onCheckedChange={(checked) => setIsDirect(checked as boolean)}
-                    />
-                    <label
-                      htmlFor={`direct-${route.id}`}
-                      className="text-sm cursor-pointer select-none"
-                    >
-                      Прямая
-                    </label>
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <Icon name="MapPin" size={20} className="text-[#0ea5e9]" />
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Маршрут {index + 1}</h2>
               </div>
               {!isRouteDisabled && routes.length > 1 && (
                 <Button
@@ -289,7 +268,7 @@ export default function RouteSection({
         );
       })}
 
-      {(!isDirect || routes.length < 2) && isOrderLocked && routes.every(r => r.isLocked) && (
+      {isOrderLocked && routes.every(r => r.isLocked) && (
         <button
           onClick={handleAddRoute}
           className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
