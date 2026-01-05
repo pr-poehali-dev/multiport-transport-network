@@ -240,7 +240,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const getFilteredContractors = (consigneeId: string) => {
     const search = searchConsignee[consigneeId]?.toLowerCase() || '';
     return contractors.filter(c => 
-      c.name.toLowerCase().includes(search)
+      c.isBuyer && c.name.toLowerCase().includes(search)
     );
   };
 
