@@ -82,7 +82,7 @@ function CompanySection({
           {showContractorList && contractors.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
               {contractors
-                .filter(c => c.name.toLowerCase().includes(searchContractor.toLowerCase()))
+                .filter(c => c.isCarrier && c.name.toLowerCase().includes(searchContractor.toLowerCase()))
                 .map(contractor => (
                   <button
                     key={contractor.id}
