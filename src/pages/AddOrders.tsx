@@ -288,9 +288,9 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const getFilteredVehicles = (routeId: string) => {
     const search = searchVehicle[routeId]?.toLowerCase() || '';
     return vehicles.filter(v => 
-      v.driverName.toLowerCase().includes(search) ||
-      v.truckNumber.toLowerCase().includes(search) ||
-      v.trailerNumber.toLowerCase().includes(search)
+      v.driverName?.toLowerCase().includes(search) ||
+      v.truckNumber?.toLowerCase().includes(search) ||
+      v.trailerNumber?.toLowerCase().includes(search)
     );
   };
 
