@@ -36,7 +36,11 @@ function CompanySection({
     return (
       <div ref={contractorSectionRef}>
         <button
-          onClick={() => setShowCompany(true)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowCompany(true);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
           className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
         >
           <Icon name="Plus" size={20} />
