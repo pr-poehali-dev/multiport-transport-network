@@ -237,7 +237,6 @@ export default function RouteSection({
                         value={stop.note}
                         onChange={(e) => handleUpdateStop(route.id, stop.id, 'note', e.target.value)}
                         disabled={isRouteDisabled}
-                        className="ml-[156px]"
                       />
                     </div>
                   ))}
