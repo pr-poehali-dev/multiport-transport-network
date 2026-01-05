@@ -330,22 +330,32 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
       <TopBar
         title="Добавить заказ"
         onMenuClick={onMenuClick}
+        leftButton={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCancel}
+            className="hover:bg-gray-100"
+          >
+            <Icon name="ArrowLeft" size={20} />
+          </Button>
+        }
         rightButtons={
           <>
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={handleCancel}
               className="gap-2"
             >
-              <Icon name="X" size={16} />
-              Отмена
+              <Icon name="X" size={18} />
+              <span className="hidden sm:inline">Отменить</span>
             </Button>
             <Button
               onClick={handleSave}
-              className="gap-2 bg-[#0ea5e9] hover:bg-[#0284c7]"
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
             >
-              <Icon name="Check" size={16} />
-              Сохранить
+              <Icon name="Check" size={18} />
+              <span className="hidden sm:inline">Сохранить</span>
             </Button>
           </>
         }
