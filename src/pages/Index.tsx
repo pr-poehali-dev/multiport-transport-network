@@ -12,6 +12,7 @@ import Vehicles from './Vehicles';
 import Contractors from './Contractors';
 import Orders from './Orders';
 import Templates from './Templates';
+import Contracts from './Contracts';
 import AddDriver from './AddDriver';
 import AddVehicle from './AddVehicle';
 import AddContractor from './AddContractor';
@@ -321,6 +322,8 @@ function Index() {
         <Vehicles onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'contractors' ? (
         <Contractors onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'contract' ? (
+        <Contracts onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'templates' ? (
         <Templates onMenuClick={() => setSidebarOpen(true)} />
       ) : (
