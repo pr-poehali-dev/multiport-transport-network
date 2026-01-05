@@ -39,7 +39,7 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
     driverName: r.driverName || '',
     loadingDate: r.loadingDate || '',
     additionalStops: r.additionalStops || [],
-    isLocked: true
+    isLocked: false
   })) || []);
   const [prefix, setPrefix] = useState<string>(order?.prefix || 'EU');
   const [orderDate, setOrderDate] = useState<string>(order?.orderDate || new Date().toISOString().split('T')[0]);
@@ -76,24 +76,27 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleSave = async () => {
-    // Проверка: заказ должен быть заблокирован
-    if (!isOrderLocked) {
-      toast({
-        title: 'Ошибка',
-        description: 'Сначала нужно сохранить заказ',
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Для режима редактирования пропускаем проверки блокировки
+    if (!isEditMode) {
+      // Проверка: заказ должен быть заблокирован
+      if (!isOrderLocked) {
+        toast({
+          title: 'Ошибка',
+          description: 'Сначала нужно сохранить заказ',
+          variant: 'destructive'
+        });
+        return;
+      }
 
-    // Проверка: все маршруты должны быть заблокированы
-    if (routes.length > 0 && routes.some(r => !r.isLocked)) {
-      toast({
-        title: 'Ошибка',
-        description: 'Все маршруты должны быть сохранены',
-        variant: 'destructive'
-      });
-      return;
+      // Проверка: все маршруты должны быть заблокированы
+      if (routes.length > 0 && routes.some(r => !r.isLocked)) {
+        toast({
+          title: 'Ошибка',
+          description: 'Все маршруты должны быть сохранены',
+          variant: 'destructive'
+        });
+        return;
+      }
     }
 
     try {
@@ -318,6 +321,33 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
       loadContractorsList();
     }
   }, [consignees.length]);
+
+  // При загрузке для редактирования установить searchVehicle из существующих маршрутов
+  useEffect(() => {
+    if (isEditMode && order && vehicles.length > 0) {
+      const newSearchVehicle: Record<string, string> = {};
+      order.routes.forEach((route) => {
+        if (route.vehicleId) {
+          const vehicle = vehicles.find(v => v.id === route.vehicleId);
+          if (vehicle) {
+            newSearchVehicle[route.id?.toString() || ''] = `${vehicle.registrationNumber} / ${vehicle.trailerNumber}`;
+          }
+        }
+      });
+      setSearchVehicle(newSearchVehicle);
+    }
+  }, [isEditMode, order, vehicles]);
+
+  // При загрузке для редактирования установить searchConsignee из существующих грузополучателей
+  useEffect(() => {
+    if (isEditMode && order && contractors.length > 0) {
+      const newSearchConsignee: Record<string, string> = {};
+      order.consignees.forEach((consignee) => {
+        newSearchConsignee[consignee.id?.toString() || ''] = consignee.name;
+      });
+      setSearchConsignee(newSearchConsignee);
+    }
+  }, [isEditMode, order, contractors]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
