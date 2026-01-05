@@ -56,7 +56,7 @@ export interface GetOrdersResponse {
 
 // Создать заказ
 export async function createOrder(order: Order): Promise<CreateOrderResponse> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}&resource=orders`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders`, {
     method: 'POST',
     body: JSON.stringify(order),
   });
@@ -64,21 +64,21 @@ export async function createOrder(order: Order): Promise<CreateOrderResponse> {
 
 // Получить все заказы
 export async function getOrders(): Promise<GetOrdersResponse> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}&resource=orders`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders`, {
     method: 'GET',
   });
 }
 
 // Получить заказ по ID
 export async function getOrderById(id: number): Promise<Order> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}&resource=orders&id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders&id=${id}`, {
     method: 'GET',
   });
 }
 
 // Обновить заказ
 export async function updateOrder(id: number, order: Order): Promise<{ message: string }> {
-  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}&resource=orders&id=${id}`, {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders&id=${id}`, {
     method: 'PUT',
     body: JSON.stringify(order),
   });
