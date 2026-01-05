@@ -4,8 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddOrders from './AddOrders';
-import { getOrders, Order } from '@/api/orders';
+import { getOrders, deleteOrder, Order } from '@/api/orders';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface OrdersProps {
   onMenuClick: () => void;
@@ -14,10 +24,13 @@ interface OrdersProps {
 function Orders({ onMenuClick }: OrdersProps) {
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -72,11 +85,45 @@ function Orders({ onMenuClick }: OrdersProps) {
 
   const handleBackFromAdd = () => {
     setIsAdding(false);
+    setOrderToEdit(null);
     loadOrders();
   };
 
+  const handleEditOrder = (order: Order) => {
+    setOrderToEdit(order);
+    setIsAdding(true);
+  };
+
+  const handleDeleteClick = (orderId: number) => {
+    setOrderToDelete(orderId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!orderToDelete) return;
+
+    try {
+      const result = await deleteOrder(orderToDelete);
+      
+      toast({
+        title: 'Заказ удалён',
+        description: result.message || 'Заказ успешно удалён из системы',
+      });
+      
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
+      loadOrders();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось удалить заказ'
+      });
+    }
+  };
+
   if (isAdding) {
-    return <AddOrders onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
+    return <AddOrders order={orderToEdit || undefined} onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
   }
 
   return (
@@ -143,18 +190,38 @@ function Orders({ onMenuClick }: OrdersProps) {
             {filteredOrders.map((order) => (
               <div
                 key={order.id}
-                className="bg-white rounded-lg border border-border p-4 hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
               >
                 {/* Заголовок карточки */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Icon name="FileText" size={18} className="text-[#0ea5e9]" />
-                      <span className="font-semibold text-lg">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="p-2 bg-[#0ea5e9]/10 rounded-full flex-shrink-0">
+                    <Icon name="FileText" size={24} className="text-[#0ea5e9]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="font-semibold text-base truncate">
                         {order.routeNumber || 'Без номера'}
-                      </span>
+                      </h3>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                          onClick={() => handleEditOrder(order)}
+                        >
+                          <Icon name="Pencil" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleDeleteClick(order.id!)}
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {new Date(order.orderDate).toLocaleDateString('ru-RU')}
                     </p>
                   </div>
@@ -198,24 +265,43 @@ function Orders({ onMenuClick }: OrdersProps) {
                 </div>
 
                 {/* Футер карточки */}
-                <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-border">
                   <span className="text-xs text-muted-foreground">
                     {order.routes.length} {order.routes.length === 1 ? 'маршрут' : 'маршрутов'}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Icon name="Eye" size={16} />
-                    Открыть
-                  </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение удаления
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Вы действительно хотите удалить этот заказ? Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="X" size={16} />
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="Trash2" size={16} />
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

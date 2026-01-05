@@ -25,6 +25,16 @@ def handle_orders(method: str, event: Dict[str, Any], cursor, conn, cors_headers
             }
         return update_order(order_id, event, cursor, conn, cors_headers)
     
+    elif method == 'DELETE':
+        if not order_id:
+            return {
+                'statusCode': 400,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'id обязателен для удаления'}),
+                'isBase64Encoded': False
+            }
+        return delete_order(order_id, cursor, conn, cors_headers)
+    
     return {
         'statusCode': 405,
         'headers': cors_headers,
@@ -324,6 +334,46 @@ def update_order(order_id: str, event: Dict[str, Any], cursor, conn, cors_header
             'statusCode': 200,
             'headers': cors_headers,
             'body': json.dumps({'message': 'Заказ обновлён'}),
+            'isBase64Encoded': False
+        }
+        
+    except Exception as e:
+        conn.rollback()
+        return {
+            'statusCode': 500,
+            'headers': cors_headers,
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
+        }
+
+
+def delete_order(order_id: str, cursor, conn, cors_headers: Dict[str, str]) -> Dict[str, Any]:
+    '''Удалить заказ и все связанные данные'''
+    try:
+        cursor.execute('SELECT id FROM order_routes WHERE order_id = %s', (order_id,))
+        route_ids = [r[0] for r in cursor.fetchall()]
+        
+        for route_id in route_ids:
+            cursor.execute('DELETE FROM route_stops WHERE route_id = %s', (route_id,))
+        
+        cursor.execute('DELETE FROM order_routes WHERE order_id = %s', (order_id,))
+        cursor.execute('DELETE FROM order_consignees WHERE order_id = %s', (order_id,))
+        cursor.execute('DELETE FROM orders WHERE id = %s', (order_id,))
+        
+        if cursor.rowcount == 0:
+            return {
+                'statusCode': 404,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'Заказ не найден'}),
+                'isBase64Encoded': False
+            }
+        
+        conn.commit()
+        
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'Заказ удалён'}),
             'isBase64Encoded': False
         }
         

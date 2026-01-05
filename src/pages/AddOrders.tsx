@@ -5,7 +5,7 @@ import TopBar from '@/components/TopBar';
 import { getVehicles, Vehicle } from '@/api/vehicles';
 import { getContractors, Contractor } from '@/api/contractors';
 import { getDrivers, Driver } from '@/api/drivers';
-import { createOrder } from '@/api/orders';
+import { createOrder, updateOrder, Order } from '@/api/orders';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -22,21 +22,37 @@ import OrderInfoSection from './AddOrders/OrderInfoSection';
 import RouteSection from './AddOrders/RouteSection';
 
 interface AddOrdersProps {
+  order?: Order;
   onBack: () => void;
   onMenuClick: () => void;
 }
 
-function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
+function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
+  const isEditMode = !!order;
   const { toast } = useToast();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [routes, setRoutes] = useState<Route[]>([]);
-  const [prefix, setPrefix] = useState<string>('EU');
-  const [orderDate, setOrderDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [routeNumber, setRouteNumber] = useState<string>('');
-  const [invoice, setInvoice] = useState<string>('');
-  const [trak, setTrak] = useState<string>('');
-  const [weight, setWeight] = useState<string>('');
-  const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
+  const [routes, setRoutes] = useState<Route[]>(order?.routes.map((r, idx) => ({
+    id: r.id?.toString() || idx.toString(),
+    from: r.from,
+    to: r.to,
+    vehicleId: r.vehicleId?.toString() || '',
+    driverName: r.driverName || '',
+    loadingDate: r.loadingDate || '',
+    additionalStops: r.additionalStops || [],
+    isLocked: true
+  })) || []);
+  const [prefix, setPrefix] = useState<string>(order?.prefix || 'EU');
+  const [orderDate, setOrderDate] = useState<string>(order?.orderDate || new Date().toISOString().split('T')[0]);
+  const [routeNumber, setRouteNumber] = useState<string>(order?.routeNumber || '');
+  const [invoice, setInvoice] = useState<string>(order?.invoice || '');
+  const [trak, setTrak] = useState<string>(order?.trak || '');
+  const [weight, setWeight] = useState<string>(order?.weight?.toString() || '');
+  const [consignees, setConsignees] = useState<Consignee[]>(order?.consignees.map((c, idx) => ({
+    id: c.id?.toString() || idx.toString(),
+    name: c.name,
+    note: c.note || '',
+    contractorId: c.contractorId
+  })) || [{ id: '1', name: '', note: '' }]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -48,7 +64,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [showConsigneeList, setShowConsigneeList] = useState<Record<string, boolean>>({});
   const vehicleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [lockedRoutes, setLockedRoutes] = useState<Set<string>>(new Set());
-  const [isOrderLocked, setIsOrderLocked] = useState(false);
+  const [isOrderLocked, setIsOrderLocked] = useState(!!order);
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -111,12 +127,19 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
         }))
       };
 
-      await createOrder(orderData);
-
-      toast({
-        title: 'Готово',
-        description: 'Заказ успешно создан и сохранен в базу данных'
-      });
+      if (isEditMode && order?.id) {
+        await updateOrder(order.id, orderData);
+        toast({
+          title: 'Готово',
+          description: 'Заказ успешно обновлён'
+        });
+      } else {
+        await createOrder(orderData);
+        toast({
+          title: 'Готово',
+          description: 'Заказ успешно создан и сохранен в базу данных'
+        });
+      }
       onBack();
     } catch (error) {
       toast({
@@ -368,7 +391,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   return (
     <div className="flex-1 flex flex-col h-full">
       <TopBar
-        title="Добавить заказ"
+        title={isEditMode ? 'Редактировать заказ' : 'Добавить заказ'}
         onMenuClick={onMenuClick}
         leftButton={
           <Button

@@ -83,3 +83,10 @@ export async function updateOrder(id: number, order: Order): Promise<{ message: 
     body: JSON.stringify(order),
   });
 }
+
+// Удалить заказ
+export async function deleteOrder(id: number): Promise<{ message: string }> {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders&id=${id}`, {
+    method: 'DELETE',
+  });
+}
