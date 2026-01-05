@@ -142,7 +142,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
       if (r.id === routeId) {
         return {
           ...r,
-          additionalStops: [...r.additionalStops, { id: Date.now().toString(), type: 'loading', address: '' }]
+          additionalStops: [...r.additionalStops, { id: Date.now().toString(), type: 'loading', address: '', note: '' }]
         };
       }
       return r;
@@ -161,7 +161,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     }));
   };
 
-  const handleUpdateStop = (routeId: string, stopId: string, field: 'type' | 'address', value: string) => {
+  const handleUpdateStop = (routeId: string, stopId: string, field: 'type' | 'address' | 'note', value: string) => {
     setRoutes(routes.map(r => {
       if (r.id === routeId) {
         return {

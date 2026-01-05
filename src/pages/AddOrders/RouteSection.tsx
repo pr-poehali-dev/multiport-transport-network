@@ -24,7 +24,7 @@ interface RouteSectionProps {
   handleEditRoute: (routeId: string) => void;
   handleAddStop: (routeId: string) => void;
   handleRemoveStop: (routeId: string, stopId: string) => void;
-  handleUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address', value: string) => void;
+  handleUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address' | 'note', value: string) => void;
   vehicles: Vehicle[];
   drivers: Driver[];
   searchVehicle: Record<string, string>;
@@ -196,39 +196,49 @@ export default function RouteSection({
             {route.additionalStops.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Дополнительные пункты</Label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {route.additionalStops.map((stop) => (
-                    <div key={stop.id} className="flex gap-2 items-start">
-                      <Select
-                        value={stop.type}
-                        onValueChange={(value) => handleUpdateStop(route.id, stop.id, 'type', value)}
-                        disabled={isRouteDisabled}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="loading">Погрузка</SelectItem>
-                          <SelectItem value="unloading">Разгрузка</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        placeholder="Адрес"
-                        value={stop.address}
-                        onChange={(e) => handleUpdateStop(route.id, stop.id, 'address', e.target.value)}
-                        disabled={isRouteDisabled}
-                        className="flex-1"
-                      />
-                      {!isRouteDisabled && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveStop(route.id, stop.id)}
-                          className="hover:bg-red-50 hover:text-red-600"
+                    <div key={stop.id} className="space-y-2">
+                      <div className="flex gap-2 items-start">
+                        <Select
+                          value={stop.type}
+                          onValueChange={(value) => handleUpdateStop(route.id, stop.id, 'type', value)}
+                          disabled={isRouteDisabled}
                         >
-                          <Icon name="Trash2" size={18} />
-                        </Button>
-                      )}
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="loading">Погрузка</SelectItem>
+                            <SelectItem value="unloading">Разгрузка</SelectItem>
+                            <SelectItem value="customs">Таможня</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Адрес"
+                          value={stop.address}
+                          onChange={(e) => handleUpdateStop(route.id, stop.id, 'address', e.target.value)}
+                          disabled={isRouteDisabled}
+                          className="flex-1"
+                        />
+                        {!isRouteDisabled && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveStop(route.id, stop.id)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Icon name="Trash2" size={18} />
+                          </Button>
+                        )}
+                      </div>
+                      <Input
+                        placeholder="Примечание"
+                        value={stop.note}
+                        onChange={(e) => handleUpdateStop(route.id, stop.id, 'note', e.target.value)}
+                        disabled={isRouteDisabled}
+                        className="ml-[156px]"
+                      />
                     </div>
                   ))}
                 </div>

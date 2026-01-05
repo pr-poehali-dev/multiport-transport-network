@@ -1,7 +1,8 @@
 export interface AdditionalStop {
   id: string;
-  type: 'loading' | 'unloading';
+  type: 'loading' | 'unloading' | 'customs';
   address: string;
+  note: string;
 }
 
 export interface Route {
