@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AddressInput from '@/components/AddressInput';
 
 import {
   Select,
@@ -101,20 +102,20 @@ export default function RouteSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Откуда</Label>
-                <Input
+                <AddressInput
                   placeholder="Город отправления"
                   value={route.from}
-                  onChange={(e) => handleUpdateRoute(route.id, 'from', e.target.value)}
+                  onChange={(value) => handleUpdateRoute(route.id, 'from', value)}
                   disabled={isRouteDisabled}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Куда</Label>
-                <Input
+                <AddressInput
                   placeholder="Город назначения"
                   value={route.to}
-                  onChange={(e) => handleUpdateRoute(route.id, 'to', e.target.value)}
+                  onChange={(value) => handleUpdateRoute(route.id, 'to', value)}
                   disabled={isRouteDisabled}
                 />
               </div>
@@ -214,13 +215,14 @@ export default function RouteSection({
                             <SelectItem value="customs">Таможня</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Input
-                          placeholder="Адрес"
-                          value={stop.address}
-                          onChange={(e) => handleUpdateStop(route.id, stop.id, 'address', e.target.value)}
-                          disabled={isRouteDisabled}
-                          className="flex-1"
-                        />
+                        <div className="flex-1">
+                          <AddressInput
+                            placeholder="Адрес"
+                            value={stop.address}
+                            onChange={(value) => handleUpdateStop(route.id, stop.id, 'address', value)}
+                            disabled={isRouteDisabled}
+                          />
+                        </div>
                         {!isRouteDisabled && (
                           <Button
                             variant="ghost"

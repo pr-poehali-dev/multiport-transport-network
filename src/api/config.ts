@@ -14,6 +14,7 @@ export const API_CONFIG = {
     vehicles: FUNC_URLS.zalupa + '?resource=vehicles',
     templates: FUNC_URLS.zalupa + '?resource=templates',
     contractors: FUNC_URLS.zalupa + '?resource=contractors',
+    zalupa: FUNC_URLS.zalupa,
     // В будущем: drivers: `${BASE_URL}/drivers.php`
   }
 };

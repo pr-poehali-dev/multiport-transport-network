@@ -2,7 +2,7 @@ import json
 import psycopg2
 import os
 from typing import Dict, Any
-from dadata_service import get_company_by_inn
+from dadata_service import get_company_by_inn, suggest_addresses
 from drivers import handle_drivers
 from vehicles import handle_vehicles
 from contractors import handle_contractors
@@ -39,41 +39,73 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     resource = params.get('resource', 'drivers')
     
     if resource == 'dadata':
-        inn = params.get('inn', '').strip()
+        action = params.get('action', 'company')
         
-        if not inn:
-            return {
-                'statusCode': 400,
-                'headers': cors_headers,
-                'body': json.dumps({'error': 'Параметр inn обязателен'}),
-                'isBase64Encoded': False
-            }
-        
-        try:
-            company_data = get_company_by_inn(inn)
+        if action == 'company':
+            inn = params.get('inn', '').strip()
             
-            if not company_data:
+            if not inn:
                 return {
-                    'statusCode': 404,
+                    'statusCode': 400,
                     'headers': cors_headers,
-                    'body': json.dumps({'error': 'Компания не найдена'}),
+                    'body': json.dumps({'error': 'Параметр inn обязателен'}),
                     'isBase64Encoded': False
                 }
             
-            return {
-                'statusCode': 200,
-                'headers': cors_headers,
-                'body': json.dumps(company_data),
-                'isBase64Encoded': False
-            }
+            try:
+                company_data = get_company_by_inn(inn)
+                
+                if not company_data:
+                    return {
+                        'statusCode': 404,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': 'Компания не найдена'}),
+                        'isBase64Encoded': False
+                    }
+                
+                return {
+                    'statusCode': 200,
+                    'headers': cors_headers,
+                    'body': json.dumps(company_data),
+                    'isBase64Encoded': False
+                }
+                
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': str(e)}),
+                    'isBase64Encoded': False
+                }
+        
+        elif action == 'address':
+            query = params.get('query', '').strip()
             
-        except Exception as e:
-            return {
-                'statusCode': 500,
-                'headers': cors_headers,
-                'body': json.dumps({'error': str(e)}),
-                'isBase64Encoded': False
-            }
+            if not query:
+                return {
+                    'statusCode': 400,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': 'Параметр query обязателен'}),
+                    'isBase64Encoded': False
+                }
+            
+            try:
+                suggestions = suggest_addresses(query)
+                
+                return {
+                    'statusCode': 200,
+                    'headers': cors_headers,
+                    'body': json.dumps({'suggestions': suggestions}),
+                    'isBase64Encoded': False
+                }
+                
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': str(e)}),
+                    'isBase64Encoded': False
+                }
     
     db_url = os.environ.get('DATABASE_URL')
     if not db_url:
