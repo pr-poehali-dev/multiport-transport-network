@@ -181,7 +181,7 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 <Label htmlFor="customer">Заказчик *</Label>
                 <Input 
                   id="customer" 
-                  placeholder="ООО \"ФЛАУЗР МАСТЕР\"" 
+                  placeholder='ООО "ФЛАУЗР МАСТЕР"' 
                   value={customer}
                   onChange={(e) => setCustomer(e.target.value)}
                 />
@@ -190,7 +190,7 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 <Label htmlFor="carrier">Перевозчик *</Label>
                 <Input 
                   id="carrier" 
-                  placeholder="ООО \"Везет 56\"" 
+                  placeholder='ООО "Везет 56"' 
                   value={carrier}
                   onChange={(e) => setCarrier(e.target.value)}
                 />
