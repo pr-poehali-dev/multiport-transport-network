@@ -33,6 +33,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [routeNumber, setRouteNumber] = useState<string>('');
   const [invoice, setInvoice] = useState<string>('');
   const [trak, setTrak] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
   const [consignees, setConsignees] = useState<Consignee[]>([{ id: '1', name: '', note: '' }]);
   const [isDirect, setIsDirect] = useState<boolean>(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -337,6 +338,8 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             setInvoice={setInvoice}
             trak={trak}
             setTrak={setTrak}
+            weight={weight}
+            setWeight={setWeight}
             consignees={consignees}
             isOrderLocked={isOrderLocked}
             searchConsignee={searchConsignee}

@@ -22,6 +22,8 @@ interface OrderInfoSectionProps {
   setInvoice: (value: string) => void;
   trak: string;
   setTrak: (value: string) => void;
+  weight: string;
+  setWeight: (value: string) => void;
   consignees: Consignee[];
   isOrderLocked: boolean;
   searchConsignee: Record<string, string>;
@@ -48,6 +50,8 @@ export default function OrderInfoSection({
   setInvoice,
   trak,
   setTrak,
+  weight,
+  setWeight,
   consignees,
   isOrderLocked,
   searchConsignee,
@@ -117,7 +121,7 @@ export default function OrderInfoSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Инвойс</Label>
           <Input
@@ -134,6 +138,17 @@ export default function OrderInfoSection({
             placeholder="Введите TRAK"
             value={trak}
             onChange={(e) => setTrak(e.target.value)}
+            disabled={isOrderLocked}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Вес (кг)</Label>
+          <Input
+            type="number"
+            placeholder="Вес груза"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
             disabled={isOrderLocked}
           />
         </div>
