@@ -4,6 +4,7 @@ import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { getVehicles, Vehicle } from '@/api/vehicles';
 import { getContractors, Contractor } from '@/api/contractors';
+import { getDrivers, Driver } from '@/api/drivers';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -38,6 +39,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const [isDirect, setIsDirect] = useState<boolean>(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [searchVehicle, setSearchVehicle] = useState<Record<string, string>>({});
   const [showVehicleList, setShowVehicleList] = useState<Record<string, boolean>>({});
   const [contractors, setContractors] = useState<Contractor[]>([]);
@@ -272,8 +274,12 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const loadVehiclesList = async () => {
     setLoadingVehicles(true);
     try {
-      const data = await getVehicles();
-      setVehicles(data.vehicles || []);
+      const [vehiclesData, driversData] = await Promise.all([
+        getVehicles(),
+        getDrivers()
+      ]);
+      setVehicles(vehiclesData.vehicles || []);
+      setDrivers(driversData.drivers || []);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -294,9 +300,15 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   };
 
   const handleSelectVehicle = (routeId: string, vehicle: Vehicle) => {
+    // Найти водителя по driverId из vehicle
+    const driver = drivers.find(d => d.id === vehicle.driverId);
+    const driverFullName = driver 
+      ? `${driver.lastName} ${driver.firstName}${driver.middleName ? ' ' + driver.middleName : ''}`
+      : '';
+    
     setRoutes(routes.map(r => 
       r.id === routeId 
-        ? { ...r, vehicleId: vehicle.id?.toString() || '', driverName: vehicle.driverName || '' }
+        ? { ...r, vehicleId: vehicle.id?.toString() || '', driverName: driverFullName }
         : r
     ));
     setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.registrationNumber} / ${vehicle.trailerNumber}` }));
@@ -372,6 +384,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             handleRemoveStop={handleRemoveStop}
             handleUpdateStop={handleUpdateStop}
             vehicles={vehicles}
+            drivers={drivers}
             searchVehicle={searchVehicle}
             setSearchVehicle={setSearchVehicle}
             showVehicleList={showVehicleList}

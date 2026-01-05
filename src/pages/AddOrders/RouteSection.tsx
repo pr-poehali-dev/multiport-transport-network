@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Vehicle } from '@/api/vehicles';
+import { Driver } from '@/api/drivers';
 import { Route } from './types';
 
 interface RouteSectionProps {
@@ -26,6 +27,7 @@ interface RouteSectionProps {
   handleRemoveStop: (routeId: string, stopId: string) => void;
   handleUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address', value: string) => void;
   vehicles: Vehicle[];
+  drivers: Driver[];
   searchVehicle: Record<string, string>;
   setSearchVehicle: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   showVehicleList: Record<string, boolean>;
@@ -49,6 +51,7 @@ export default function RouteSection({
   handleRemoveStop,
   handleUpdateStop,
   vehicles,
+  drivers,
   searchVehicle,
   setSearchVehicle,
   showVehicleList,
@@ -158,20 +161,27 @@ export default function RouteSection({
                       {loadingVehicles ? (
                         <div className="p-3 text-sm text-muted-foreground text-center">Загрузка...</div>
                       ) : getFilteredVehicles(route.id).length > 0 ? (
-                        getFilteredVehicles(route.id).map((vehicle) => (
-                          <button
-                            key={vehicle.id}
-                            onClick={() => handleSelectVehicle(route.id, vehicle)}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
-                          >
-                            <div className="font-medium text-sm">
-                              {vehicle.registrationNumber} / {vehicle.trailerNumber}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Водитель: {vehicle.driverName}
-                            </div>
-                          </button>
-                        ))
+                        getFilteredVehicles(route.id).map((vehicle) => {
+                          const driver = drivers.find(d => d.id === vehicle.driverId);
+                          const driverName = driver 
+                            ? `${driver.lastName} ${driver.firstName}${driver.middleName ? ' ' + driver.middleName : ''}`
+                            : 'Не назначен';
+                          
+                          return (
+                            <button
+                              key={vehicle.id}
+                              onClick={() => handleSelectVehicle(route.id, vehicle)}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
+                            >
+                              <div className="font-medium text-sm">
+                                {vehicle.registrationNumber} / {vehicle.trailerNumber}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Водитель: {driverName}
+                              </div>
+                            </button>
+                          );
+                        })
                       ) : (
                         <div className="p-3 text-sm text-muted-foreground text-center">Автомобили не найдены</div>
                       )}
