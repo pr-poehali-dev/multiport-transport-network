@@ -288,7 +288,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
   const getFilteredVehicles = (routeId: string) => {
     const search = searchVehicle[routeId]?.toLowerCase() || '';
     return vehicles.filter(v => 
-      v.truckNumber?.toLowerCase().includes(search) ||
+      v.registrationNumber?.toLowerCase().includes(search) ||
       v.trailerNumber?.toLowerCase().includes(search)
     );
   };
@@ -299,7 +299,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
         ? { ...r, vehicleId: vehicle.id?.toString() || '', driverName: vehicle.driverName || '' }
         : r
     ));
-    setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.truckNumber} / ${vehicle.trailerNumber}` }));
+    setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.registrationNumber} / ${vehicle.trailerNumber}` }));
     setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
   };
 

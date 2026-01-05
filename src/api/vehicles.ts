@@ -9,6 +9,7 @@ export interface Vehicle {
   trailerType?: string;
   companyId?: number;
   driverId?: number;
+  driverName?: string;
   createdAt?: string;
   updatedAt?: string;
 }
