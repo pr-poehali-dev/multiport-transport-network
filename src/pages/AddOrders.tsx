@@ -109,6 +109,23 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
     });
   };
 
+  const handleEditRoute = (routeId: string) => {
+    setRoutes(routes.map(r => 
+      r.id === routeId ? { ...r, isLocked: false } : r
+    ));
+    
+    setLockedRoutes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(routeId);
+      return newSet;
+    });
+    
+    toast({
+      title: 'Редактирование маршрута',
+      description: 'Маршрут разблокирован для редактирования'
+    });
+  };
+
   const handleAddRoute = () => {
     if (isDirect && routes.length >= 2) {
       return;
@@ -380,6 +397,7 @@ function AddOrders({ onBack, onMenuClick }: AddOrdersProps) {
             handleRemoveRoute={handleRemoveRoute}
             handleUpdateRoute={handleUpdateRoute}
             handleSaveAndGo={handleSaveAndGo}
+            handleEditRoute={handleEditRoute}
             handleAddStop={handleAddStop}
             handleRemoveStop={handleRemoveStop}
             handleUpdateStop={handleUpdateStop}

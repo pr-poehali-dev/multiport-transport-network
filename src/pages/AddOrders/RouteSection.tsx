@@ -23,6 +23,7 @@ interface RouteSectionProps {
   handleRemoveRoute: (id: string) => void;
   handleUpdateRoute: (id: string, field: 'from' | 'to' | 'vehicleId' | 'driverName' | 'loadingDate', value: string) => void;
   handleSaveAndGo: (routeId: string, routeIndex: number) => void;
+  handleEditRoute: (routeId: string) => void;
   handleAddStop: (routeId: string) => void;
   handleRemoveStop: (routeId: string, stopId: string) => void;
   handleUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address', value: string) => void;
@@ -47,6 +48,7 @@ export default function RouteSection({
   handleRemoveRoute,
   handleUpdateRoute,
   handleSaveAndGo,
+  handleEditRoute,
   handleAddStop,
   handleRemoveStop,
   handleUpdateStop,
@@ -275,13 +277,13 @@ export default function RouteSection({
             )}
 
             {isRouteDisabled && (
-              <button
-                onClick={() => handleAddStop(route.id)}
-                className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              <Button
+                onClick={() => handleEditRoute(route.id)}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white gap-2"
               >
-                <Icon name="Plus" size={16} />
-                <span>Дополнительный пункт</span>
-              </button>
+                <Icon name="Pencil" size={18} />
+                <span>Редактировать маршрут</span>
+              </Button>
             )}
           </div>
         );
