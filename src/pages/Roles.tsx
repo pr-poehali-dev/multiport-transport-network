@@ -169,6 +169,46 @@ export default function Roles({ onMenuClick }: RolesProps) {
     }
   };
 
+  const handleDeleteRole = async (role: Role) => {
+    if (role.is_system) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Системные роли нельзя удалить'
+      });
+      return;
+    }
+
+    if (!confirm(`Удалить роль "${role.display_name}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles&id=${role.id}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Успешно',
+          description: 'Роль удалена'
+        });
+        loadRoles();
+      } else {
+        throw new Error(data.error || 'Ошибка удаления');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось удалить роль'
+      });
+    }
+  };
+
   const togglePermission = (resourceIndex: number, permType: 'can_create' | 'can_read' | 'can_update' | 'can_remove') => {
     setFormData(prev => ({
       ...prev,
@@ -242,15 +282,25 @@ export default function Roles({ onMenuClick }: RolesProps) {
                         <CardDescription className="mt-1">{role.description}</CardDescription>
                       </div>
                       {!role.is_system && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditRole(role)}
-                          className="hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                        >
-                          <Icon name="Pencil" size={16} className="mr-2" />
-                          Редактировать
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRole(role)}
+                            className="hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                          >
+                            <Icon name="Pencil" size={16} className="mr-2" />
+                            Редактировать
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteRole(role)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </CardHeader>

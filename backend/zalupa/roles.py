@@ -164,6 +164,50 @@ def handle_roles(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
             'isBase64Encoded': False
         }
 
+    elif method == 'DELETE':
+        params = event.get('queryStringParameters') or {}
+        role_id = params.get('id')
+
+        if not role_id:
+            return {
+                'statusCode': 400,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'role id is required'}),
+                'isBase64Encoded': False
+            }
+
+        cursor.execute('SELECT is_system FROM roles WHERE id = %s', (role_id,))
+        role = cursor.fetchone()
+        
+        if not role:
+            return {
+                'statusCode': 404,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'Role not found'}),
+                'isBase64Encoded': False
+            }
+
+        if role[0]:
+            return {
+                'statusCode': 403,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'Cannot delete system role'}),
+                'isBase64Encoded': False
+            }
+
+        cursor.execute('DELETE FROM role_permissions WHERE role_id = %s', (role_id,))
+        cursor.execute('DELETE FROM user_roles WHERE role_id = %s', (role_id,))
+        cursor.execute('DELETE FROM roles WHERE id = %s', (role_id,))
+        
+        conn.commit()
+
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'Role deleted'}),
+            'isBase64Encoded': False
+        }
+
     return {
         'statusCode': 405,
         'headers': cors_headers,
