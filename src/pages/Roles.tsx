@@ -349,16 +349,6 @@ export default function Roles({ onMenuClick }: RolesProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Системное имя (латиница)</Label>
-                    <Input
-                      id="name"
-                      placeholder="logistician"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value.toLowerCase() })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="description">Описание</Label>
                     <Textarea
                       id="description"
