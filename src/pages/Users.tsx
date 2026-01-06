@@ -44,6 +44,8 @@ export default function Users({ onMenuClick }: UsersProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [inviteLink, setInviteLink] = useState<string>('');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -198,6 +200,39 @@ export default function Users({ onMenuClick }: UsersProps) {
     }));
   };
 
+  const handleGenerateInvite = async (userId: number) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.invite_link) {
+        setInviteLink(data.invite_link);
+        setShowInviteDialog(true);
+      } else {
+        throw new Error(data.error || 'Ошибка создания инвайт-ссылки');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось создать инвайт-ссылку'
+      });
+    }
+  };
+
+  const handleCopyInvite = () => {
+    navigator.clipboard.writeText(inviteLink);
+    toast({
+      title: 'Скопировано',
+      description: 'Инвайт-ссылка скопирована в буфер обмена'
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <TopBar
@@ -250,6 +285,15 @@ export default function Users({ onMenuClick }: UsersProps) {
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleGenerateInvite(user.id)}
+                          className="hover:bg-green-50 hover:text-green-600"
+                        >
+                          <Icon name="Link" size={16} className="mr-2" />
+                          Инвайт-ссылка
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -380,6 +424,65 @@ export default function Users({ onMenuClick }: UsersProps) {
                 </Button>
                 <Button onClick={handleSaveUser} className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90">
                   {isEditMode ? 'Сохранить' : 'Создать'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Icon name="Link" size={20} className="text-green-600" />
+                  Инвайт-ссылка для Telegram бота
+                </DialogTitle>
+                <DialogDescription>
+                  Отправьте эту ссылку пользователю для подключения к боту
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Ссылка</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={inviteLink}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      onClick={handleCopyInvite}
+                      variant="outline"
+                      size="icon"
+                    >
+                      <Icon name="Copy" size={16} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-medium text-blue-900">Как это работает:</p>
+                      <ol className="list-decimal list-inside space-y-1 text-blue-800">
+                        <li>Скопируйте ссылку и отправьте её пользователю</li>
+                        <li>Пользователь открывает ссылку и запускает бота в Telegram</li>
+                        <li>Бот автоматически привязывается к аккаунту пользователя</li>
+                        <li>Пользователь начинает получать уведомления согласно своей роли</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button onClick={() => setShowInviteDialog(false)} variant="outline">
+                  Закрыть
+                </Button>
+                <Button onClick={handleCopyInvite} className="bg-green-600 hover:bg-green-700">
+                  <Icon name="Copy" size={16} className="mr-2" />
+                  Скопировать ссылку
                 </Button>
               </DialogFooter>
             </DialogContent>

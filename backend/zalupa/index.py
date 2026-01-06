@@ -10,6 +10,8 @@ from templates import handle_templates
 from orders import handle_orders
 from roles import handle_roles
 from users import handle_users
+from telegram import handle_telegram
+from invites import handle_invites
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -136,6 +138,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = handle_roles(method, event, cursor, conn, cors_headers)
         elif resource == 'users':
             result = handle_users(method, event, cursor, conn, cors_headers)
+        elif resource == 'telegram':
+            result = handle_telegram(method, event, cursor, conn, cors_headers)
+        elif resource == 'invites':
+            result = handle_invites(method, event, cursor, conn, cors_headers)
         else:
             result = {
                 'statusCode': 400,
