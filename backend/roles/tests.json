@@ -1,0 +1,27 @@
+{
+  "tests": [
+    {
+      "name": "Get all roles",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Create new role",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "display_name": "Тестовая роль",
+        "description": "Тестовое описание",
+        "permissions": [
+          {
+            "resource": "contracts",
+            "can_read": true,
+            "can_create": true
+          }
+        ]
+      },
+      "expectedStatus": 201
+    }
+  ]
+}
