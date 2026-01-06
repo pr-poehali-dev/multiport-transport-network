@@ -43,6 +43,12 @@
         "total": "number"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all roles",
+      "method": "GET",
+      "path": "/?resource=roles",
+      "expectedStatus": 200
     }
   ]
 }

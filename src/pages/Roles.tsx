@@ -71,7 +71,7 @@ export default function Roles({ onMenuClick }: RolesProps) {
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/6abe16fb-f4c2-4855-b8f0-e20a59c2420a');
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles');
       const data = await response.json();
       if (data.roles) {
         setRoles(data.roles);
@@ -139,8 +139,8 @@ export default function Roles({ onMenuClick }: RolesProps) {
 
     try {
       const url = isEditMode && selectedRole
-        ? `https://functions.poehali.dev/6abe16fb-f4c2-4855-b8f0-e20a59c2420a/${selectedRole.id}`
-        : 'https://functions.poehali.dev/6abe16fb-f4c2-4855-b8f0-e20a59c2420a';
+        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles&id=${selectedRole.id}`
+        : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles';
 
       const response = await fetch(url, {
         method: isEditMode ? 'PUT' : 'POST',
