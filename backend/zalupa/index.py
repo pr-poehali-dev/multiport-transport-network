@@ -9,6 +9,7 @@ from contractors import handle_contractors
 from templates import handle_templates
 from orders import handle_orders
 from roles import handle_roles
+from users import handle_users
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -133,6 +134,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = handle_orders(method, event, cursor, conn, cors_headers)
         elif resource == 'roles':
             result = handle_roles(method, event, cursor, conn, cors_headers)
+        elif resource == 'users':
+            result = handle_users(method, event, cursor, conn, cors_headers)
         else:
             result = {
                 'statusCode': 400,

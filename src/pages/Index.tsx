@@ -18,6 +18,7 @@ import AddVehicle from './AddVehicle';
 import AddContractor from './AddContractor';
 import AddOrders from './AddOrders';
 import Roles from './Roles';
+import Users from './Users';
 
 interface Order {
   id: string;
@@ -285,6 +286,23 @@ function Index() {
                 <div className="mt-1 ml-9 space-y-1">
                   <button
                     onClick={() => {
+                      setActiveSection('users');
+                      setSettingsOpen(true);
+                      setReferencesOpen(false);
+                      setDocumentsOpen(false);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                      activeSection === 'users'
+                        ? 'bg-[#0ea5e9] text-white'
+                        : 'text-white/70 hover:bg-white/5 hover:text-white/90'
+                    }`}
+                  >
+                    <Icon name="Users" size={16} />
+                    Пользователи
+                  </button>
+                  <button
+                    onClick={() => {
                       setActiveSection('roles');
                       setSettingsOpen(true);
                       setReferencesOpen(false);
@@ -344,6 +362,8 @@ function Index() {
         <Contracts onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'templates' ? (
         <Templates onMenuClick={() => setSidebarOpen(true)} />
+      ) : activeSection === 'users' ? (
+        <Users onMenuClick={() => setSidebarOpen(true)} />
       ) : activeSection === 'roles' ? (
         <Roles onMenuClick={() => setSidebarOpen(true)} />
       ) : (
