@@ -23,6 +23,13 @@ interface Role {
   display_name: string;
 }
 
+interface TelegramConfig {
+  bot_token: string;
+  bot_username: string;
+  admin_telegram_id: number | null;
+  is_connected: boolean;
+}
+
 interface TelegramBotProps {
   onMenuClick: () => void;
 }
@@ -42,17 +49,38 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const [loading, setLoading] = useState(true);
   const [botToken, setBotToken] = useState('');
   const [botUsername, setBotUsername] = useState('');
+  const [adminTelegramId, setAdminTelegramId] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
+  const [adminVerified, setAdminVerified] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    loadConfig();
     loadSettings();
     loadRoles();
   }, []);
 
+  const loadConfig = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=config');
+      const data = await response.json();
+      if (data.config) {
+        setBotUsername(data.config.bot_username || '');
+        setIsConnected(data.config.is_connected || false);
+        setAdminTelegramId(data.config.admin_telegram_id || '');
+        setAdminVerified(!!data.config.admin_telegram_id);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки конфига:', error);
+    }
+  };
+
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram');
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=settings');
       const data = await response.json();
       if (data.settings) {
         setSettings(data.settings);
@@ -80,10 +108,104 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     }
   };
 
+  const handleConnectBot = async () => {
+    if (!botToken.trim() || !botUsername.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Заполните токен и username бота'
+      });
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bot_token: botToken,
+          bot_username: botUsername
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsConnected(true);
+        toast({
+          title: 'Успешно!',
+          description: data.message || 'Бот успешно подключён'
+        });
+      } else {
+        throw new Error(data.error || 'Ошибка подключения');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка подключения',
+        description: error instanceof Error ? error.message : 'Не удалось подключить бота'
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleVerifyAdmin = async () => {
+    if (!adminTelegramId.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Укажите Telegram ID администратора'
+      });
+      return;
+    }
+
+    if (!isConnected) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Сначала подключите бота'
+      });
+      return;
+    }
+
+    setIsCheckingAdmin(true);
+    try {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_telegram_id: parseInt(adminTelegramId)
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAdminVerified(true);
+        toast({
+          title: 'Успешно!',
+          description: `Администратор ${data.user_info?.first_name || ''} подтверждён`
+        });
+      } else {
+        throw new Error(data.error || 'Ошибка проверки');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка проверки',
+        description: error instanceof Error ? error.message : 'Не удалось проверить администратора'
+      });
+    } finally {
+      setIsCheckingAdmin(false);
+    }
+  };
+
   const handleToggleSetting = async (eventType: string, isEnabled: boolean) => {
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&event_type=${eventType}`,
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=settings&event_type=${eventType}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -112,7 +234,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const handleUpdateNotificationText = async (eventType: string, text: string) => {
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&event_type=${eventType}`,
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=settings&event_type=${eventType}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -157,6 +279,12 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
               <CardTitle className="flex items-center gap-2">
                 <Icon name="Send" size={20} className="text-[#0ea5e9]" />
                 Подключение бота
+                {isConnected && (
+                  <Badge variant="default" className="bg-green-500">
+                    <Icon name="CheckCircle2" size={12} className="mr-1" />
+                    Подключено
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 Укажите токен Telegram бота для отправки уведомлений
@@ -171,6 +299,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
+                  disabled={isConnected}
                 />
                 <p className="text-xs text-muted-foreground">
                   Получите токен у @BotFather в Telegram
@@ -183,14 +312,91 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="your_bot"
                   value={botUsername}
                   onChange={(e) => setBotUsername(e.target.value)}
+                  disabled={isConnected}
                 />
               </div>
-              <Button className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90">
-                <Icon name="Save" size={18} className="mr-2" />
-                Сохранить настройки
+              <Button 
+                onClick={handleConnectBot}
+                disabled={isConnected || isConnecting}
+                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
+              >
+                {isConnecting ? (
+                  <>
+                    <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                    Проверка...
+                  </>
+                ) : isConnected ? (
+                  <>
+                    <Icon name="CheckCircle2" size={18} className="mr-2" />
+                    Подключено
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Save" size={18} className="mr-2" />
+                    Сохранить и проверить
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
+
+          {isConnected && (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="UserCog" size={20} className="text-[#0ea5e9]" />
+                  Главный администратор
+                  {adminVerified && (
+                    <Badge variant="default" className="bg-green-500">
+                      <Icon name="CheckCircle2" size={12} className="mr-1" />
+                      Подтверждён
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Укажите Telegram ID главного администратора, который будет получать все уведомления
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="adminId">Admin Telegram ID</Label>
+                  <Input
+                    id="adminId"
+                    type="number"
+                    placeholder="123456789"
+                    value={adminTelegramId}
+                    onChange={(e) => setAdminTelegramId(e.target.value)}
+                    disabled={adminVerified}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Чтобы узнать свой ID, напишите боту @userinfobot
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleVerifyAdmin}
+                  disabled={adminVerified || isCheckingAdmin}
+                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
+                >
+                  {isCheckingAdmin ? (
+                    <>
+                      <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                      Проверка...
+                    </>
+                  ) : adminVerified ? (
+                    <>
+                      <Icon name="CheckCircle2" size={18} className="mr-2" />
+                      Подтверждён
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="UserCheck" size={18} className="mr-2" />
+                      Проверить администратора
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -275,9 +481,10 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>1. Создайте бота через @BotFather и получите токен</p>
-              <p>2. Укажите токен в настройках выше</p>
-              <p>3. Пользователи должны получить инвайт-ссылку (создаётся в разделе "Пользователи")</p>
-              <p>4. После подключения через инвайт-ссылку они начнут получать уведомления согласно своей роли</p>
+              <p>2. Укажите токен и username, нажмите "Сохранить и проверить"</p>
+              <p>3. Укажите Telegram ID главного администратора и проверьте его</p>
+              <p>4. Пользователи должны получить инвайт-ссылку (создаётся в разделе "Пользователи")</p>
+              <p>5. После подключения через инвайт-ссылку они начнут получать уведомления согласно своей роли</p>
             </CardContent>
           </Card>
         </div>
