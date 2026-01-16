@@ -176,11 +176,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   };
 
   const handleCancelEdit = () => {
-    if (botToken !== originalData.botToken || botUsername !== originalData.botUsername || adminTelegramId !== originalData.adminTelegramId) {
-      setShowCancelDialog(true);
-    } else {
-      setIsEditMode(false);
-    }
+    setShowCancelDialog(true);
   };
 
   const confirmCancelEdit = () => {
@@ -378,7 +374,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
-                  disabled={!isEditMode || isConnected}
+                  disabled={!isEditMode}
                 />
                 <p className="text-xs text-muted-foreground">
                   Получите токен у @BotFather в Telegram
@@ -391,7 +387,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="your_bot"
                   value={botUsername}
                   onChange={(e) => setBotUsername(e.target.value)}
-                  disabled={!isEditMode || isConnected}
+                  disabled={!isEditMode}
                 />
               </div>
               <Button 
@@ -444,7 +440,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="123456789"
                   value={adminTelegramId}
                   onChange={(e) => setAdminTelegramId(e.target.value)}
-                  disabled={!isEditMode || adminVerified || !isConnected}
+                  disabled={!isEditMode}
                 />
                 <p className="text-xs text-muted-foreground">
                   {!isConnected ? 'Сначала подключите бота' : 'Чтобы узнать свой ID, напишите боту @userinfobot'}
