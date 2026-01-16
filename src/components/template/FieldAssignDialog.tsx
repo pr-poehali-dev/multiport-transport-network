@@ -18,8 +18,9 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-import { DRIVER_FIELDS } from './types';
+import { TABLE_OPTIONS } from './types';
 
 interface FieldAssignDialogProps {
   open: boolean;
@@ -31,16 +32,20 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
   const [formula, setFormula] = useState<string>('');
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<string>('');
 
   useEffect(() => {
     if (!open) {
       setFormula('');
       setCursorPosition(0);
+      setSelectedTable('');
     }
   }, [open]);
 
+  const currentTableFields = TABLE_OPTIONS.find(t => t.value === selectedTable)?.fields || [];
+
   const handleInsertField = (fieldValue: string) => {
-    const field = DRIVER_FIELDS.find(f => f.value === fieldValue);
+    const field = currentTableFields.find(f => f.value === fieldValue);
     if (!field) return;
 
     const fieldTag = `<${field.label}>`;
@@ -57,7 +62,7 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
     const matches = [...formula.matchAll(fieldRegex)];
     const usedFields = matches.map(match => {
       const label = match[1];
-      const field = DRIVER_FIELDS.find(f => f.label === label);
+      const field = currentTableFields.find(f => f.label === label);
       return field?.value || '';
     }).filter(Boolean);
 
@@ -103,7 +108,7 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
                 value={formula}
                 onChange={handleInputChange}
                 onSelect={(e) => setCursorPosition((e.target as HTMLInputElement).selectionStart || 0)}
-                placeholder="Введите текст и вставьте поля"
+                placeholder="Введите текст и вставьте теги полей"
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">
@@ -112,22 +117,42 @@ function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogPr
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Вставить поле</label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                {DRIVER_FIELDS.map((field) => (
-                  <Button
-                    key={field.value}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleInsertField(field.value)}
-                    className="justify-start text-left"
-                  >
-                    <Icon name="Plus" size={14} className="mr-2 flex-shrink-0" />
-                    <span className="truncate">{field.label}</span>
-                  </Button>
-                ))}
-              </div>
+              <label className="text-sm font-medium">Выберите таблицу</label>
+              <Select value={selectedTable} onValueChange={setSelectedTable}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите источник данных" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TABLE_OPTIONS.map((table) => (
+                    <SelectItem key={table.value} value={table.value}>
+                      {table.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {selectedTable && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Доступные теги</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
+                  {currentTableFields.map((field) => (
+                    <Badge
+                      key={field.value}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-[#0ea5e9] hover:text-white transition-colors"
+                      onClick={() => handleInsertField(field.value)}
+                    >
+                      <Icon name="Plus" size={12} className="mr-1" />
+                      {field.label}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Нажмите на тег, чтобы вставить его в формулу
+                </p>
+              </div>
+            )}
           </div>
 
           <AlertDialogFooter>

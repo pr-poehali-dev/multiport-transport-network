@@ -17,7 +17,7 @@ import {
 import FieldMappingsSidebar from '@/components/template/FieldMappingsSidebar';
 import PdfViewer from '@/components/template/PdfViewer';
 import FieldAssignDialog from '@/components/template/FieldAssignDialog';
-import { FieldMapping, TemplateFile, TextItemData, DRIVER_FIELDS } from '@/components/template/types';
+import { FieldMapping, TemplateFile, TextItemData } from '@/components/template/types';
 
 interface AddTemplateProps {
   onBack: () => void;
