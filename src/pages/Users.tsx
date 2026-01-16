@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import TopBar from '@/components/TopBar';
 import AddUser from './AddUser';
 import { useToast } from '@/hooks/use-toast';
+import { getUsers, deleteUser } from '@/api/users';
+import { API_CONFIG, apiRequest } from '@/api/config';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,16 +61,14 @@ function Users({ onMenuClick }: UsersProps) {
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users');
-      const data = await response.json();
+      const data = await getUsers();
       if (data.users) {
         const usersWithInvites = await Promise.all(
           data.users.map(async (user: User) => {
             try {
-              const inviteResponse = await fetch(
-                `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=user_invite&user_id=${user.id}`
+              const inviteData = await apiRequest(
+                `${API_CONFIG.ENDPOINTS.invites}&action=user_invite&user_id=${user.id}`
               );
-              const inviteData = await inviteResponse.json();
               return { ...user, invite: inviteData.invite };
             } catch {
               return { ...user, invite: null };
@@ -141,25 +141,16 @@ function Users({ onMenuClick }: UsersProps) {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${userToDelete}`,
-        { method: 'DELETE' }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Пользователь удалён',
-          description: data.message || 'Пользователь успешно удалён из системы',
-        });
-        
-        setDeleteDialogOpen(false);
-        setUserToDelete(null);
-        loadUsers();
-      } else {
-        throw new Error(data.error || 'Ошибка удаления');
-      }
+      const data = await deleteUser(userToDelete);
+      
+      toast({
+        title: 'Пользователь удалён',
+        description: data.message || 'Пользователь успешно удалён из системы',
+      });
+      
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      loadUsers();
     } catch (error) {
       toast({
         variant: 'destructive',

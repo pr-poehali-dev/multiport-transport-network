@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { Badge } from '@/components/ui/badge';
+import { createUser, updateUser, User } from '@/api/users';
+import { API_CONFIG, apiRequest } from '@/api/config';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,15 +26,6 @@ interface Role {
   role_display_name: string;
 }
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  full_name: string;
-  is_active: boolean;
-  roles: Role[] | null;
-}
-
 interface RoleOption {
   id: number;
   name: string;
@@ -41,34 +34,33 @@ interface RoleOption {
 }
 
 interface AddUserProps {
-  user?: User;
+  user?: User & { roles?: Role[] };
   onBack: () => void;
   onMenuClick: () => void;
 }
 
 export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const { toast } = useToast();
+  const isEditMode = !!user;
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [existingInvite, setExistingInvite] = useState<any>(null);
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
-  const [createdUserId, setCreatedUserId] = useState<number | null>(null);
   const [searchRole, setSearchRole] = useState('');
   const [showRoleList, setShowRoleList] = useState(false);
   const roleSectionRef = useRef<HTMLDivElement>(null);
-  const [showInviteSection, setShowInviteSection] = useState(false);
+  const [showInviteSection, setShowInviteSection] = useState(isEditMode);
   
-  const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
-    username: user?.username || '',
-    email: user?.email || '',
-    phone: '',
-    password: '',
-    is_active: user?.is_active ?? true,
-    role_ids: user?.roles?.map(r => r.role_id) || [] as number[]
-  });
+  // Основная информация
+  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [password, setPassword] = useState('');
+  const [isActive, setIsActive] = useState(user?.is_active ?? true);
+  const [roleIds, setRoleIds] = useState<number[]>(user?.roles?.map(r => r.role_id) || []);
 
   useEffect(() => {
     loadRoles();
@@ -77,18 +69,17 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
-      setShowInviteSection(true);
     }
   }, [user]);
 
   useEffect(() => {
-    if (formData.role_ids.length > 0 && roles.length > 0) {
-      const selectedRole = roles.find(r => r.id === formData.role_ids[0]);
+    if (roleIds.length > 0 && roles.length > 0) {
+      const selectedRole = roles.find(r => r.id === roleIds[0]);
       if (selectedRole) {
         setSearchRole(selectedRole.display_name);
       }
     }
-  }, [formData.role_ids, roles]);
+  }, [roleIds, roles]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -104,22 +95,30 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
   const loadRoles = async () => {
     try {
-      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles');
-      const data = await response.json();
-      if (data.roles) {
-        setRoles(data.roles);
+      const response = await apiRequest(API_CONFIG.ENDPOINTS.roles);
+      if (response.roles) {
+        setRoles(response.roles);
       }
     } catch (error) {
       console.error('Ошибка загрузки ролей:', error);
     }
   };
 
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onBack();
+  };
+
   const handleSave = async () => {
-    if (!formData.full_name.trim() || !formData.password.trim()) {
+    if (!fullName.trim() || !password.trim()) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: 'ФИО и Пароль обязательны для заполнения'
+        description: 'Заполните обязательные поля: ФИО и Пароль'
       });
       return;
     }
@@ -127,33 +126,32 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     setIsSaving(true);
 
     try {
-      const isEdit = !!user || !!createdUserId;
-      const userId = user?.id || createdUserId;
-      const url = isEdit
-        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${userId}`
-        : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users';
+      const userData: User = {
+        full_name: fullName.trim(),
+        username: username.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password: password.trim(),
+        is_active: isActive,
+        role_ids: roleIds
+      };
 
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Ошибка сохранения пользователя');
-      }
-
-      if (!isEdit && data.id) {
-        setCreatedUserId(data.id);
-      }
+      const data = isEditMode 
+        ? await updateUser(user.id!, userData)
+        : await createUser(userData);
 
       toast({
         title: 'Успешно',
-        description: isEdit ? 'Пользователь обновлён' : 'Пользователь создан'
+        description: data.message || (isEditMode ? 'Пользователь обновлён' : 'Пользователь создан')
       });
-      
+
+      // Если создан новый пользователь, показываем секцию инвайта
+      if (!isEditMode && data.id) {
+        setShowInviteSection(true);
+        loadExistingInvite(data.id);
+        return; // Не выходим, чтобы можно было создать инвайт
+      }
+
       onBack();
     } catch (error) {
       toast({
@@ -169,11 +167,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const loadExistingInvite = async (userId: number) => {
     setLoadingInvite(true);
     try {
-      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=user_invite&user_id=${userId}`);
-      const data = await response.json();
-      console.log('Загрузка инвайта для user_id:', userId, 'результат:', data);
-      if (data.invite) {
-        setExistingInvite(data.invite);
+      const response = await apiRequest(`${API_CONFIG.ENDPOINTS.invites}&action=user_invite&user_id=${userId}`);
+      if (response.invite) {
+        setExistingInvite(response.invite);
       } else {
         setExistingInvite(null);
       }
@@ -185,7 +181,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleCreateInvite = async () => {
-    const targetUserId = user?.id || createdUserId;
+    const targetUserId = user?.id;
     if (!targetUserId) {
       toast({
         variant: 'destructive',
@@ -197,15 +193,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     
     setRegeneratingInvite(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites', {
+      const response = await apiRequest(API_CONFIG.ENDPOINTS.invites, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: targetUserId })
       });
-      const data = await response.json();
       
-      if (response.ok && data.invite_link) {
-        setExistingInvite(data);
+      if (response.invite_link) {
+        setExistingInvite(response);
         toast({
           title: 'Инвайт создан',
           description: 'Ссылка готова к отправке'
@@ -223,18 +217,17 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleRegenerateInvite = async () => {
-    const targetUserId = user?.id || createdUserId;
+    const targetUserId = user?.id;
     if (!targetUserId) return;
     
     setRegeneratingInvite(true);
     try {
-      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${targetUserId}`, {
+      const response = await apiRequest(`${API_CONFIG.ENDPOINTS.invites}&action=regenerate&user_id=${targetUserId}`, {
         method: 'POST'
       });
-      const data = await response.json();
       
-      if (response.ok && data.invite_link) {
-        setExistingInvite(data);
+      if (response.invite_link) {
+        setExistingInvite(response);
         toast({
           title: 'Инвайт обновлён',
           description: 'Старая ссылка больше не работает'
@@ -286,78 +279,24 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleFullNameChange = (value: string) => {
-    setFormData({ ...formData, full_name: value });
+    setFullName(value);
     
-    if (!user) {
+    if (!isEditMode) {
       const generatedUsername = generateUsername(value);
-      setFormData(prev => ({ ...prev, full_name: value, username: generatedUsername }));
+      setUsername(generatedUsername);
     }
   };
-
-  const handleAddInvite = async () => {
-    if (!formData.full_name.trim() || !formData.password.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'ФИО и Пароль обязательны для заполнения'
-      });
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const isEdit = !!user || !!createdUserId;
-      const userId = user?.id || createdUserId;
-      const url = isEdit
-        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${userId}`
-        : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users';
-
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Ошибка сохранения пользователя');
-      }
-
-      if (!isEdit && data.id) {
-        setCreatedUserId(data.id);
-      }
-
-      toast({
-        title: 'Успешно',
-        description: 'Пользователь сохранён'
-      });
-      
-      setShowInviteSection(true);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось сохранить пользователя'
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-
 
   return (
     <div className="flex-1 flex flex-col h-full">
       <TopBar
-        title={user ? 'Редактировать пользователя' : 'Добавить пользователя'}
+        title={isEditMode ? 'Редактировать пользователя' : 'Добавить пользователя'}
         onMenuClick={onMenuClick}
         leftButton={
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => setShowCancelDialog(true)}
+            onClick={handleCancel}
             className="hover:bg-gray-100"
           >
             <Icon name="ArrowLeft" size={20} />
@@ -367,7 +306,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
           <>
             <Button
               variant="outline"
-              onClick={() => setShowCancelDialog(true)}
+              onClick={handleCancel}
               className="gap-2"
             >
               <Icon name="X" size={18} />
@@ -396,147 +335,129 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
-              <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">ФИО *</Label>
+                <Input
+                  id="full_name"
+                  value={fullName}
+                  onChange={(e) => handleFullNameChange(e.target.value)}
+                  placeholder="Иванов Иван Иванович"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Логин</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="ivanov_ii"
+                    disabled={isEditMode}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="full_name">ФИО *</Label>
-                    <Input
-                      id="full_name"
-                      value={formData.full_name}
-                      onChange={(e) => handleFullNameChange(e.target.value)}
-                      placeholder="Иванов Иван Иванович"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Логин</Label>
-                      <Input
-                        id="username"
-                        value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        placeholder="ivanov_ii"
-                        disabled={!!user}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Пароль *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="ivanov@example.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Телефон</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+7 (999) 123-45-67"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 items-end">
-                    <div ref={roleSectionRef} className="space-y-2 relative">
-                      <Label htmlFor="role">Роль</Label>
-                      <div className="relative">
-                        <Input
-                          id="role"
-                          placeholder="Начните вводить название роли..."
-                          value={searchRole}
-                          onChange={(e) => {
-                            setSearchRole(e.target.value);
-                            setShowRoleList(true);
-                          }}
-                          onFocus={() => setShowRoleList(true)}
-                        />
-                        
-                        {showRoleList && roles.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {roles
-                              .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
-                                          r.name.toLowerCase().includes(searchRole.toLowerCase()))
-                              .map(role => (
-                                <button
-                                  key={role.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setFormData({ ...formData, role_ids: [role.id] });
-                                    setSearchRole(role.display_name);
-                                    setShowRoleList(false);
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
-                                >
-                                  <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">{role.display_name}</p>
-                                    {role.description && (
-                                      <p className="text-xs text-muted-foreground">{role.description}</p>
-                                    )}
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm font-normal mb-0">Статус</Label>
-                        <span className="text-xs text-muted-foreground">
-                          {formData.is_active ? 'Активен' : 'Заблокирован'}
-                        </span>
-                      </div>
-                      <Switch
-                        checked={formData.is_active}
-                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Пароль *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
                 </div>
               </div>
 
-          {!showInviteSection ? (
-            <button
-              onClick={handleAddInvite}
-              disabled={isSaving}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <Icon name="Loader2" size={20} className="animate-spin" />
-                  <span>Сохранение...</span>
-                </>
-              ) : (
-                <>
-                  <Icon name="Plus" size={20} />
-                  <span>Добавить инвайт</span>
-                </>
-              )}
-            </button>
-          ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ivanov@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Телефон</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+7 (999) 123-45-67"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 items-end">
+                <div ref={roleSectionRef} className="space-y-2 relative">
+                  <Label htmlFor="role">Роль</Label>
+                  <div className="relative">
+                    <Input
+                      id="role"
+                      placeholder="Начните вводить название роли..."
+                      value={searchRole}
+                      onChange={(e) => {
+                        setSearchRole(e.target.value);
+                        setShowRoleList(true);
+                      }}
+                      onFocus={() => setShowRoleList(true)}
+                    />
+                    
+                    {showRoleList && roles.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {roles
+                          .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
+                                      r.name.toLowerCase().includes(searchRole.toLowerCase()))
+                          .map(role => (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={() => {
+                                setRoleIds([role.id]);
+                                setSearchRole(role.display_name);
+                                setShowRoleList(false);
+                              }}
+                              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                            >
+                              <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{role.display_name}</p>
+                                {role.description && (
+                                  <p className="text-xs text-muted-foreground">{role.description}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-normal mb-0">Статус</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {isActive ? 'Активен' : 'Заблокирован'}
+                    </span>
+                  </div>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={setIsActive}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {showInviteSection && (
             <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -568,13 +489,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   <div className="flex gap-2">
                     <Input 
                       value={existingInvite.invite_link} 
-                  readOnly 
-                  className="font-mono text-sm"
-                />
-                <Button 
-                  onClick={() => handleCopyInvite(existingInvite.invite_link)}
-                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
-                >
+                      readOnly 
+                      className="font-mono text-sm"
+                    />
+                    <Button 
+                      onClick={() => handleCopyInvite(existingInvite.invite_link)}
+                      className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
+                    >
                       <Icon name="Copy" size={18} />
                       Скопировать
                     </Button>
@@ -584,24 +505,24 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     <span>Использований: {existingInvite.current_uses}/{existingInvite.max_uses}</span>
                   </div>
                   {existingInvite.is_used && (
-                <Button 
-                  onClick={handleRegenerateInvite}
-                  disabled={regeneratingInvite}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  {regeneratingInvite ? (
-                    <>
-                      <Icon name="Loader2" size={16} className="animate-spin" />
-                      Генерация...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="RefreshCw" size={16} />
-                      Сгенерировать новую ссылку
-                    </>
-                    )}
-                  </Button>
+                    <Button 
+                      onClick={handleRegenerateInvite}
+                      disabled={regeneratingInvite}
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      {regeneratingInvite ? (
+                        <>
+                          <Icon name="Loader2" size={16} className="animate-spin" />
+                          Генерация...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="RefreshCw" size={16} />
+                          Сгенерировать новую ссылку
+                        </>
+                      )}
+                    </Button>
                   )}
                 </>
               ) : (
@@ -609,7 +530,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   <p className="text-sm text-muted-foreground mb-3">Инвайт-ссылка ещё не создана</p>
                   <Button 
                     onClick={handleCreateInvite}
-                    disabled={regeneratingInvite || (!user?.id && !createdUserId)}
+                    disabled={regeneratingInvite || !user?.id}
                     className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                   >
                     {regeneratingInvite ? (
@@ -624,7 +545,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       </>
                     )}
                   </Button>
-                  {!user?.id && !createdUserId && (
+                  {!user?.id && (
                     <p className="text-xs text-muted-foreground mt-2">Сначала сохраните пользователя</p>
                   )}
                 </div>
@@ -651,10 +572,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
               Продолжить редактирование
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                setShowCancelDialog(false);
-                onBack();
-              }}
+              onClick={confirmCancel}
               className="bg-red-600 hover:bg-red-700 gap-2"
             >
               <Icon name="LogOut" size={16} />
