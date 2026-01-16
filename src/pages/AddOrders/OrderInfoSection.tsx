@@ -18,26 +18,27 @@ interface OrderInfoSectionProps {
   orderDate: string;
   setOrderDate: (value: string) => void;
   routeNumber: string;
+  setRouteNumber: (value: string) => void;
   invoice: string;
   setInvoice: (value: string) => void;
   trak: string;
   setTrak: (value: string) => void;
   weight: string;
   setWeight: (value: string) => void;
+  fullRoute: string;
   consignees: Consignee[];
+  contractors: Contractor[];
   isOrderLocked: boolean;
   searchConsignee: Record<string, string>;
   setSearchConsignee: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   showConsigneeList: Record<string, boolean>;
   setShowConsigneeList: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   loadingContractors: boolean;
-  getFilteredContractors: (consigneeId: string) => Contractor[];
-  handleSelectConsignee: (consigneeId: string, contractor: Contractor) => void;
-  handleUpdateConsignee: (id: string, field: 'name' | 'note', value: string) => void;
-  handleRemoveConsignee: (id: string) => void;
-  handleAddConsignee: () => void;
-  handleSaveOrder: () => void;
-  getFullRoute: () => string;
+  onUpdateConsignee: (id: string, field: 'name' | 'note' | 'contractorId', value: string | number | undefined) => void;
+  onRemoveConsignee: (id: string) => void;
+  onAddConsignee: () => void;
+  onSaveOrder: () => void;
+  onGenerateRouteNumber: () => string;
 }
 
 export default function OrderInfoSection({
@@ -52,21 +53,35 @@ export default function OrderInfoSection({
   setTrak,
   weight,
   setWeight,
+  fullRoute,
   consignees,
+  contractors,
   isOrderLocked,
   searchConsignee,
   setSearchConsignee,
   showConsigneeList,
   setShowConsigneeList,
   loadingContractors,
-  getFilteredContractors,
-  handleSelectConsignee,
-  handleUpdateConsignee,
-  handleRemoveConsignee,
-  handleAddConsignee,
-  handleSaveOrder,
-  getFullRoute,
+  onUpdateConsignee,
+  onRemoveConsignee,
+  onAddConsignee,
+  onSaveOrder,
 }: OrderInfoSectionProps) {
+  const getFilteredContractors = (consigneeId: string) => {
+    const query = (searchConsignee[consigneeId] || '').toLowerCase();
+    if (!query) return contractors;
+    return contractors.filter(c => 
+      c.name.toLowerCase().includes(query) ||
+      (c.inn && c.inn.includes(query))
+    );
+  };
+
+  const handleSelectConsignee = (consigneeId: string, contractor: Contractor) => {
+    onUpdateConsignee(consigneeId, 'name', contractor.name);
+    onUpdateConsignee(consigneeId, 'contractorId', contractor.id);
+    setSearchConsignee(prev => ({ ...prev, [consigneeId]: contractor.name }));
+    setShowConsigneeList(prev => ({ ...prev, [consigneeId]: false }));
+  };
   return (
     <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -77,7 +92,7 @@ export default function OrderInfoSection({
       <div className="space-y-2">
         <Label>Маршрут</Label>
         <Input
-          value={getFullRoute()}
+          value={fullRoute}
           readOnly
           placeholder="Маршрут будет составлен из точек ниже"
           className="bg-gray-50"
@@ -166,7 +181,7 @@ export default function OrderInfoSection({
                   value={searchConsignee[consignee.id] || consignee.name}
                   onChange={(e) => {
                     setSearchConsignee(prev => ({ ...prev, [consignee.id]: e.target.value }));
-                    handleUpdateConsignee(consignee.id, 'name', e.target.value);
+                    onUpdateConsignee(consignee.id, 'name', e.target.value);
                     setShowConsigneeList(prev => ({ ...prev, [consignee.id]: true }));
                   }}
                   onFocus={() => setShowConsigneeList(prev => ({ ...prev, [consignee.id]: true }))}
@@ -198,7 +213,7 @@ export default function OrderInfoSection({
               <Input
                 placeholder="Примечание"
                 value={consignee.note}
-                onChange={(e) => handleUpdateConsignee(consignee.id, 'note', e.target.value)}
+                onChange={(e) => onUpdateConsignee(consignee.id, 'note', e.target.value)}
                 disabled={isOrderLocked}
               />
             </div>
@@ -206,7 +221,7 @@ export default function OrderInfoSection({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleRemoveConsignee(consignee.id)}
+                onClick={() => onRemoveConsignee(consignee.id)}
                 className="hover:bg-red-50 hover:text-red-600"
               >
                 <Icon name="Trash2" size={18} />
@@ -216,7 +231,7 @@ export default function OrderInfoSection({
         ))}
         {!isOrderLocked && (
           <button
-            onClick={handleAddConsignee}
+            onClick={onAddConsignee}
             className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <Icon name="Plus" size={16} />
@@ -227,7 +242,7 @@ export default function OrderInfoSection({
 
       {!isOrderLocked && (
         <Button
-          onClick={handleSaveOrder}
+          onClick={onSaveOrder}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
         >
           <Icon name="Save" size={18} />
