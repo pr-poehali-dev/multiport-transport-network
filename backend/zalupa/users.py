@@ -76,20 +76,21 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         email = body.get('email', '').strip()
         full_name = body.get('full_name', '').strip()
         phone = body.get('phone', '').strip()
+        password = body.get('password', '').strip()
         role_ids = body.get('role_ids', [])
 
-        if not username or not email or not full_name:
+        if not full_name or not password:
             return {
                 'statusCode': 400,
                 'headers': cors_headers,
-                'body': json.dumps({'error': 'username, email and full_name are required'}),
+                'body': json.dumps({'error': 'full_name and password are required'}),
                 'isBase64Encoded': False
             }
 
         try:
             cursor.execute(
-                'INSERT INTO users (username, email, full_name, phone) VALUES (%s, %s, %s, %s) RETURNING id',
-                (username, email, full_name, phone)
+                'INSERT INTO users (username, email, full_name, phone, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id',
+                (username or None, email or None, full_name, phone or None, password)
             )
             user_id = cursor.fetchone()[0]
 
