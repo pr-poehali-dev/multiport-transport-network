@@ -142,6 +142,32 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             "Вы успешно подключены к системе Диантус.\n"
                             "Теперь вы будете получать уведомления о важных событиях."
                         )
+                        
+                        # Отправляем уведомление админу о подключении
+                        cursor.execute('''
+                            SELECT utl.telegram_id
+                            FROM user_telegram_links utl
+                            WHERE utl.user_id = %s
+                        ''', (invite[1],))
+                        admin_link = cursor.fetchone()
+                        
+                        if admin_link and admin_link[0]:
+                            admin_telegram_id = admin_link[0]
+                            admin_notification = (
+                                f"🎉 Новый пользователь подключился!\n\n"
+                                f"👤 {user_name}\n"
+                                f"📱 Telegram ID: {chat_id}\n"
+                                f"🔗 По вашей инвайт-ссылке"
+                            )
+                            requests.post(
+                                f'https://api.telegram.org/bot{bot_token}/sendMessage',
+                                json={
+                                    'chat_id': admin_telegram_id,
+                                    'text': admin_notification,
+                                    'parse_mode': 'HTML'
+                                },
+                                timeout=5
+                            )
         
         elif text == '/help':
             response_text = (
