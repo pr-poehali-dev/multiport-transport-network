@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
@@ -19,6 +13,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import BotConnectionCard from './TelegramBot/BotConnectionCard';
+import AdminConfigCard from './TelegramBot/AdminConfigCard';
+import EventNotificationsSection from './TelegramBot/EventNotificationsSection';
+import InfoCard from './TelegramBot/InfoCard';
 
 interface TelegramSetting {
   id: number;
@@ -31,15 +29,6 @@ interface TelegramSetting {
 interface Role {
   id: number;
   display_name: string;
-}
-
-
-
-interface TelegramConfig {
-  bot_token: string;
-  bot_username: string;
-  admin_telegram_id: number | null;
-  is_connected: boolean;
 }
 
 interface TelegramBotProps {
@@ -335,8 +324,6 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     }
   };
 
-
-
   const handleEditRoles = (eventType: string, currentRoleIds: number[]) => {
     setEditingRoles(eventType);
     setTempRoleIds(currentRoleIds);
@@ -422,296 +409,58 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
             <p className="text-muted-foreground mt-1">Управляйте уведомлениями для различных событий</p>
           </div>
 
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon name="Send" size={20} className="text-[#0ea5e9]" />
-                Подключение бота
-                {isConnected && (
-                  <Badge variant="default" className="bg-green-500">
-                    <Icon name="CheckCircle2" size={12} className="mr-1" />
-                    Подключено
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Укажите токен Telegram бота для отправки уведомлений
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="botToken">Bot Token</Label>
-                <Input
-                  id="botToken"
-                  type="password"
-                  placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
-                  value={botToken}
-                  onChange={(e) => setBotToken(e.target.value)}
-                  disabled={!isEditMode}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Получите токен у @BotFather в Telegram
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="botUsername">Username бота</Label>
-                <Input
-                  id="botUsername"
-                  placeholder="your_bot"
-                  value={botUsername}
-                  onChange={(e) => setBotUsername(e.target.value)}
-                  disabled={!isEditMode}
-                />
-              </div>
-              <Button 
-                onClick={handleConnectBot}
-                disabled={isConnected || isConnecting || !isEditMode}
-                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
-              >
-                {isConnecting ? (
-                  <>
-                    <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                    Проверка...
-                  </>
-                ) : isConnected ? (
-                  <>
-                    <Icon name="CheckCircle2" size={18} className="mr-2" />
-                    Подключено
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Save" size={18} className="mr-2" />
-                    Сохранить и проверить
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+          <BotConnectionCard
+            botToken={botToken}
+            setBotToken={setBotToken}
+            botUsername={botUsername}
+            setBotUsername={setBotUsername}
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            isEditMode={isEditMode}
+            onConnect={handleConnectBot}
+          />
 
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon name="UserCog" size={20} className="text-[#0ea5e9]" />
-                Главный администратор
-                {adminVerified && (
-                  <Badge variant="default" className="bg-green-500">
-                    <Icon name="CheckCircle2" size={12} className="mr-1" />
-                    Подтверждён
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Укажите Telegram ID главного администратора, который будет получать все уведомления
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="adminId">Admin Telegram ID</Label>
-                <Input
-                  id="adminId"
-                  type="number"
-                  placeholder="123456789"
-                  value={adminTelegramId}
-                  onChange={(e) => setAdminTelegramId(e.target.value)}
-                  disabled={!isEditMode}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {!isConnected ? 'Сначала подключите бота' : 'Чтобы узнать свой ID, напишите боту @userinfobot'}
-                </p>
-              </div>
-              <Button 
-                onClick={handleVerifyAdmin}
-                disabled={adminVerified || isCheckingAdmin || !isConnected || !isEditMode}
-                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
-              >
-                {isCheckingAdmin ? (
-                  <>
-                    <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                    Проверка...
-                  </>
-                ) : adminVerified ? (
-                  <>
-                    <Icon name="CheckCircle2" size={18} className="mr-2" />
-                    Подтверждён
-                  </>
-                ) : (
-                  <>
-                    <Icon name="UserCheck" size={18} className="mr-2" />
-                    Проверить администратора
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+          <AdminConfigCard
+            adminTelegramId={adminTelegramId}
+            setAdminTelegramId={setAdminTelegramId}
+            adminVerified={adminVerified}
+            isCheckingAdmin={isCheckingAdmin}
+            isConnected={isConnected}
+            isEditMode={isEditMode}
+            onVerify={handleVerifyAdmin}
+          />
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Icon name="Bell" size={20} className="text-[#0ea5e9]" />
-              События и уведомления
-            </h3>
+          <EventNotificationsSection
+            settings={settings}
+            setSettings={setSettings}
+            roles={roles}
+            loading={loading}
+            editingRoles={editingRoles}
+            setEditingRoles={setEditingRoles}
+            tempRoleIds={tempRoleIds}
+            eventLabels={EVENT_LABELS}
+            onToggleSetting={handleToggleSetting}
+            onUpdateNotificationText={handleUpdateNotificationText}
+            onEditRoles={handleEditRoles}
+            onSaveRoles={handleSaveRoles}
+            onToggleRole={toggleRole}
+          />
 
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Icon name="Loader2" size={32} className="animate-spin text-[#0ea5e9]" />
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {settings.map((setting) => (
-                  <Card key={setting.id} className="border-border">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            {EVENT_LABELS[setting.event_type] || setting.event_type}
-                            {setting.is_enabled ? (
-                              <Badge variant="default" className="bg-green-500">Активно</Badge>
-                            ) : (
-                              <Badge variant="outline">Отключено</Badge>
-                            )}
-                          </CardTitle>
-                        </div>
-                        <Switch
-                          checked={setting.is_enabled}
-                          onCheckedChange={(checked) => handleToggleSetting(setting.event_type, checked)}
-                        />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Текст уведомления</Label>
-                        <Textarea
-                          value={setting.notification_text}
-                          onChange={(e) => {
-                            setSettings(prev => prev.map(s => 
-                              s.event_type === setting.event_type ? { ...s, notification_text: e.target.value } : s
-                            ));
-                          }}
-                          onBlur={(e) => handleUpdateNotificationText(setting.event_type, e.target.value)}
-                          rows={2}
-                          placeholder="Текст уведомления"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Используйте переменные: {'{order_id}'}, {'{driver_name}'}, {'{status}'}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm text-muted-foreground">Кому отправлять</Label>
-                          {editingRoles === setting.event_type ? (
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => setEditingRoles(null)}
-                              >
-                                <Icon name="X" size={14} className="mr-1" />
-                                Отмена
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={() => handleSaveRoles(setting.event_type)}
-                                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
-                              >
-                                <Icon name="Check" size={14} className="mr-1" />
-                                Сохранить
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => handleEditRoles(setting.event_type, setting.role_ids)}
-                            >
-                              <Icon name="Edit" size={14} className="mr-1" />
-                              Изменить
-                            </Button>
-                          )}
-                        </div>
-                        
-                        {editingRoles === setting.event_type ? (
-                          <div className="flex flex-wrap gap-2 p-3 border rounded-lg">
-                            {roles.map((role) => (
-                              <Badge 
-                                key={role.id}
-                                variant={tempRoleIds.includes(role.id) ? "default" : "outline"}
-                                className="cursor-pointer"
-                                onClick={() => toggleRole(role.id)}
-                              >
-                                <Icon name="Shield" size={12} className="mr-1" />
-                                {role.display_name}
-                                {tempRoleIds.includes(role.id) && (
-                                  <Icon name="Check" size={12} className="ml-1" />
-                                )}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {setting.role_ids && setting.role_ids.length > 0 ? (
-                              setting.role_ids.map((roleId) => {
-                                const role = roles.find(r => r.id === roleId);
-                                return role ? (
-                                  <Badge key={roleId} variant="secondary">
-                                    <Icon name="Shield" size={12} className="mr-1" />
-                                    {role.display_name}
-                                  </Badge>
-                                ) : null;
-                              })
-                            ) : (
-                              <p className="text-xs text-muted-foreground">Роли не выбраны</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Card className="border-border bg-blue-50/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Icon name="Info" size={20} className="text-blue-600" />
-                Как это работает
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>1. Создайте бота через @BotFather и получите токен</p>
-              <p>2. Укажите токен и username, нажмите "Сохранить и проверить"</p>
-              <p>3. Укажите Telegram ID главного администратора и проверьте его</p>
-              <p>4. Пользователи должны получить инвайт-ссылку (создаётся в разделе "Пользователи")</p>
-              <p>5. После подключения через инвайт-ссылку они начнут получать уведомления согласно своей роли</p>
-            </CardContent>
-          </Card>
+          <InfoCard />
         </div>
       </div>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
-              Подтверждение отмены
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base pt-2">
-              Все несохранённые изменения будут потеряны. Вы уверены, что хотите выйти без сохранения?
+            <AlertDialogTitle>Отменить изменения?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Все несохраненные изменения будут потеряны
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="gap-2">
-              <Icon name="ArrowLeft" size={16} />
-              Продолжить редактирование
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmCancelEdit}
-              className="bg-red-600 hover:bg-red-700 gap-2"
-            >
-              <Icon name="LogOut" size={16} />
-              Выйти без сохранения
-            </AlertDialogAction>
+            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelEdit}>Да, отменить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
