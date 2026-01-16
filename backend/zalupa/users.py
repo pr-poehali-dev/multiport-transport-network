@@ -99,6 +99,19 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
             if not email:
                 email = f"{username}@temp.local"
             
+            # Проверяем, существует ли пользователь с таким username
+            cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                print(f"[ERROR] User with username={username} already exists")
+                return {
+                    'statusCode': 400,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': f'Пользователь с логином "{username}" уже существует'}),
+                    'isBase64Encoded': False
+                }
+            
             print(f"[DEBUG] Executing INSERT with username={username}, email={email}")
             cursor.execute(
                 'INSERT INTO users (username, email, full_name, phone, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id',
