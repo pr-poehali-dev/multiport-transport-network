@@ -72,6 +72,8 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
 
     elif method == 'POST':
         body = json.loads(event.get('body', '{}'))
+        print(f"[DEBUG] POST /users body: {json.dumps(body)}")
+        
         username = body.get('username', '').strip()
         email = body.get('email', '').strip()
         full_name = body.get('full_name', '').strip()
@@ -79,7 +81,10 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         password = body.get('password', '').strip()
         role_ids = body.get('role_ids', [])
 
+        print(f"[DEBUG] Parsed: username={username}, email={email}, full_name={full_name}, password={'***' if password else 'EMPTY'}")
+
         if not full_name or not password:
+            print(f"[ERROR] Validation failed: full_name={bool(full_name)}, password={bool(password)}")
             return {
                 'statusCode': 400,
                 'headers': cors_headers,
@@ -88,6 +93,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
             }
 
         try:
+            print(f"[DEBUG] Executing INSERT with username={username or 'NULL'}, email={email or 'NULL'}")
             cursor.execute(
                 'INSERT INTO users (username, email, full_name, phone, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id',
                 (username or None, email or None, full_name, phone or None, password)
