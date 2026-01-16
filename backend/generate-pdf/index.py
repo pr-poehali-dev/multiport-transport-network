@@ -212,19 +212,23 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     writer.write(temp_output)
     temp_output.seek(0)
     
-    # Используем pikepdf для правильного flatten (превращение полей в текст)
+    # Используем pikepdf для flatten формы
     try:
         with pikepdf.open(temp_output) as pdf:
-            # Flatten - превращаем интерактивные поля в обычный текст
-            if '/AcroForm' in pdf.Root:
-                for page in pdf.pages:
-                    if '/Annots' in page:
-                        page.Annots = pikepdf.Array([])
-                del pdf.Root.AcroForm
+            # Flatten аннотаций (превращает поля формы в обычный контент)
+            for page in pdf.pages:
+                for annot in page.get('/Annots', []):
+                    annot_obj = pdf.make_indirect(annot)
+                    if '/Subtype' in annot_obj and annot_obj['/Subtype'] == '/Widget':
+                        # Делаем поле нередактируемым
+                        if '/Ff' not in annot_obj:
+                            annot_obj['/Ff'] = 1  # ReadOnly flag
+                        else:
+                            annot_obj['/Ff'] = annot_obj['/Ff'] | 1
             
-            # Сохраняем результат
+            # Сохраняем с flatten
             output = BytesIO()
-            pdf.save(output)
+            pdf.save(output, flatten_annotations=True)
             output.seek(0)
             return output.getvalue()
     except Exception as e:
