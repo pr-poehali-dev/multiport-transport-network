@@ -346,8 +346,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
-          {user?.id && (
-            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
+          <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="Link" size={20} className="text-[#0ea5e9]" />
@@ -437,7 +436,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               )}
             </div>
-          )}
         </div>
       </div>
 
