@@ -93,10 +93,16 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
             }
 
         try:
-            print(f"[DEBUG] Executing INSERT with username={username or 'NULL'}, email={email or 'NULL'}")
+            # Генерируем дефолтные значения для обязательных полей
+            if not username:
+                username = f"user_{int(__import__('time').time() * 1000)}"
+            if not email:
+                email = f"{username}@temp.local"
+            
+            print(f"[DEBUG] Executing INSERT with username={username}, email={email}")
             cursor.execute(
                 'INSERT INTO users (username, email, full_name, phone, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id',
-                (username or None, email or None, full_name, phone or None, password)
+                (username, email, full_name, phone or None, password)
             )
             user_id = cursor.fetchone()[0]
 

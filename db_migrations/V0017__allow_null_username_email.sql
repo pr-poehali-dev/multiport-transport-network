@@ -1,0 +1,6 @@
+-- Разрешаем NULL для username и email в таблице users
+ALTER TABLE users ALTER COLUMN username SET DEFAULT NULL;
+ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(255);
+
+ALTER TABLE users ALTER COLUMN email SET DEFAULT NULL;
+ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(255);
