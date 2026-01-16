@@ -267,6 +267,77 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
                 'isBase64Encoded': False
             }
 
+    elif action == 'linked':
+        if method == 'GET':
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute('''
+                    SELECT 
+                        utl.user_id,
+                        utl.telegram_id,
+                        utl.telegram_username,
+                        utl.telegram_first_name,
+                        u.email,
+                        u.username as user_name,
+                        to_char(utl.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
+                    FROM user_telegram_links utl
+                    JOIN users u ON utl.user_id = u.id
+                    ORDER BY utl.created_at DESC
+                ''')
+                linked_users = cursor.fetchall()
+
+                return {
+                    'statusCode': 200,
+                    'headers': cors_headers,
+                    'body': json.dumps({'linked_users': [dict(u) for u in linked_users]}),
+                    'isBase64Encoded': False
+                }
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': f'Ошибка загрузки: {str(e)}'}),
+                    'isBase64Encoded': False
+                }
+
+    elif action == 'unlink':
+        if method == 'DELETE':
+            user_id = params.get('user_id')
+
+            if not user_id:
+                return {
+                    'statusCode': 400,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': 'user_id is required'}),
+                    'isBase64Encoded': False
+                }
+
+            try:
+                cursor.execute('DELETE FROM user_telegram_links WHERE user_id = %s', (user_id,))
+                conn.commit()
+
+                if cursor.rowcount == 0:
+                    return {
+                        'statusCode': 404,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': 'Привязка не найдена'}),
+                        'isBase64Encoded': False
+                    }
+
+                return {
+                    'statusCode': 200,
+                    'headers': cors_headers,
+                    'body': json.dumps({'message': 'Пользователь успешно отвязан'}),
+                    'isBase64Encoded': False
+                }
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': f'Ошибка отвязки: {str(e)}'}),
+                    'isBase64Encoded': False
+                }
+
     return {
         'statusCode': 405,
         'headers': cors_headers,
