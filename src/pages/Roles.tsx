@@ -143,6 +143,9 @@ export default function Roles({ onMenuClick }: RolesProps) {
   };
 
   const getPermissionCount = (role: Role) => {
+    if (!role.permissions || role.permissions.length === 0) {
+      return 0;
+    }
     return role.permissions.reduce((count, perm) => {
       return count + (perm.can_create ? 1 : 0) + (perm.can_read ? 1 : 0) + (perm.can_update ? 1 : 0) + (perm.can_remove ? 1 : 0);
     }, 0);
