@@ -158,7 +158,7 @@ function Templates({ onMenuClick }: TemplatesProps) {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate">{template.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {template.fieldMappings.length} полей назначено
+                      PDF-форма с заполняемыми полями
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(template.createdAt).toLocaleDateString('ru-RU')}
