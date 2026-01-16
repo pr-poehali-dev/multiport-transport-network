@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import Icon from '@/components/ui/icon';
 import { Contractor } from '@/api/contractors';
 
 interface ContractorSelectProps {
@@ -13,8 +16,8 @@ interface ContractorSelectProps {
   onSelect: (contractor: Contractor) => void;
   showDetails?: boolean;
   showAddressSelect?: boolean;
-  selectedAddress?: string;
-  onSelectAddress?: (address: string) => void;
+  selectedAddresses?: string[];
+  onSelectAddresses?: (addresses: string[]) => void;
 }
 
 export default function ContractorSelect({
@@ -27,17 +30,19 @@ export default function ContractorSelect({
   onSelect,
   showDetails = false,
   showAddressSelect = false,
-  selectedAddress,
-  onSelectAddress
+  selectedAddresses = [],
+  onSelectAddresses
 }: ContractorSelectProps) {
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
+  const [showAddressList, setShowAddressList] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('[data-dropdown]')) {
+      if (!target.closest('[data-dropdown]') && !target.closest('[data-address-dropdown]')) {
         setShowList(false);
+        setShowAddressList(false);
       }
     };
 
@@ -130,34 +135,74 @@ export default function ContractorSelect({
       )}
       
       {showAddressSelect && selectedContractor && (
-        <div className="space-y-2">
+        <div className="space-y-2 relative" data-address-dropdown>
           <Label>Адрес {role === 'seller' ? 'погрузки' : 'разгрузки'}</Label>
-          <div className="space-y-2">
-            {/* Только дополнительные адреса доставки */}
-            {selectedContractor.deliveryAddresses && selectedContractor.deliveryAddresses.length > 0 ? (
-              selectedContractor.deliveryAddresses.map((da, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onSelectAddress?.(da.address)}
-                  className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
-                    selectedAddress === da.address
-                      ? 'border-[#0ea5e9] bg-blue-50'
-                      : 'border-border'
-                  }`}
-                >
-                  <div className="font-medium text-foreground">{da.address}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {da.contact} • {da.phone}
-                  </div>
-                </button>
-              ))
+          
+          {/* Поле выбора */}
+          <div 
+            className="min-h-[40px] p-2 border border-border rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+            onClick={() => setShowAddressList(!showAddressList)}
+          >
+            {selectedAddresses.length === 0 ? (
+              <span className="text-muted-foreground text-sm">Выберите адреса</span>
             ) : (
-              <div className="p-3 text-sm text-muted-foreground text-center border border-dashed rounded-lg">
-                Нет добавленных адресов {role === 'seller' ? 'погрузки' : 'разгрузки'}
+              <div className="flex flex-wrap gap-1">
+                {selectedAddresses.map((addr, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">
+                    {addr.length > 40 ? `${addr.substring(0, 40)}...` : addr}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectAddresses?.(selectedAddresses.filter(a => a !== addr));
+                      }}
+                      className="ml-1 hover:text-red-600"
+                    >
+                      <Icon name="X" size={12} />
+                    </button>
+                  </Badge>
+                ))}
               </div>
             )}
           </div>
+
+          {/* Выпадающий список */}
+          {showAddressList && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto" data-address-dropdown>
+              {selectedContractor.deliveryAddresses && selectedContractor.deliveryAddresses.length > 0 ? (
+                <div className="p-2 space-y-1">
+                  {selectedContractor.deliveryAddresses.map((da, index) => {
+                    const isChecked = selectedAddresses.includes(da.address);
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                        onClick={() => {
+                          if (isChecked) {
+                            onSelectAddresses?.(selectedAddresses.filter(a => a !== da.address));
+                          } else {
+                            onSelectAddresses?.([...selectedAddresses, da.address]);
+                          }
+                        }}
+                      >
+                        <Checkbox checked={isChecked} className="mt-1" />
+                        <div className="flex-1 text-sm">
+                          <div className="font-medium text-foreground">{da.address}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {da.contact} • {da.phone}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 text-sm text-muted-foreground text-center">
+                  Нет добавленных адресов
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>
