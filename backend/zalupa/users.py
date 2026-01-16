@@ -115,6 +115,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
                 'isBase64Encoded': False
             }
         except Exception as e:
+            print(f"[ERROR] INSERT failed: {str(e)}")
             conn.rollback()
             return {
                 'statusCode': 400,
