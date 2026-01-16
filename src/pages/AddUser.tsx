@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
@@ -57,6 +55,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<number | null>(null);
+  const [searchRole, setSearchRole] = useState('');
+  const [showRoleList, setShowRoleList] = useState(false);
+  const roleSectionRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -76,6 +77,27 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
       loadExistingInvite(user.id);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (formData.role_ids.length > 0 && roles.length > 0) {
+      const selectedRole = roles.find(r => r.id === formData.role_ids[0]);
+      if (selectedRole) {
+        setSearchRole(selectedRole.display_name);
+      }
+    }
+  }, [formData.role_ids, roles]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (roleSectionRef.current && !roleSectionRef.current.contains(target)) {
+        setShowRoleList(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadRoles = async () => {
     try {
@@ -363,32 +385,53 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+              <div ref={roleSectionRef} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <Icon name="Shield" size={20} className="text-[#0ea5e9]" />
                   <h2 className="text-base lg:text-lg font-semibold text-foreground">Роль *</h2>
                 </div>
-                <div className="space-y-2">
-                  <Select
-                    value={formData.role_ids[0]?.toString() || ''}
-                    onValueChange={(value) => setFormData({ ...formData, role_ids: [parseInt(value)] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите роль" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id.toString()}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{role.display_name}</span>
-                            {role.description && (
-                              <span className="text-xs text-muted-foreground">{role.description}</span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2 relative">
+                  <Label htmlFor="role">Роль</Label>
+                  <div className="relative">
+                    <Input
+                      id="role"
+                      placeholder="Начните вводить название роли..."
+                      value={searchRole}
+                      onChange={(e) => {
+                        setSearchRole(e.target.value);
+                        setShowRoleList(true);
+                      }}
+                      onFocus={() => setShowRoleList(true)}
+                    />
+                    
+                    {showRoleList && roles.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {roles
+                          .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
+                                      r.name.toLowerCase().includes(searchRole.toLowerCase()))
+                          .map(role => (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, role_ids: [role.id] });
+                                setSearchRole(role.display_name);
+                                setShowRoleList(false);
+                              }}
+                              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                            >
+                              <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{role.display_name}</p>
+                                {role.description && (
+                                  <p className="text-xs text-muted-foreground">{role.description}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
