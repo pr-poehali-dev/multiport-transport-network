@@ -55,7 +55,6 @@ function Users({ onMenuClick }: UsersProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
-  const [loadingInvites, setLoadingInvites] = useState<Record<number, boolean>>({});
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -138,49 +137,6 @@ function Users({ onMenuClick }: UsersProps) {
     setDeleteDialogOpen(true);
   };
 
-  const handleRegenerateInvite = async (userId: number) => {
-    setLoadingInvites(prev => ({ ...prev, [userId]: true }));
-    try {
-      const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${userId}`,
-        { method: 'POST' }
-      );
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Инвайт обновлён',
-          description: 'Новая инвайт-ссылка сгенерирована'
-        });
-        
-        setUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, invite: data } : u
-        ));
-        setFilteredUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, invite: data } : u
-        ));
-      } else {
-        throw new Error(data.error || 'Ошибка генерации инвайта');
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось обновить инвайт'
-      });
-    } finally {
-      setLoadingInvites(prev => ({ ...prev, [userId]: false }));
-    }
-  };
-
-  const handleCopyInvite = (inviteLink: string) => {
-    navigator.clipboard.writeText(inviteLink);
-    toast({
-      title: 'Скопировано',
-      description: 'Инвайт-ссылка скопирована в буфер обмена'
-    });
-  };
-
   const confirmDelete = async () => {
     if (!userToDelete) return;
 
@@ -235,7 +191,6 @@ function Users({ onMenuClick }: UsersProps) {
       />
 
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
-        {/* Поиск */}
         <div className="mb-6">
           <div className="relative max-w-xl">
             <Icon 
@@ -265,7 +220,6 @@ function Users({ onMenuClick }: UsersProps) {
           )}
         </div>
 
-        {/* Список пользователей */}
         {isLoading ? (
           <div className="text-center py-20">
             <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
@@ -273,124 +227,127 @@ function Users({ onMenuClick }: UsersProps) {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
-            <Icon name="Users" size={48} className="mx-auto mb-4 opacity-20" />
-            <p>{searchQuery ? 'Ничего не найдено' : 'Нажмите "+ Добавить" для создания'}</p>
+            <Icon name="UserCircle" size={48} className="mx-auto mb-4 opacity-20" />
+            <p className="text-lg font-medium mb-2">
+              {searchQuery ? 'Ничего не найдено' : 'Нет пользователей'}
+            </p>
+            <p className="text-sm">
+              {searchQuery ? 'Попробуйте изменить запрос' : 'Нажмите "+ Добавить" для создания'}
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.map((user) => (
-              <div
-                key={user.id}
-                className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-[#0ea5e9]/10 rounded">
-                    <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredUsers.map((user) => {
+              const telegramConnected = user.invite?.is_used || false;
+              
+              return (
+                <div
+                  key={user.id}
+                  className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
+                      <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-base truncate">
+                          {user.full_name}
+                        </h3>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Icon name="Pencil" size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => handleDeleteClick(user.id)}
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        @{user.username}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm truncate">{user.full_name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">@{user.username}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Icon name="Mail" size={16} className="text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{user.email || '—'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Icon 
+                        name="MessageCircle" 
+                        size={16} 
+                        className={`flex-shrink-0 ${telegramConnected ? 'text-green-600' : 'text-red-600'}`} 
+                      />
+                      <span className={telegramConnected ? 'text-green-600' : 'text-red-600'}>
+                        {telegramConnected ? 'Telegram подключен' : 'Telegram не подключен'}
+                      </span>
+                    </div>
+
                     {user.roles && user.roles.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {user.roles.map((role) => (
-                          <Badge
-                            key={role.role_id}
-                            variant="secondary"
-                            className="text-xs bg-[#0ea5e9]/10 text-[#0ea5e9] px-2 py-0.5"
-                          >
-                            {role.role_display_name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(user.created_at).toLocaleDateString('ru-RU')}
-                    </p>
-                    
-                    {/* Инвайт-ссылка */}
-                    {user.invite && (
-                      <div className="mt-3 pt-3 border-t border-border space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Icon name="Link" size={14} className="text-[#0ea5e9]" />
-                          <span className="text-xs font-medium">Инвайт-ссылка</span>
-                          {user.invite.is_used ? (
-                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
-                              Использован
+                      <div className="flex items-center gap-2">
+                        <Icon name="Shield" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <div className="flex flex-wrap gap-1">
+                          {user.roles.map((role) => (
+                            <Badge key={role.role_id} variant="outline" className="text-xs">
+                              {role.role_display_name}
                             </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-green-50 text-green-600">
-                              Активен
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs flex-1"
-                            onClick={() => handleCopyInvite(user.invite!.invite_link)}
-                          >
-                            <Icon name="Copy" size={12} className="mr-1" />
-                            Скопировать
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleRegenerateInvite(user.id)}
-                            disabled={loadingInvites[user.id]}
-                          >
-                            {loadingInvites[user.id] ? (
-                              <Icon name="Loader2" size={12} className="animate-spin" />
-                            ) : (
-                              <Icon name="RefreshCw" size={12} />
-                            )}
-                          </Button>
+                          ))}
                         </div>
                       </div>
                     )}
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                      onClick={() => handleEditUser(user)}
-                    >
-                      <Icon name="Pencil" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => handleDeleteClick(user.id)}
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </Button>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-border">
+                      <Icon 
+                        name={user.is_active ? "CheckCircle2" : "XCircle"} 
+                        size={16} 
+                        className={`flex-shrink-0 ${user.is_active ? 'text-green-600' : 'text-gray-400'}`}
+                      />
+                      <span className={user.is_active ? 'text-green-600 font-medium' : 'text-gray-400'}>
+                        {user.is_active ? 'Активен' : 'Заблокирован'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Диалог подтверждения удаления */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Это действие нельзя отменить. Пользователь будет удалён из системы.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-red-500" />
+              Удалить пользователя?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Это действие нельзя отменить. Пользователь будет полностью удалён из системы.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="X" size={16} />
+              Отмена
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 gap-2"
             >
+              <Icon name="Trash2" size={16} />
               Удалить
             </AlertDialogAction>
           </AlertDialogFooter>
