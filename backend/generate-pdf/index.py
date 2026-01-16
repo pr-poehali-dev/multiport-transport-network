@@ -6,7 +6,6 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from io import BytesIO
 from pypdf import PdfReader, PdfWriter
-import pikepdf
 
 def handler(event: dict, context) -> dict:
     '''API для генерации PDF документов по шаблонам'''
@@ -203,38 +202,16 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     # Заполняем поля формы на всех страницах
     for page in writer.pages:
         try:
-            writer.update_page_form_field_values(page, form_data, auto_regenerate=False)
+            writer.update_page_form_field_values(page, form_data)
         except Exception as e:
             print(f'[WARNING] Could not update form fields: {e}')
     
-    # Сохраняем заполненную форму во временный буфер
-    temp_output = BytesIO()
-    writer.write(temp_output)
-    temp_output.seek(0)
+    # Записываем результат (оставляем как форму без flatten)
+    output = BytesIO()
+    writer.write(output)
+    output.seek(0)
     
-    # Используем pikepdf для flatten формы
-    try:
-        with pikepdf.open(temp_output) as pdf:
-            # Flatten аннотаций (превращает поля формы в обычный контент)
-            for page in pdf.pages:
-                for annot in page.get('/Annots', []):
-                    annot_obj = pdf.make_indirect(annot)
-                    if '/Subtype' in annot_obj and annot_obj['/Subtype'] == '/Widget':
-                        # Делаем поле нередактируемым
-                        if '/Ff' not in annot_obj:
-                            annot_obj['/Ff'] = 1  # ReadOnly flag
-                        else:
-                            annot_obj['/Ff'] = annot_obj['/Ff'] | 1
-            
-            # Сохраняем с flatten
-            output = BytesIO()
-            pdf.save(output, flatten_annotations=True)
-            output.seek(0)
-            return output.getvalue()
-    except Exception as e:
-        print(f'[WARNING] Flatten failed: {e}, returning form as-is')
-        temp_output.seek(0)
-        return temp_output.getvalue()
+    return output.getvalue()
 
 
 def prepare_form_data(contract: Dict[str, Any], related_data: Dict[str, Any]) -> Dict[str, str]:
