@@ -65,6 +65,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     username: user?.username || '',
     email: user?.email || '',
     phone: '',
+    password: '',
     is_active: user?.is_active ?? true,
     role_ids: user?.roles?.map(r => r.role_id) || [] as number[]
   });
@@ -400,18 +401,18 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                         id="username"
                         value={formData.username}
                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        placeholder="ivanov"
+                        placeholder="ivanov_ii"
                         disabled={!!user}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Телефон</Label>
+                      <Label htmlFor="password">Пароль</Label>
                       <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+7 (999) 123-45-67"
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="••••••••"
                       />
                     </div>
                   </div>
@@ -427,6 +428,19 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                         placeholder="ivanov@example.com"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Телефон</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+7 (999) 123-45-67"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 items-end">
                     <div ref={roleSectionRef} className="space-y-2 relative">
                       <Label htmlFor="role">Роль</Label>
                       <div className="relative">
@@ -470,19 +484,18 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label>Статус</Label>
-                      <p className="text-xs text-muted-foreground">
-                        {formData.is_active ? 'Активен' : 'Заблокирован'}
-                      </p>
+                    <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm font-normal mb-0">Статус</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {formData.is_active ? 'Активен' : 'Заблокирован'}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={formData.is_active}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                      />
                     </div>
-                    <Switch
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                    />
                   </div>
                 </div>
               </div>
