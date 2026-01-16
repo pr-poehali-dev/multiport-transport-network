@@ -52,10 +52,14 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
     setCargo,
     loadingSellerId,
     setLoadingSellerId,
+    loadingAddress,
+    setLoadingAddress,
     loadingDate,
     setLoadingDate,
     unloadingBuyerId,
     setUnloadingBuyerId,
+    unloadingAddress,
+    setUnloadingAddress,
     unloadingDate,
     setUnloadingDate,
     paymentAmount,
@@ -290,6 +294,9 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 selectedId={loadingSellerId}
                 onSelect={(contractor) => setLoadingSellerId(contractor.id)}
                 showDetails
+                showAddressSelect
+                selectedAddress={loadingAddress}
+                onSelectAddress={setLoadingAddress}
               />
               
               <div className="space-y-2">
@@ -321,6 +328,9 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 selectedId={unloadingBuyerId}
                 onSelect={(contractor) => setUnloadingBuyerId(contractor.id)}
                 showDetails
+                showAddressSelect
+                selectedAddress={unloadingAddress}
+                onSelectAddress={setUnloadingAddress}
               />
               
               <div className="space-y-2">

@@ -12,6 +12,9 @@ interface ContractorSelectProps {
   selectedId?: number;
   onSelect: (contractor: Contractor) => void;
   showDetails?: boolean;
+  showAddressSelect?: boolean;
+  selectedAddress?: string;
+  onSelectAddress?: (address: string) => void;
 }
 
 export default function ContractorSelect({
@@ -22,7 +25,10 @@ export default function ContractorSelect({
   loadingData,
   selectedId,
   onSelect,
-  showDetails = false
+  showDetails = false,
+  showAddressSelect = false,
+  selectedAddress,
+  onSelectAddress
 }: ContractorSelectProps) {
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
@@ -120,6 +126,47 @@ export default function ContractorSelect({
               </span>
             </div>
           )}
+        </div>
+      )}
+      
+      {showAddressSelect && selectedContractor && (
+        <div className="space-y-2">
+          <Label>Адрес {role === 'seller' ? 'погрузки' : 'разгрузки'}</Label>
+          <div className="space-y-2">
+            {/* Основной адрес */}
+            {selectedContractor.actualAddress && (
+              <button
+                type="button"
+                onClick={() => onSelectAddress?.(selectedContractor.actualAddress!)}
+                className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
+                  selectedAddress === selectedContractor.actualAddress
+                    ? 'border-[#0ea5e9] bg-blue-50'
+                    : 'border-border'
+                }`}
+              >
+                <div className="font-medium text-foreground">{selectedContractor.actualAddress}</div>
+                <div className="text-xs text-muted-foreground mt-1">Адрес фирмы</div>
+              </button>
+            )}
+            {/* Дополнительные адреса доставки */}
+            {selectedContractor.deliveryAddresses?.map((da, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onSelectAddress?.(da.address)}
+                className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
+                  selectedAddress === da.address
+                    ? 'border-[#0ea5e9] bg-blue-50'
+                    : 'border-border'
+                }`}
+              >
+                <div className="font-medium text-foreground">{da.address}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {da.contact} • {da.phone}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </>

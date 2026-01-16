@@ -15,8 +15,10 @@ export function useContractForm() {
   const [additionalConditions, setAdditionalConditions] = useState('');
   const [cargo, setCargo] = useState('');
   const [loadingSellerId, setLoadingSellerId] = useState<number | undefined>();
+  const [loadingAddress, setLoadingAddress] = useState('');
   const [loadingDate, setLoadingDate] = useState('');
   const [unloadingBuyerId, setUnloadingBuyerId] = useState<number | undefined>();
+  const [unloadingAddress, setUnloadingAddress] = useState('');
   const [unloadingDate, setUnloadingDate] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [taxationType, setTaxationType] = useState('');
@@ -79,10 +81,14 @@ export function useContractForm() {
     setCargo,
     loadingSellerId,
     setLoadingSellerId,
+    loadingAddress,
+    setLoadingAddress,
     loadingDate,
     setLoadingDate,
     unloadingBuyerId,
     setUnloadingBuyerId,
+    unloadingAddress,
+    setUnloadingAddress,
     unloadingDate,
     setUnloadingDate,
     paymentAmount,
