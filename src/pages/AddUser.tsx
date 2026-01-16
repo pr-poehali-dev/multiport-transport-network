@@ -52,6 +52,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [showRoleList, setShowRoleList] = useState(false);
   const roleSectionRef = useRef<HTMLDivElement>(null);
   const [showInviteSection, setShowInviteSection] = useState(isEditMode);
+  const [createdUserId, setCreatedUserId] = useState<number | null>(user?.id || null);
   
   // Основная информация
   const [fullName, setFullName] = useState(user?.full_name || '');
@@ -145,8 +146,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         description: data.message || (isEditMode ? 'Пользователь обновлён' : 'Пользователь создан')
       });
 
-      // Если создан новый пользователь, показываем секцию инвайта
+      // Если создан новый пользователь, сохраняем его ID и показываем секцию инвайта
       if (!isEditMode && data.id) {
+        setCreatedUserId(data.id);
         setShowInviteSection(true);
         loadExistingInvite(data.id);
         return; // Не выходим, чтобы можно было создать инвайт
@@ -181,7 +183,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleCreateInvite = async () => {
-    const targetUserId = user?.id;
+    const targetUserId = user?.id || createdUserId;
     if (!targetUserId) {
       toast({
         variant: 'destructive',
@@ -217,7 +219,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleRegenerateInvite = async () => {
-    const targetUserId = user?.id;
+    const targetUserId = user?.id || createdUserId;
     if (!targetUserId) return;
     
     setRegeneratingInvite(true);
@@ -530,7 +532,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   <p className="text-sm text-muted-foreground mb-3">Инвайт-ссылка ещё не создана</p>
                   <Button 
                     onClick={handleCreateInvite}
-                    disabled={regeneratingInvite || !user?.id}
+                    disabled={regeneratingInvite || (!user?.id && !createdUserId)}
                     className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                   >
                     {regeneratingInvite ? (
@@ -545,7 +547,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       </>
                     )}
                   </Button>
-                  {!user?.id && (
+                  {!user?.id && !createdUserId && (
                     <p className="text-xs text-muted-foreground mt-2">Сначала сохраните пользователя</p>
                   )}
                 </div>
