@@ -70,10 +70,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
   useEffect(() => {
     loadRoles();
+  }, []);
+
+  useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const loadRoles = async () => {
     try {
