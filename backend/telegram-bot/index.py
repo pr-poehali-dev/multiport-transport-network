@@ -96,78 +96,56 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 invite_code = parts[1]
                 
                 cursor.execute('''
-                    SELECT id, created_by, current_uses, max_uses, is_active
-                    FROM invite_links
-                    WHERE code = %s
+                    SELECT id, full_name, telegram_id, invite_used_at
+                    FROM users
+                    WHERE invite_code = %s
                 ''', (invite_code,))
-                invite = cursor.fetchone()
+                user = cursor.fetchone()
                 
-                if not invite or not invite[4]:
-                    response_text = "❌ Инвайт-ссылка недействительна или уже использована."
-                elif invite[2] >= invite[3]:
+                if not user:
+                    response_text = "❌ Инвайт-ссылка недействительна."
+                elif user[3] is not None:
                     response_text = "❌ Эта инвайт-ссылка уже использована."
+                elif user[2] is not None:
+                    response_text = "✅ Вы уже подключены к системе!"
                 else:
-                    user_id = invite[1]
+                    user_id = user[0]
+                    user_name = user[1]
                     
                     cursor.execute('''
-                        SELECT id FROM user_telegram_links
-                        WHERE user_id = %s
-                    ''', (user_id,))
+                        UPDATE users
+                        SET telegram_id = %s, invite_used_at = NOW()
+                        WHERE id = %s
+                    ''', (chat_id, user_id))
                     
-                    if cursor.fetchone():
-                        response_text = "✅ Вы уже подключены к системе!"
-                    else:
-                        cursor.execute('''
-                            INSERT INTO user_telegram_links (user_id, telegram_id)
-                            VALUES (%s, %s)
-                            ON CONFLICT (user_id) DO UPDATE SET telegram_id = EXCLUDED.telegram_id
-                        ''', (user_id, chat_id))
-                        
-                        cursor.execute('''
-                            UPDATE invite_links
-                            SET current_uses = current_uses + 1
-                            WHERE id = %s
-                        ''', (invite[0],))
-                        
-                        conn.commit()
-                        
-                        cursor.execute('''
-                            SELECT full_name FROM users WHERE id = %s
-                        ''', (user_id,))
-                        user = cursor.fetchone()
-                        user_name = user[0] if user else 'Пользователь'
-                        
-                        response_text = (
-                            f"✅ Отлично, {user_name}!\n\n"
-                            "Вы успешно подключены к системе Диантус.\n"
-                            "Теперь вы будете получать уведомления о важных событиях."
+                    conn.commit()
+                    
+                    response_text = (
+                        f"✅ Отлично, {user_name}!\n\n"
+                        "Вы успешно подключены к системе Диантус.\n"
+                        "Теперь вы будете получать уведомления о важных событиях."
+                    )
+                    
+                    # Отправляем уведомление админу
+                    cursor.execute('SELECT admin_telegram_id FROM telegram_config WHERE id = 1')
+                    admin_config = cursor.fetchone()
+                    
+                    if admin_config and admin_config[0]:
+                        admin_telegram_id = admin_config[0]
+                        admin_notification = (
+                            f"🎉 Новый пользователь подключился!\n\n"
+                            f"👤 {user_name}\n"
+                            f"📱 Telegram ID: {chat_id}"
                         )
-                        
-                        # Отправляем уведомление админу о подключении
-                        cursor.execute('''
-                            SELECT utl.telegram_id
-                            FROM user_telegram_links utl
-                            WHERE utl.user_id = %s
-                        ''', (invite[1],))
-                        admin_link = cursor.fetchone()
-                        
-                        if admin_link and admin_link[0]:
-                            admin_telegram_id = admin_link[0]
-                            admin_notification = (
-                                f"🎉 Новый пользователь подключился!\n\n"
-                                f"👤 {user_name}\n"
-                                f"📱 Telegram ID: {chat_id}\n"
-                                f"🔗 По вашей инвайт-ссылке"
-                            )
-                            requests.post(
-                                f'https://api.telegram.org/bot{bot_token}/sendMessage',
-                                json={
-                                    'chat_id': admin_telegram_id,
-                                    'text': admin_notification,
-                                    'parse_mode': 'HTML'
-                                },
-                                timeout=5
-                            )
+                        requests.post(
+                            f'https://api.telegram.org/bot{bot_token}/sendMessage',
+                            json={
+                                'chat_id': admin_telegram_id,
+                                'text': admin_notification,
+                                'parse_mode': 'HTML'
+                            },
+                            timeout=5
+                        )
         
         elif text == '/help':
             response_text = (
@@ -179,10 +157,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         elif text == '/status':
             cursor.execute('''
-                SELECT u.full_name, u.email
-                FROM user_telegram_links utl
-                JOIN users u ON utl.user_id = u.id
-                WHERE utl.telegram_id = %s
+                SELECT full_name, email
+                FROM users
+                WHERE telegram_id = %s
             ''', (chat_id,))
             user = cursor.fetchone()
             
