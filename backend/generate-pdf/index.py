@@ -202,14 +202,18 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     # Заполняем поля формы на всех страницах
     for page in writer.pages:
         try:
-            writer.update_page_form_field_values(page, form_data)
+            writer.update_page_form_field_values(page, form_data, auto_regenerate=False)
         except Exception as e:
             print(f'[WARNING] Could not update form fields: {e}')
             # Если нет полей формы - ничего страшного, просто вернем оригинал
     
     # Flatten форму - превращаем поля в обычный текст (убираем редактируемость и рамки)
-    if writer.get_fields():
-        writer.flatten_annotations()
+    try:
+        # Удаляем AcroForm чтобы убрать интерактивность полей
+        if "/AcroForm" in writer._root_object:
+            writer._root_object.pop("/AcroForm")
+    except Exception as e:
+        print(f'[WARNING] Could not flatten form: {e}')
     
     # Записываем результат
     output = BytesIO()
