@@ -83,6 +83,20 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
+        # Проверяем что file_data не пустой
+        if not template.get('file_data'):
+            cursor.close()
+            conn.close()
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'Template file data is empty'}),
+                'isBase64Encoded': False
+            }
+        
         # Загружаем договор
         cursor.execute(
             "SELECT * FROM contracts WHERE id = %s",
@@ -158,8 +172,25 @@ def handler(event: dict, context) -> dict:
 def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_data: Dict[str, Any]) -> bytes:
     '''Генерирует PDF из шаблона с подстановкой данных'''
     
-    # Декодируем PDF шаблон из base64
-    template_pdf_bytes = base64.b64decode(template['file_data'])
+    # Получаем file_data из шаблона
+    file_data = template['file_data']
+    
+    # PostgreSQL bytea возвращается как memoryview или bytes
+    if isinstance(file_data, memoryview):
+        template_pdf_bytes = file_data.tobytes()
+    elif isinstance(file_data, bytes):
+        template_pdf_bytes = file_data
+    elif isinstance(file_data, str):
+        # Если строка - это base64
+        file_data = file_data.strip().replace('\n', '').replace('\r', '')
+        template_pdf_bytes = base64.b64decode(file_data)
+    else:
+        raise ValueError(f'Unexpected file_data type: {type(file_data)}')
+    
+    # Проверяем что это действительно PDF (начинается с %PDF)
+    if not template_pdf_bytes.startswith(b'%PDF'):
+        raise ValueError(f'Invalid PDF header: {template_pdf_bytes[:20]}')
+    
     template_pdf = BytesIO(template_pdf_bytes)
     
     # Читаем шаблон (strict=False для игнорирования ошибок формата)
