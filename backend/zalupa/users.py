@@ -75,6 +75,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         username = body.get('username', '').strip()
         email = body.get('email', '').strip()
         full_name = body.get('full_name', '').strip()
+        phone = body.get('phone', '').strip()
         role_ids = body.get('role_ids', [])
 
         if not username or not email or not full_name:
@@ -87,8 +88,8 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
 
         try:
             cursor.execute(
-                'INSERT INTO users (username, email, full_name) VALUES (%s, %s, %s) RETURNING id',
-                (username, email, full_name)
+                'INSERT INTO users (username, email, full_name, phone) VALUES (%s, %s, %s, %s) RETURNING id',
+                (username, email, full_name, phone)
             )
             user_id = cursor.fetchone()[0]
 
@@ -131,6 +132,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         username = body.get('username', '').strip()
         email = body.get('email', '').strip()
         full_name = body.get('full_name', '').strip()
+        phone = body.get('phone', '').strip()
         is_active = body.get('is_active', True)
         role_ids = body.get('role_ids', [])
 
@@ -146,8 +148,8 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         try:
             if username and email and full_name:
                 cursor.execute(
-                    'UPDATE users SET username = %s, email = %s, full_name = %s, is_active = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s',
-                    (username, email, full_name, is_active, user_id)
+                    'UPDATE users SET username = %s, email = %s, full_name = %s, phone = %s, is_active = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s',
+                    (username, email, full_name, phone, is_active, user_id)
                 )
 
             cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
