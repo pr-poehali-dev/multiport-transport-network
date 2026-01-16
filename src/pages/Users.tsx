@@ -19,13 +19,19 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
+interface Role {
+  role_id: number;
+  role_name: string;
+  role_display_name: string;
+}
+
 interface User {
   id: number;
   username: string;
   email: string;
   full_name: string;
   is_active: boolean;
-  is_admin: boolean;
+  roles: Role[] | null;
   created_at: string;
   invite?: {
     id: number;
@@ -281,12 +287,16 @@ function Users({ onMenuClick }: UsersProps) {
                       </span>
                     </div>
 
-                    {user.is_admin && (
+                    {user.roles && user.roles.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <Icon name="Shield" size={16} className="text-[#0ea5e9] flex-shrink-0" />
-                        <Badge variant="outline" className="text-xs border-[#0ea5e9] text-[#0ea5e9]">
-                          Администратор
-                        </Badge>
+                        <Icon name="Shield" size={16} className="text-muted-foreground flex-shrink-0" />
+                        <div className="flex flex-wrap gap-1">
+                          {user.roles.map((role) => (
+                            <Badge key={role.role_id} variant="outline" className="text-xs">
+                              {role.role_display_name}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
 

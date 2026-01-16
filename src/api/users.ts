@@ -9,7 +9,7 @@ export interface User {
   phone?: string;
   password?: string;
   is_active?: boolean;
-  is_admin?: boolean;
+  role_ids?: number[];
   created_at?: string;
   updated_at?: string;
 }

@@ -20,8 +20,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+interface Role {
+  role_id: number;
+  role_name: string;
+  role_display_name: string;
+}
+
+interface RoleOption {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+}
+
 interface AddUserProps {
-  user?: User;
+  user?: User & { roles?: Role[] };
   onBack: () => void;
   onMenuClick: () => void;
 }
@@ -31,9 +44,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const isEditMode = !!user;
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [existingInvite, setExistingInvite] = useState<any>(null);
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
+  const [searchRole, setSearchRole] = useState('');
+  const [showRoleList, setShowRoleList] = useState(false);
+  const roleSectionRef = useRef<HTMLDivElement>(null);
   const [showInviteSection, setShowInviteSection] = useState(isEditMode);
   const [createdUserId, setCreatedUserId] = useState<number | null>(user?.id || null);
   
@@ -44,13 +61,49 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [phone, setPhone] = useState(user?.phone || '');
   const [password, setPassword] = useState('');
   const [isActive, setIsActive] = useState(user?.is_active ?? true);
-  const [isAdmin, setIsAdmin] = useState(user?.is_admin ?? false);
+  const [roleIds, setRoleIds] = useState<number[]>(user?.roles?.map(r => r.role_id) || []);
+
+  useEffect(() => {
+    loadRoles();
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (roleIds.length > 0 && roles.length > 0) {
+      const selectedRole = roles.find(r => r.id === roleIds[0]);
+      if (selectedRole) {
+        setSearchRole(selectedRole.display_name);
+      }
+    }
+  }, [roleIds, roles]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (roleSectionRef.current && !roleSectionRef.current.contains(target)) {
+        setShowRoleList(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadRoles = async () => {
+    try {
+      const response = await apiRequest(API_CONFIG.ENDPOINTS.roles);
+      if (response.roles) {
+        setRoles(response.roles);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки ролей:', error);
+    }
+  };
 
   const handleCancel = () => {
     setShowCancelDialog(true);
@@ -81,7 +134,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         phone: phone.trim(),
         password: password.trim(),
         is_active: isActive,
-        is_admin: isAdmin
+        role_ids: roleIds
       };
 
       const data = isEditMode 
@@ -346,16 +399,49 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <Icon name="Shield" size={16} className="text-[#0ea5e9]" />
-                    <Label className="text-sm font-normal mb-0">Администратор</Label>
+              <div className="grid grid-cols-2 gap-4 items-end">
+                <div ref={roleSectionRef} className="space-y-2 relative">
+                  <Label htmlFor="role">Роль</Label>
+                  <div className="relative">
+                    <Input
+                      id="role"
+                      placeholder="Начните вводить название роли..."
+                      value={searchRole}
+                      onChange={(e) => {
+                        setSearchRole(e.target.value);
+                        setShowRoleList(true);
+                      }}
+                      onFocus={() => setShowRoleList(true)}
+                    />
+                    
+                    {showRoleList && roles.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {roles
+                          .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
+                                      r.name.toLowerCase().includes(searchRole.toLowerCase()))
+                          .map(role => (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={() => {
+                                setRoleIds([role.id]);
+                                setSearchRole(role.display_name);
+                                setShowRoleList(false);
+                              }}
+                              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                            >
+                              <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{role.display_name}</p>
+                                {role.description && (
+                                  <p className="text-xs text-muted-foreground">{role.description}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    )}
                   </div>
-                  <Switch
-                    checked={isAdmin}
-                    onCheckedChange={setIsAdmin}
-                  />
                 </div>
                 <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
                   <div className="flex items-center gap-2">
