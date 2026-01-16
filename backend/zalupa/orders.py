@@ -253,16 +253,6 @@ def create_order(event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, st
         
         order_id, created_at = cursor.fetchone()
         
-        send_notification(
-            cursor,
-            'order_created',
-            {
-                'order_id': order_id,
-                'prefix': data.get('prefix', ''),
-                'route_number': data.get('routeNumber', '')
-            }
-        )
-        
         consignees = data.get('consignees', [])
         for idx, consignee in enumerate(consignees):
             cursor.execute('''
@@ -288,6 +278,19 @@ def create_order(event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, st
                 ''', (route_id, stop.get('type'), stop.get('address'), stop.get('note'), stop_idx))
         
         conn.commit()
+        
+        try:
+            send_notification(
+                cursor,
+                'order_created',
+                {
+                    'order_id': order_id,
+                    'prefix': data.get('prefix', ''),
+                    'route_number': data.get('routeNumber', '')
+                }
+            )
+        except Exception as e:
+            print(f'Ошибка отправки уведомления: {e}')
         
         return {
             'statusCode': 201,

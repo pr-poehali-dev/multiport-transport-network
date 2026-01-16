@@ -187,16 +187,24 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
 
     elif action == 'settings':
         if method == 'GET':
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute('SELECT * FROM telegram_settings ORDER BY event_type')
-            settings = cursor.fetchall()
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute('SELECT * FROM telegram_settings ORDER BY event_type')
+                settings = cursor.fetchall()
 
-            return {
-                'statusCode': 200,
-                'headers': cors_headers,
-                'body': json.dumps({'settings': [dict(s) for s in settings]}),
-                'isBase64Encoded': False
-            }
+                return {
+                    'statusCode': 200,
+                    'headers': cors_headers,
+                    'body': json.dumps({'settings': [dict(s) for s in settings]}),
+                    'isBase64Encoded': False
+                }
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': f'Settings fetch error: {str(e)}'}),
+                    'isBase64Encoded': False
+                }
 
         elif method == 'PUT':
             event_type = params.get('event_type')
