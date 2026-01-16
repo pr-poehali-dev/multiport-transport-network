@@ -117,17 +117,15 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     onBack();
   };
 
-  const handleSave = async () => {
+  const saveUserData = async () => {
     if (!fullName.trim() || !password.trim()) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
         description: 'Заполните обязательные поля: ФИО и Пароль'
       });
-      return;
+      return null;
     }
-
-    setIsSaving(true);
 
     try {
       const userData: User = {
@@ -144,24 +142,36 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         ? await updateUser(user.id!, userData)
         : await createUser(userData);
 
-      toast({
-        title: 'Успешно',
-        description: data.message || (isEditMode ? 'Пользователь обновлён' : 'Пользователь создан')
-      });
-
       // Если создан новый пользователь, сохраняем его ID
       if (!isEditMode && data.id) {
         setCreatedUserId(data.id);
         loadExistingInvite(data.id);
       }
 
-      onBack();
+      return data;
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
         description: error instanceof Error ? error.message : 'Не удалось сохранить пользователя'
       });
+      return null;
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    try {
+      const data = await saveUserData();
+      
+      if (data) {
+        toast({
+          title: 'Успешно',
+          description: data.message || (isEditMode ? 'Пользователь обновлён' : 'Пользователь создан')
+        });
+        onBack();
+      }
     } finally {
       setIsSaving(false);
     }
@@ -462,11 +472,39 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
           {!showInviteSection ? (
             <button
-              onClick={() => setShowInviteSection(true)}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+              onClick={async () => {
+                // Если пользователь ещё не сохранён, сохраняем его
+                if (!createdUserId && !user?.id) {
+                  setIsSaving(true);
+                  const data = await saveUserData();
+                  setIsSaving(false);
+                  
+                  if (!data || !data.id) {
+                    return; // Ошибка валидации или сохранения
+                  }
+                  
+                  toast({
+                    title: 'Успешно',
+                    description: 'Пользователь создан'
+                  });
+                }
+                
+                setShowInviteSection(true);
+              }}
+              disabled={isSaving}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Icon name="Plus" size={20} />
-              <span>Добавить инвайт-ссылку</span>
+              {isSaving ? (
+                <>
+                  <Icon name="Loader2" size={20} className="animate-spin" />
+                  <span>Сохранение...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="Plus" size={20} />
+                  <span>Добавить инвайт-ссылку</span>
+                </>
+              )}
             </button>
           ) : (
             <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
