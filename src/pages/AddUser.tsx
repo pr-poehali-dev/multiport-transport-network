@@ -115,6 +115,15 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleSave = async () => {
+    if (!formData.full_name.trim() || !formData.password.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'ФИО и Пароль обязательны для заполнения'
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -287,6 +296,15 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleAddInvite = async () => {
+    if (!formData.full_name.trim() || !formData.password.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'ФИО и Пароль обязательны для заполнения'
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -385,7 +403,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">ФИО</Label>
+                    <Label htmlFor="full_name">ФИО *</Label>
                     <Input
                       id="full_name"
                       value={formData.full_name}
@@ -406,7 +424,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Пароль</Label>
+                      <Label htmlFor="password">Пароль *</Label>
                       <Input
                         id="password"
                         type="password"
