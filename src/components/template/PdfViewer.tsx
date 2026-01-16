@@ -208,17 +208,17 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
               style={{ userSelect: 'text' }}
             />
 
-            {/* Плейсхолдеры назначенных полей (заменяют текст) */}
+            {/* Плейсхолдеры назначенных полей с голубой подсветкой */}
             {fieldMappings.map((mapping) => (
               <div
                 key={mapping.id}
-                className="absolute pointer-events-none"
+                className="absolute pointer-events-none border-2 border-[#0ea5e9]"
                 style={{
                   left: mapping.x * scale,
                   top: mapping.y * scale,
                   width: mapping.width * scale,
                   height: mapping.height * scale,
-                  backgroundColor: 'white',
+                  backgroundColor: 'rgba(14, 165, 233, 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: mapping.align === 'center' ? 'center' : mapping.align === 'right' ? 'flex-end' : 'flex-start',
@@ -227,6 +227,7 @@ const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                   textAlign: mapping.align || 'left',
                   flexWrap: mapping.wordWrap ? 'wrap' : 'nowrap',
                   overflow: 'hidden',
+                  borderRadius: '2px',
                 }}
               >
                 <span
