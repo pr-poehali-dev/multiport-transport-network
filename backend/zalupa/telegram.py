@@ -1,6 +1,13 @@
 import json
 import requests
 from psycopg2.extras import RealDictCursor
+from datetime import datetime
+
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) -> dict:
@@ -206,7 +213,7 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
                 return {
                     'statusCode': 200,
                     'headers': cors_headers,
-                    'body': json.dumps({'settings': [dict(s) for s in settings]}),
+                    'body': json.dumps({'settings': [dict(s) for s in settings]}, default=serialize_datetime),
                     'isBase64Encoded': False
                 }
             except Exception as e:
