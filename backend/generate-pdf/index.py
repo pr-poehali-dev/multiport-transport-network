@@ -207,6 +207,10 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
             print(f'[WARNING] Could not update form fields: {e}')
             # Если нет полей формы - ничего страшного, просто вернем оригинал
     
+    # Flatten форму - превращаем поля в обычный текст (убираем редактируемость и рамки)
+    if writer.get_fields():
+        writer.flatten_annotations()
+    
     # Записываем результат
     output = BytesIO()
     writer.write(output)
