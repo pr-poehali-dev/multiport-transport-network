@@ -55,6 +55,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [inviteLink, setInviteLink] = useState<string>('');
   const [showInviteSection, setShowInviteSection] = useState(false);
+  const [existingInvite, setExistingInvite] = useState<any>(null);
+  const [loadingInvite, setLoadingInvite] = useState(false);
+  const [regeneratingInvite, setRegeneratingInvite] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -67,7 +70,10 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
   useEffect(() => {
     loadRoles();
-  }, []);
+    if (user?.id) {
+      loadExistingInvite(user.id);
+    }
+  }, [user?.id]);
 
   const loadRoles = async () => {
     try {
@@ -164,8 +170,51 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     }
   };
 
-  const handleCopyInvite = () => {
-    navigator.clipboard.writeText(inviteLink);
+  const loadExistingInvite = async (userId: number) => {
+    setLoadingInvite(true);
+    try {
+      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=user_invite&user_id=${userId}`);
+      const data = await response.json();
+      if (data.invite) {
+        setExistingInvite(data.invite);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки инвайта:', error);
+    } finally {
+      setLoadingInvite(false);
+    }
+  };
+
+  const handleRegenerateInvite = async () => {
+    if (!user?.id) return;
+    
+    setRegeneratingInvite(true);
+    try {
+      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${user.id}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok && data.invite_link) {
+        setExistingInvite(data);
+        toast({
+          title: 'Инвайт обновлён',
+          description: 'Старая ссылка больше не работает'
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось обновить инвайт'
+      });
+    } finally {
+      setRegeneratingInvite(false);
+    }
+  };
+
+  const handleCopyInvite = (link: string) => {
+    navigator.clipboard.writeText(link);
     toast({
       title: 'Скопировано',
       description: 'Инвайт-ссылка скопирована в буфер обмена'
@@ -320,6 +369,69 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
+          {user?.id && existingInvite && (
+            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="Link" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
+                </div>
+                {existingInvite.is_used ? (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Icon name="CheckCircle2" size={12} className="mr-1" />
+                    Использована
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="bg-green-500">
+                    <Icon name="Clock" size={12} className="mr-1" />
+                    Активна
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Отправьте эту ссылку пользователю для подключения к боту
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  value={existingInvite.invite_link} 
+                  readOnly 
+                  className="font-mono text-sm"
+                />
+                <Button 
+                  onClick={() => handleCopyInvite(existingInvite.invite_link)}
+                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
+                >
+                  <Icon name="Copy" size={18} />
+                  Скопировать
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon name="Info" size={14} />
+                <span>Использований: {existingInvite.current_uses}/{existingInvite.max_uses}</span>
+              </div>
+              {existingInvite.is_used && (
+                <Button 
+                  onClick={handleRegenerateInvite}
+                  disabled={regeneratingInvite}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  {regeneratingInvite ? (
+                    <>
+                      <Icon name="Loader2" size={16} className="animate-spin" />
+                      Генерация...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="RefreshCw" size={16} />
+                      Сгенерировать новую ссылку
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
+
           {showInviteSection && inviteLink && (
             <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center gap-2">
@@ -336,7 +448,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   className="font-mono text-sm"
                 />
                 <Button 
-                  onClick={handleCopyInvite}
+                  onClick={() => handleCopyInvite(inviteLink)}
                   className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                 >
                   <Icon name="Copy" size={18} />
