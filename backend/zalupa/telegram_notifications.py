@@ -32,17 +32,9 @@ def send_notification(
     for key, value in variables.items():
         message = message.replace(f'{{{key}}}', str(value))
     
-    cursor.execute('''
-        SELECT DISTINCT utl.telegram_id
-        FROM user_telegram_links utl
-        JOIN user_roles ur ON utl.user_id = ur.user_id
-        WHERE ur.role_id = ANY(%s)
-          AND utl.telegram_id IS NOT NULL
-    ''', (role_ids,))
-    
-    telegram_ids = [row[0] for row in cursor.fetchall()]
-    
-    if admin_telegram_id not in telegram_ids:
+    # Получаем telegram_id пользователей (сейчас отправляем только админу)
+    telegram_ids = []
+    if admin_telegram_id:
         telegram_ids.append(admin_telegram_id)
     
     success = False
