@@ -3,6 +3,17 @@ from typing import Dict, Any
 from psycopg2.extras import RealDictCursor
 
 
+def to_camelcase(data: Dict[str, Any]) -> Dict[str, Any]:
+    '''Преобразует snake_case ключи в camelCase'''
+    result = {}
+    for key, value in data.items():
+        # Преобразуем snake_case в camelCase
+        parts = key.split('_')
+        camel_key = parts[0] + ''.join(word.capitalize() for word in parts[1:])
+        result[camel_key] = value
+    return result
+
+
 def handle_contracts(method: str, event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, str]) -> Dict[str, Any]:
     '''Обработка запросов для договоров-заявок'''
     
@@ -67,13 +78,14 @@ def get_all_contracts(cursor, cors_headers: Dict[str, str]) -> Dict[str, Any]:
     ''')
     
     contracts = cursor.fetchall()
+    contracts_camelcase = [to_camelcase(dict(c)) for c in contracts]
     
     return {
         'statusCode': 200,
         'headers': cors_headers,
         'body': json.dumps({
-            'contracts': [dict(c) for c in contracts],
-            'total': len(contracts)
+            'contracts': contracts_camelcase,
+            'total': len(contracts_camelcase)
         }, default=str),
         'isBase64Encoded': False
     }
@@ -112,7 +124,7 @@ def get_contract_by_id(cursor, contract_id: str, cors_headers: Dict[str, str]) -
     return {
         'statusCode': 200,
         'headers': cors_headers,
-        'body': json.dumps(dict(contract), default=str),
+        'body': json.dumps(to_camelcase(dict(contract)), default=str),
         'isBase64Encoded': False
     }
 
