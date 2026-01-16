@@ -16,7 +16,8 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
             if config:
                 result = dict(config)
                 if result.get('bot_token'):
-                    result['bot_token'] = '***' + result['bot_token'][-4:] if len(result['bot_token']) > 4 else '***'
+                    result['bot_token_masked'] = '***' + result['bot_token'][-4:] if len(result['bot_token']) > 4 else '***'
+                    result['bot_token'] = result['bot_token']
                 return {
                     'statusCode': 200,
                     'headers': cors_headers,
