@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Process empty queue",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
