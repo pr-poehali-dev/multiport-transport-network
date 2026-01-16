@@ -7,6 +7,13 @@ def handle_orders(method: str, event: Dict[str, Any], cursor, conn, cors_headers
     '''Обработка запросов к orders'''
     params = event.get('queryStringParameters') or {}
     order_id = params.get('id')
+    action = params.get('action')
+    
+    if method == 'POST' and action == 'notify_order_saved':
+        return notify_order_saved(event, cursor, conn, cors_headers)
+    
+    if method == 'POST' and action == 'notify_route_saved':
+        return notify_route_saved(event, cursor, conn, cors_headers)
     
     if method == 'GET':
         if order_id:
@@ -388,6 +395,76 @@ def delete_order(order_id: str, cursor, conn, cors_headers: Dict[str, str]) -> D
             'statusCode': 200,
             'headers': cors_headers,
             'body': json.dumps({'message': 'Заказ удалён'}),
+            'isBase64Encoded': False
+        }
+    
+    except Exception as e:
+        conn.rollback()
+        return {
+            'statusCode': 500,
+            'headers': cors_headers,
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
+        }
+
+
+def notify_order_saved(event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, str]) -> Dict[str, Any]:
+    '''Отправить уведомление о сохранении основной информации заказа'''
+    try:
+        data = json.loads(event.get('body', '{}'))
+        
+        send_notification(
+            cursor,
+            'order_created',
+            {
+                'order_id': data.get('routeNumber', 'Новый'),
+                'prefix': data.get('prefix', ''),
+                'route_number': data.get('routeNumber', '')
+            }
+        )
+        
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'Уведомление отправлено'}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'ok', 'error': str(e)}),
+            'isBase64Encoded': False
+        }
+
+
+def notify_route_saved(event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, str]) -> Dict[str, Any]:
+    '''Отправить уведомление о сохранении маршрута'''
+    try:
+        data = json.loads(event.get('body', '{}'))
+        
+        send_notification(
+            cursor,
+            'order_assigned',
+            {
+                'order_id': data.get('routeNumber', ''),
+                'driver_name': data.get('driverName', 'Не указан'),
+                'route_from': data.get('from', ''),
+                'route_to': data.get('to', '')
+            }
+        )
+        
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'Уведомление отправлено'}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'ok', 'error': str(e)}),
             'isBase64Encoded': False
         }
         

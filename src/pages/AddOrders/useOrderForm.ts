@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Order } from '@/api/orders';
+import { Order, notifyOrderSaved, notifyRouteSaved } from '@/api/orders';
 import { Route, Consignee } from './types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,20 +39,45 @@ export function useOrderForm(order?: Order) {
   const [lockedRoutes, setLockedRoutes] = useState<Set<string>>(new Set());
   const [isOrderLocked, setIsOrderLocked] = useState(!!order);
 
-  const handleSaveOrder = () => {
+  const handleSaveOrder = async () => {
     setIsOrderLocked(true);
+    
+    try {
+      await notifyOrderSaved({
+        prefix,
+        routeNumber
+      });
+    } catch (error) {
+      console.error('Ошибка отправки уведомления:', error);
+    }
+    
     toast({
       title: 'Заказ сохранен',
       description: 'Теперь можно создавать и блокировать маршруты'
     });
   };
 
-  const handleSaveAndGo = (routeId: string, routeIndex: number) => {
+  const handleSaveAndGo = async (routeId: string, routeIndex: number) => {
+    const route = routes.find(r => r.id === routeId);
+    
     setRoutes(routes.map(r => 
       r.id === routeId ? { ...r, isLocked: true } : r
     ));
     
     setLockedRoutes(prev => new Set(prev).add(routeId));
+    
+    if (route) {
+      try {
+        await notifyRouteSaved({
+          routeNumber,
+          driverName: route.driverName || 'Не указан',
+          from: route.from,
+          to: route.to
+        });
+      } catch (error) {
+        console.error('Ошибка отправки уведомления:', error);
+      }
+    }
     
     toast({
       title: 'Маршрут сохранен',

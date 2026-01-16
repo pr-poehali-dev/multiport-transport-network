@@ -90,3 +90,19 @@ export async function deleteOrder(id: number): Promise<{ message: string }> {
     method: 'DELETE',
   });
 }
+
+// Уведомление о сохранении заказа
+export async function notifyOrderSaved(orderData: { prefix: string; routeNumber: string }): Promise<{ message: string }> {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders&action=notify_order_saved`, {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  });
+}
+
+// Уведомление о сохранении маршрута
+export async function notifyRouteSaved(routeData: { routeNumber: string; driverName: string; from: string; to: string }): Promise<{ message: string }> {
+  return apiRequest(`${API_CONFIG.ENDPOINTS.zalupa}?resource=orders&action=notify_route_saved`, {
+    method: 'POST',
+    body: JSON.stringify(routeData),
+  });
+}
