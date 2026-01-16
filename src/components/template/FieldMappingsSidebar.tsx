@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
-import { FieldMapping, DRIVER_FIELDS, FIELD_GROUPS } from './types';
+import { FieldMapping, TABLE_OPTIONS } from './types';
 
 interface FieldMappingsSidebarProps {
   templateName: string;
@@ -59,98 +59,35 @@ function FieldMappingsSidebar({
             <p className="text-xs mt-1">Выделите текст на PDF для привязки</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {FIELD_GROUPS.map((group) => {
-              const groupFields = fieldMappings.filter((mapping) => {
-                const field = DRIVER_FIELDS.find(f => f.value === mapping.fieldName);
-                return field?.group === group.value;
-              });
-
-              if (groupFields.length === 0) return null;
-
-              return (
-                <div key={group.value} className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground px-1">
-                    {group.label}
-                  </h3>
-                  <div className="space-y-2">
-                    {groupFields.map((mapping) => (
-                      <div
-                        key={mapping.id}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium truncate block">
-                              {mapping.fieldLabel}
-                            </span>
-                            {mapping.text && (
-                              <span className="text-xs text-muted-foreground truncate block">
-                                {mapping.text}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                          onClick={() => onRemoveMapping(mapping.id)}
-                        >
-                          <Icon name="Trash2" size={14} />
-                        </Button>
-                      </div>
-                    ))}
+          <div className="space-y-2">
+            {fieldMappings.map((mapping) => (
+              <div
+                key={mapping.id}
+                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium truncate block">
+                      {mapping.fieldLabel}
+                    </span>
+                    {mapping.text && (
+                      <span className="text-xs text-muted-foreground truncate block">
+                        {mapping.text}
+                      </span>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-            
-            {/* Показываем формулы (поля без группы) отдельно */}
-            {fieldMappings.filter((mapping) => {
-              const field = DRIVER_FIELDS.find(f => f.value === mapping.fieldName);
-              return !field; // Формулы не имеют соответствия в DRIVER_FIELDS
-            }).length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground px-1">
-                  Формулы
-                </h3>
-                <div className="space-y-2">
-                  {fieldMappings.filter((mapping) => {
-                    const field = DRIVER_FIELDS.find(f => f.value === mapping.fieldName);
-                    return !field;
-                  }).map((mapping) => (
-                    <div
-                      key={mapping.id}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-border"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon name="Link" size={16} className="text-[#0ea5e9] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium truncate block">
-                            {mapping.fieldLabel}
-                          </span>
-                          {mapping.text && (
-                            <span className="text-xs text-muted-foreground truncate block">
-                              {mapping.text}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                        onClick={() => onRemoveMapping(mapping.id)}
-                      >
-                        <Icon name="Trash2" size={14} />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                  onClick={() => onRemoveMapping(mapping.id)}
+                >
+                  <Icon name="Trash2" size={14} />
+                </Button>
               </div>
-            )}
+            ))}
           </div>
         )}
       </ScrollArea>
