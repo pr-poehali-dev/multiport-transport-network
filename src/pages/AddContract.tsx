@@ -113,7 +113,7 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
               <span className="hidden sm:inline">Отменить</span>
             </Button>
             <Button 
-              onClick={() => handleSave(onBack)}
+              onClick={() => handleSave(onBack, drivers, vehicles)}
               disabled={isSaving}
               className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
             >

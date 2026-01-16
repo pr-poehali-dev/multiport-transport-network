@@ -14,6 +14,7 @@ export const API_CONFIG = {
     vehicles: FUNC_URLS.zalupa + '?resource=vehicles',
     templates: FUNC_URLS.zalupa + '?resource=templates',
     contractors: FUNC_URLS.zalupa + '?resource=contractors',
+    contracts: FUNC_URLS.zalupa + '?resource=contracts',
     users: FUNC_URLS.zalupa + '?resource=users',
     roles: FUNC_URLS.zalupa + '?resource=roles',
     invites: FUNC_URLS.zalupa + '?resource=invites',

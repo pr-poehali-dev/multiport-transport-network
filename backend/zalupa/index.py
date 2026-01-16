@@ -6,6 +6,7 @@ from dadata_service import get_company_by_inn, suggest_addresses
 from drivers import handle_drivers
 from vehicles import handle_vehicles
 from contractors import handle_contractors
+from contracts import handle_contracts
 from templates import handle_templates
 from orders import handle_orders
 from roles import handle_roles
@@ -130,6 +131,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = handle_vehicles(method, event, cursor, conn, cors_headers)
         elif resource == 'contractors':
             result = handle_contractors(method, event, cursor, conn, cors_headers)
+        elif resource == 'contracts':
+            result = handle_contracts(method, event, cursor, conn, cors_headers)
         elif resource == 'templates':
             result = handle_templates(method, event, cursor, conn, cors_headers)
         elif resource == 'orders':

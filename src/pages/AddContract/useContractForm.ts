@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { createContract } from '@/api/contracts';
 
 export function useContractForm() {
   const { toast } = useToast();
@@ -29,7 +30,7 @@ export function useContractForm() {
   
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = async (onBack: () => void) => {
+  const handleSave = async (onBack: () => void, drivers: any[] = [], vehicles: any[] = []) => {
     if (!contractNumber.trim()) {
       toast({
         variant: 'destructive',
@@ -39,9 +40,82 @@ export function useContractForm() {
       return;
     }
 
+    if (!cargo.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Заполните наименование груза'
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
+      // Копируем данные водителя
+      let driverFullName = '';
+      let driverPhone = '';
+      let driverPhoneExtra = '';
+      let driverPassport = '';
+      let driverLicenseStr = '';
+      
+      if (driverId) {
+        const driver = drivers.find(d => d.id === driverId);
+        if (driver) {
+          driverFullName = `${driver.lastName} ${driver.firstName} ${driver.middleName || ''}`.trim();
+          driverPhone = driver.phone || '';
+          driverPhoneExtra = driver.phoneExtra || '';
+          driverPassport = `${driver.passportSeries || ''} ${driver.passportNumber || ''} ${driver.passportIssued || ''} ${driver.passportDate || ''}`.trim();
+          driverLicenseStr = `${driver.licenseSeries || ''} ${driver.licenseNumber || ''} ${driver.licenseIssued || ''} ${driver.licenseDate || ''}`.trim();
+        }
+      }
+
+      // Копируем данные ТС
+      let vehicleRegistrationNumber = '';
+      let vehicleTrailerNumber = '';
+      let vehicleBrandStr = '';
+      
+      if (vehicleId) {
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        if (vehicle) {
+          vehicleRegistrationNumber = vehicle.registrationNumber || '';
+          vehicleTrailerNumber = vehicle.trailerNumber || '';
+          vehicleBrandStr = vehicle.brand || '';
+        }
+      }
+
+      await createContract({
+        contractNumber,
+        contractDate,
+        customerId,
+        carrierId,
+        vehicleType,
+        vehicleCapacityTons: vehicleCapacityTons ? parseFloat(vehicleCapacityTons) : undefined,
+        vehicleCapacityM3: vehicleCapacityM3 ? parseFloat(vehicleCapacityM3) : undefined,
+        temperatureMode,
+        additionalConditions,
+        cargo,
+        loadingSellerId,
+        loadingAddresses,
+        loadingDate,
+        unloadingBuyerId,
+        unloadingAddresses,
+        unloadingDate,
+        paymentAmount: paymentAmount ? parseFloat(paymentAmount) : undefined,
+        taxationType,
+        paymentTerms,
+        driverId,
+        driverFullName,
+        driverPhone,
+        driverPhoneExtra,
+        driverPassport,
+        driverLicense: driverLicenseStr,
+        vehicleId,
+        vehicleRegistrationNumber,
+        vehicleTrailerNumber,
+        vehicleBrand: vehicleBrandStr
+      });
+
       toast({
         title: 'Успешно сохранено',
         description: 'Договор-заявка создан'
