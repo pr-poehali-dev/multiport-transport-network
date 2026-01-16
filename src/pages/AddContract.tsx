@@ -402,6 +402,12 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 onSelect={(driver, license) => {
                   setDriverId(driver.id);
                   setDriverLicense(license);
+                  
+                  // Автоматическая подстановка ТС водителя
+                  const driverVehicle = vehicles.find(v => v.driverId === driver.id);
+                  if (driverVehicle) {
+                    setVehicleId(driverVehicle.id);
+                  }
                 }}
               />
             </div>
