@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { getTemplates, Template } from '@/api/templates';
+import { generatePdf, downloadPdf } from '@/api/pdf';
 import { useToast } from '@/hooks/use-toast';
 
 interface PrintContractDialogProps {
@@ -80,24 +81,27 @@ function PrintContractDialog({
 
     setIsPrinting(true);
     try {
-      // TODO: Здесь будет вызов API для генерации PDF
-      toast({
-        title: 'Печать',
-        description: `Генерация документа для договора ${contractNumber}...`
+      const result = await generatePdf({
+        templateId: parseInt(selectedTemplate),
+        contractId: contractId
       });
       
-      // Временно просто закрываем диалог
-      setTimeout(() => {
-        setIsPrinting(false);
-        onOpenChange(false);
-        setSelectedTemplate('');
-      }, 1000);
+      downloadPdf(result.pdfData, result.fileName);
+      
+      toast({
+        title: 'Успешно!',
+        description: `Документ "${result.fileName}" скачан`
+      });
+      
+      onOpenChange(false);
+      setSelectedTemplate('');
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: 'Не удалось сгенерировать документ'
+        description: error instanceof Error ? error.message : 'Не удалось сгенерировать документ'
       });
+    } finally {
       setIsPrinting(false);
     }
   };
