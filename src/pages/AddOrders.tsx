@@ -168,7 +168,7 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
       <TopBar 
         title={isEditMode ? "Редактирование заказа" : "Новый заказ"}
         onMenuClick={onMenuClick}
-        actions={
+        rightButtons={
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCancel} size="sm">
               <Icon name="X" size={16} className="mr-1" />
