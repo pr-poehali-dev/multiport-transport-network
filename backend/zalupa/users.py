@@ -1,5 +1,12 @@
 import json
 from psycopg2.extras import RealDictCursor
+from datetime import datetime
+
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> dict:
@@ -40,35 +47,45 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
             return {
                 'statusCode': 200,
                 'headers': cors_headers,
-                'body': json.dumps(dict(user)),
+                'body': json.dumps(dict(user), default=serialize_datetime),
                 'isBase64Encoded': False
             }
 
-        cursor.execute('''
-            SELECT 
-                u.id, u.username, u.email, u.full_name, u.is_active, 
-                u.created_at, u.updated_at,
-                json_agg(
-                    json_build_object(
-                        'role_id', r.id,
-                        'role_name', r.name,
-                        'role_display_name', r.display_name
-                    )
-                ) FILTER (WHERE r.id IS NOT NULL) as roles
-            FROM users u
-            LEFT JOIN user_roles ur ON u.id = ur.user_id
-            LEFT JOIN roles r ON ur.role_id = r.id
-            GROUP BY u.id
-            ORDER BY u.created_at DESC
-        ''')
-        users = cursor.fetchall()
+        try:
+            cursor.execute('''
+                SELECT 
+                    u.id, u.username, u.email, u.full_name, u.is_active, 
+                    u.created_at, u.updated_at,
+                    json_agg(
+                        json_build_object(
+                            'role_id', r.id,
+                            'role_name', r.name,
+                            'role_display_name', r.display_name
+                        )
+                    ) FILTER (WHERE r.id IS NOT NULL) as roles
+                FROM users u
+                LEFT JOIN user_roles ur ON u.id = ur.user_id
+                LEFT JOIN roles r ON ur.role_id = r.id
+                GROUP BY u.id
+                ORDER BY u.created_at DESC
+            ''')
+            users = cursor.fetchall()
+            print(f"[DEBUG] GET /users found {len(users)} users")
 
-        return {
-            'statusCode': 200,
-            'headers': cors_headers,
-            'body': json.dumps({'users': [dict(u) for u in users]}),
-            'isBase64Encoded': False
-        }
+            return {
+                'statusCode': 200,
+                'headers': cors_headers,
+                'body': json.dumps({'users': [dict(u) for u in users]}, default=serialize_datetime),
+                'isBase64Encoded': False
+            }
+        except Exception as e:
+            print(f"[ERROR] GET /users failed: {str(e)}")
+            return {
+                'statusCode': 500,
+                'headers': cors_headers,
+                'body': json.dumps({'error': str(e)}),
+                'isBase64Encoded': False
+            }
 
     elif method == 'POST':
         body = json.loads(event.get('body', '{}'))
