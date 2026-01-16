@@ -1,11 +1,13 @@
 import json
 import os
 import base64
+import re
 from typing import Dict, Any
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from io import BytesIO
 from pypdf import PdfReader, PdfWriter
+import pikepdf
 
 def handler(event: dict, context) -> dict:
     '''API для генерации PDF документов по шаблонам'''
@@ -187,31 +189,94 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     
     template_pdf = BytesIO(template_pdf_bytes)
     
-    # Читаем PDF-форму
-    reader = PdfReader(template_pdf, strict=False)
-    writer = PdfWriter()
-    
-    # Копируем все страницы
-    writer.append(reader)
-    
-    # Подготавливаем данные для заполнения полей формы
+    # Подготавливаем данные для замены
     form_data = prepare_form_data(contract, related_data)
     
-    print(f'[DEBUG] Form data to fill: {form_data}')
+    print(f'[DEBUG] Data to fill: {form_data}')
     
-    # Заполняем поля формы на всех страницах
+    # Шаг 1: Заменяем плейсхолдеры {{field_name}}
+    try:
+        pdf_with_placeholders = replace_placeholders(template_pdf_bytes, form_data)
+        template_pdf = BytesIO(pdf_with_placeholders)
+    except Exception as e:
+        print(f'[WARNING] Placeholder replacement failed: {e}, skipping')
+        template_pdf = BytesIO(template_pdf_bytes)
+    
+    # Шаг 2: Заполняем поля формы (если они есть)
+    reader = PdfReader(template_pdf, strict=False)
+    writer = PdfWriter()
+    writer.append(reader)
+    
     for page in writer.pages:
         try:
             writer.update_page_form_field_values(page, form_data)
         except Exception as e:
             print(f'[WARNING] Could not update form fields: {e}')
     
-    # Записываем результат (оставляем как форму без flatten)
+    # Записываем результат
     output = BytesIO()
     writer.write(output)
     output.seek(0)
     
     return output.getvalue()
+
+
+def replace_placeholders(pdf_bytes: bytes, data: Dict[str, str]) -> bytes:
+    '''Заменяет плейсхолдеры {{field_name}} в PDF на реальные значения'''
+    
+    try:
+        with pikepdf.open(BytesIO(pdf_bytes)) as pdf:
+            replacements_made = 0
+            
+            for page in pdf.pages:
+                # Извлекаем содержимое страницы
+                if '/Contents' not in page:
+                    continue
+                
+                contents = page.Contents
+                
+                # Если Contents - массив, обрабатываем каждый элемент
+                if isinstance(contents, pikepdf.Array):
+                    for i, content_stream in enumerate(contents):
+                        stream_data = content_stream.read_bytes().decode('latin-1', errors='ignore')
+                        modified = stream_data
+                        
+                        # Заменяем все плейсхолдеры
+                        for key, value in data.items():
+                            placeholder = f'{{{{{key}}}}}'
+                            if placeholder in modified:
+                                modified = modified.replace(placeholder, str(value))
+                                replacements_made += 1
+                                print(f'[DEBUG] Replaced {placeholder} -> {value}')
+                        
+                        if modified != stream_data:
+                            contents[i] = pikepdf.Stream(pdf, modified.encode('latin-1', errors='ignore'))
+                else:
+                    # Одиночный stream
+                    stream_data = contents.read_bytes().decode('latin-1', errors='ignore')
+                    modified = stream_data
+                    
+                    for key, value in data.items():
+                        placeholder = f'{{{{{key}}}}}'
+                        if placeholder in modified:
+                            modified = modified.replace(placeholder, str(value))
+                            replacements_made += 1
+                            print(f'[DEBUG] Replaced {placeholder} -> {value}')
+                    
+                    if modified != stream_data:
+                        page.Contents = pikepdf.Stream(pdf, modified.encode('latin-1', errors='ignore'))
+            
+            print(f'[INFO] Total placeholder replacements: {replacements_made}')
+            
+            # Сохраняем в буфер
+            output = BytesIO()
+            pdf.save(output)
+            output.seek(0)
+            return output.getvalue()
+    
+    except Exception as e:
+        print(f'[ERROR] Placeholder replacement failed: {e}')
+        return pdf_bytes
 
 
 def prepare_form_data(contract: Dict[str, Any], related_data: Dict[str, Any]) -> Dict[str, str]:
