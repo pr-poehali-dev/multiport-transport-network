@@ -33,15 +33,7 @@ interface Role {
   display_name: string;
 }
 
-interface LinkedUser {
-  user_id: number;
-  telegram_id: number;
-  telegram_username: string;
-  telegram_first_name: string;
-  email: string;
-  user_name: string;
-  created_at: string;
-}
+
 
 interface TelegramConfig {
   bot_token: string;
@@ -66,7 +58,7 @@ const EVENT_LABELS: Record<string, string> = {
 export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const [settings, setSettings] = useState<TelegramSetting[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [editingRoles, setEditingRoles] = useState<string | null>(null);
   const [tempRoleIds, setTempRoleIds] = useState<number[]>([]);
@@ -92,7 +84,6 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     loadConfig();
     loadSettings();
     loadRoles();
-    loadLinkedUsers();
   }, []);
 
   const loadConfig = async () => {
@@ -344,40 +335,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     }
   };
 
-  const loadLinkedUsers = async () => {
-    try {
-      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=linked');
-      const data = await response.json();
-      if (data.linked_users) {
-        setLinkedUsers(data.linked_users);
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки привязанных пользователей:', error);
-    }
-  };
 
-  const handleUnlinkUser = async (userId: number) => {
-    try {
-      const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=unlink&user_id=${userId}`,
-        { method: 'DELETE' }
-      );
-
-      if (response.ok) {
-        setLinkedUsers(prev => prev.filter(u => u.user_id !== userId));
-        toast({
-          title: 'Успешно',
-          description: 'Пользователь отвязан от Telegram'
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Не удалось отвязать пользователя'
-      });
-    }
-  };
 
   const handleEditRoles = (eventType: string, currentRoleIds: number[]) => {
     setEditingRoles(eventType);
@@ -712,59 +670,6 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
               </div>
             )}
           </div>
-
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon name="Users" size={20} className="text-[#0ea5e9]" />
-                Привязанные пользователи
-              </CardTitle>
-              <CardDescription>
-                Пользователи, которые подключились к боту через инвайт-ссылку
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {linkedUsers.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Icon name="UserX" size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>Нет привязанных пользователей</p>
-                  <p className="text-sm mt-1">Создайте инвайт-ссылку в разделе "Пользователи"</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {linkedUsers.map((user) => (
-                    <div 
-                      key={user.user_id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Icon name="User" size={16} className="text-muted-foreground" />
-                          <span className="font-medium">{user.telegram_first_name || user.user_name}</span>
-                          {user.telegram_username && (
-                            <span className="text-sm text-muted-foreground">@{user.telegram_username}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                          <Icon name="Mail" size={14} />
-                          {user.email}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleUnlinkUser(user.user_id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Icon name="Unlink" size={16} className="mr-1" />
-                        Отвязать
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           <Card className="border-border bg-blue-50/50">
             <CardHeader>
