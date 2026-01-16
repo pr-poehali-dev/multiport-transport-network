@@ -250,6 +250,41 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     });
   };
 
+  const transliterate = (text: string): string => {
+    const map: { [key: string]: string } = {
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e', 'ж': 'zh',
+      'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+      'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+      'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+    };
+    
+    return text.toLowerCase().split('').map(char => map[char] || char).join('');
+  };
+
+  const generateUsername = (fullName: string): string => {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '';
+    
+    const lastName = parts[0] || '';
+    const firstName = parts[1] || '';
+    const middleName = parts[2] || '';
+    
+    const lastNameTranslit = transliterate(lastName);
+    const firstInitial = firstName ? transliterate(firstName[0]) : '';
+    const middleInitial = middleName ? transliterate(middleName[0]) : '';
+    
+    return `${lastNameTranslit}_${firstInitial}${middleInitial}`.toLowerCase();
+  };
+
+  const handleFullNameChange = (value: string) => {
+    setFormData({ ...formData, full_name: value });
+    
+    if (!user) {
+      const generatedUsername = generateUsername(value);
+      setFormData(prev => ({ ...prev, full_name: value, username: generatedUsername }));
+    }
+  };
+
   const handleAddInvite = async () => {
     setIsSaving(true);
 
@@ -353,7 +388,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     <Input
                       id="full_name"
                       value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      onChange={(e) => handleFullNameChange(e.target.value)}
                       placeholder="Иванов Иван Иванович"
                     />
                   </div>
