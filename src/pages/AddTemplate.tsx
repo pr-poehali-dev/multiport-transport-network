@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
@@ -14,99 +15,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import FieldMappingsSidebar from '@/components/template/FieldMappingsSidebar';
-import PdfViewer from '@/components/template/PdfViewer';
-import FieldAssignDialog from '@/components/template/FieldAssignDialog';
-import { FieldMapping, TemplateFile, TextItemData } from '@/components/template/types';
 
 interface AddTemplateProps {
   onBack: () => void;
   onMenuClick: () => void;
-  initialData?: TemplateFile;
-  onSave?: (templateData: any) => void;
   editMode?: boolean;
   templateId?: number;
-  existingMappings?: FieldMapping[];
-  defaultTable?: string;
+  initialTemplateName?: string;
 }
 
-function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templateId, existingMappings = [], defaultTable = 'contracts' }: AddTemplateProps) {
+function AddTemplate({ 
+  onBack, 
+  onMenuClick, 
+  editMode = false, 
+  templateId,
+  initialTemplateName = ''
+}: AddTemplateProps) {
   const { toast } = useToast();
-  const containerRef = useRef<HTMLDivElement>(null);
   
-  const [file, setFile] = useState<File | null>(initialData?.file || null);
-  const [templateName, setTemplateName] = useState(initialData?.fileName || '');
+  const [file, setFile] = useState<File | null>(null);
+  const [templateName, setTemplateName] = useState(initialTemplateName);
   const [isUploading, setIsUploading] = useState(false);
-  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>(existingMappings);
-  const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [hasSelection, setHasSelection] = useState(false);
-  const [scale, setScale] = useState(1.0);
-  const [textItems, setTextItems] = useState<TextItemData[]>([]);
 
-  const handleSelectionChange = (hasText: boolean) => {
-    setHasSelection(hasText);
-  };
-
-  const handleAssignClick = () => {
-    if (!hasSelection) return;
-    setShowAssignMenu(true);
-  };
-
-  const handleAssignField = (formula: string, usedFields: string[]) => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const container = containerRef.current;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const x = rect.left - containerRect.left;
-    const y = rect.top - containerRect.top;
-    const width = rect.width;
-    const height = rect.height;
-
-    const fieldName = usedFields.length === 1 ? usedFields[0] : `formula_${Date.now()}`;
-
-    const newMapping: FieldMapping = {
-      id: `field_${Date.now()}`,
-      fieldName,
-      fieldLabel: formula,
-      x: x / scale,
-      y: y / scale,
-      width: width / scale,
-      height: height / scale,
-      page: 0,
-      fontSize: 12,
-      fontFamily: 'Arial',
-      text: formula,
-      align: 'center',
-      wordWrap: true,
-    };
-
-    setFieldMappings([...fieldMappings, newMapping]);
-    setShowAssignMenu(false);
-    setHasSelection(false);
-    selection.removeAllRanges();
-
-    toast({
-      title: 'Поле назначено',
-      description: `Формула добавлена в шаблон`,
-    });
-  };
-
-  const handleRemoveMapping = (id: string) => {
-    setFieldMappings(fieldMappings.filter(m => m.id !== id));
-    toast({
-      title: 'Поле удалено',
-      description: 'Привязка поля удалена из шаблона',
-    });
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0];
+    if (uploadedFile && uploadedFile.type === 'application/pdf') {
+      setFile(uploadedFile);
+      if (!templateName) {
+        setTemplateName(uploadedFile.name.replace('.pdf', ''));
+      }
+    } else {
+      toast({
+        title: 'Ошибка',
+        description: 'Пожалуйста, выберите PDF файл',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCancel = () => {
-    setShowCancelDialog(true);
+    if (file || templateName !== initialTemplateName) {
+      setShowCancelDialog(true);
+    } else {
+      onBack();
+    }
   };
 
   const confirmCancel = () => {
@@ -115,19 +68,19 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
   };
 
   const handleSave = async () => {
-    if (!file || !templateName.trim()) {
+    if (!templateName.trim()) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните название шаблона',
+        description: 'Укажите название шаблона',
         variant: 'destructive',
       });
       return;
     }
 
-    if (fieldMappings.length === 0) {
+    if (!file && !editMode) {
       toast({
-        title: 'Предупреждение',
-        description: 'Вы не назначили ни одного поля',
+        title: 'Ошибка',
+        description: 'Загрузите PDF-файл',
         variant: 'destructive',
       });
       return;
@@ -136,47 +89,45 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
     setIsUploading(true);
 
     try {
-      // Режим редактирования - только обновляем маппинги, не загружаем файл заново
       if (editMode && templateId) {
+        // Режим редактирования - только имя
         const data = await updateTemplate(templateId, {
           name: templateName,
-          fileName: file.name,
-          fieldMappings,
+          fileName: file?.name || '',
+          fieldMappings: [],
         });
 
         toast({
           title: 'Успех!',
           description: data.message || `Шаблон "${templateName}" обновлён`,
         });
+      } else {
+        // Режим создания - читаем PDF
+        if (!file) return;
 
-        onBack();
-        return;
+        const reader = new FileReader();
+        const fileDataBase64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64Data = result.split(',')[1];
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const data = await createTemplate({
+          name: templateName,
+          fileName: file.name,
+          fileData: fileDataBase64,
+          fieldMappings: [],
+        });
+
+        toast({
+          title: 'Успех!',
+          description: data.message || `Шаблон "${templateName}" сохранён`,
+        });
       }
-
-      // Режим создания - читаем PDF как base64
-      const reader = new FileReader();
-      const fileDataBase64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Убираем "data:application/pdf;base64," префикс
-          const base64Data = result.split(',')[1];
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const data = await createTemplate({
-        name: templateName,
-        fileName: file.name,
-        fileData: fileDataBase64,
-        fieldMappings,
-      });
-
-      toast({
-        title: 'Успех!',
-        description: data.message || `Шаблон "${templateName}" успешно сохранён`,
-      });
 
       onBack();
     } catch (error) {
@@ -228,33 +179,106 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
         }
       />
 
-      <div className="flex-1 flex flex-row overflow-hidden">
-        <FieldMappingsSidebar
-          templateName={templateName}
-          onTemplateNameChange={setTemplateName}
-          fieldMappings={fieldMappings}
-          onRemoveMapping={handleRemoveMapping}
-          onAssignClick={handleAssignClick}
-          hasSelection={hasSelection}
-        />
+      <div className="flex-1 p-6 overflow-auto">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Название */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Название шаблона
+            </label>
+            <Input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Договор-заявка"
+              className="text-base"
+            />
+          </div>
 
-        <PdfViewer
-          ref={containerRef}
-          file={file}
-          scale={scale}
-          fieldMappings={fieldMappings}
-          onAssignClick={handleAssignClick}
-          onTextItemsExtracted={setTextItems}
-          onSelectionChange={handleSelectionChange}
-        />
+          {/* Загрузка файла */}
+          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center bg-slate-50">
+            {file ? (
+              <div>
+                <Icon name="FileCheck" size={64} className="mx-auto mb-4 text-green-600" />
+                <p className="font-medium text-lg mb-1">{file.name}</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {(file.size / 1024).toFixed(1)} КБ
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setFile(null)} 
+                  className="gap-2"
+                >
+                  <Icon name="Trash2" size={16} />
+                  Выбрать другой файл
+                </Button>
+              </div>
+            ) : (
+              <div>
+                <Icon name="Upload" size={64} className="mx-auto mb-4 opacity-20" />
+                <p className="text-lg font-medium mb-2">
+                  {editMode ? 'Заменить PDF-форму' : 'Загрузите PDF-форму'}
+                </p>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                  Файл должен содержать поля формы с названиями: customer_name, contract_number, cargo и т.д.
+                </p>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label htmlFor="file-upload">
+                  <Button asChild className="gap-2">
+                    <span>
+                      <Icon name="FileUp" size={18} />
+                      Выбрать PDF файл
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Инструкция */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-semibold mb-3 flex items-center gap-2 text-blue-900">
+              <Icon name="Info" size={20} />
+              Как создать PDF-форму
+            </h3>
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="font-medium mb-2">В LibreOffice Writer (бесплатно):</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Создайте договор как обычно</li>
+                  <li>Вставка → Поле → Другие поля → Функции → Поле ввода</li>
+                  <li>Назовите поля: customer_name, contract_number и т.д.</li>
+                  <li>Файл → Экспорт в PDF → ✓ Создать PDF-форму</li>
+                </ol>
+              </div>
+              
+              <div>
+                <p className="font-medium mb-2">Доступные поля формы:</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
+                  <code className="text-xs">customer_name</code>
+                  <code className="text-xs">carrier_name</code>
+                  <code className="text-xs">contract_number</code>
+                  <code className="text-xs">contract_date</code>
+                  <code className="text-xs">cargo</code>
+                  <code className="text-xs">loading_addresses</code>
+                  <code className="text-xs">unloading_addresses</code>
+                  <code className="text-xs">payment_amount</code>
+                  <code className="text-xs">driver_full_name</code>
+                  <code className="text-xs">vehicle_registration_number</code>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ...и другие из договора
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <FieldAssignDialog
-        open={showAssignMenu}
-        onOpenChange={setShowAssignMenu}
-        onAssign={handleAssignField}
-        defaultTable={defaultTable}
-      />
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
@@ -264,20 +288,15 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
               Подтверждение отмены
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base pt-2">
-              Данное действие приведет к потере всех введенных данных.
-              Вы уверены, что хотите выйти без сохранения?
+              Вы уверены, что хотите выйти? Несохранённые изменения будут потеряны.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="gap-2">
-              <Icon name="ArrowLeft" size={16} />
-              Продолжить редактирование
-            </AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
+            <AlertDialogAction 
               onClick={confirmCancel}
-              className="bg-red-600 hover:bg-red-700 gap-2"
+              className="bg-red-600 hover:bg-red-700"
             >
-              <Icon name="LogOut" size={16} />
               Выйти без сохранения
             </AlertDialogAction>
           </AlertDialogFooter>

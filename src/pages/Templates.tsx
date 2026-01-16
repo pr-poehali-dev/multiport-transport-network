@@ -91,40 +91,8 @@ function Templates({ onMenuClick }: TemplatesProps) {
   };
 
   const handleEditTemplate = async (template: Template) => {
-    try {
-      // Загружаем полную информацию о шаблоне с fileData
-      const fullTemplate = await getTemplateById(template.id!);
-      
-      // Декодируем base64 в Blob и создаём File объект
-      if (!fullTemplate.fileData) {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Файл шаблона не найден'
-        });
-        return;
-      }
-      
-      const byteCharacters = atob(fullTemplate.fileData);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      const file = new File([blob], fullTemplate.fileName, { type: 'application/pdf' });
-      const pdfUrl = URL.createObjectURL(blob);
-      
-      setSelectedFile({ file, pdfUrl, fileName: fullTemplate.name });
-      setEditingTemplate(fullTemplate);
-      setIsEditing(true);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Не удалось загрузить шаблон для редактирования'
-      });
-    }
+    setEditingTemplate(template);
+    setIsEditing(true);
   };
 
   const handleDeleteClick = (templateId: number) => {
@@ -155,7 +123,7 @@ function Templates({ onMenuClick }: TemplatesProps) {
     }
   };
 
-  if (isEditing && selectedFile) {
+  if (isEditing) {
     return (
       <AddTemplate 
         onBack={() => {
@@ -165,10 +133,9 @@ function Templates({ onMenuClick }: TemplatesProps) {
           loadTemplates();
         }}
         onMenuClick={onMenuClick}
-        initialData={selectedFile}
         editMode={!!editingTemplate}
         templateId={editingTemplate?.id}
-        existingMappings={editingTemplate?.fieldMappings || []}
+        initialTemplateName={editingTemplate?.name || selectedFile?.fileName || ''}
       />
     );
   }

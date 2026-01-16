@@ -5,11 +5,6 @@ from typing import Dict, Any
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader, PdfWriter
 
 def handler(event: dict, context) -> dict:
@@ -170,7 +165,7 @@ def handler(event: dict, context) -> dict:
 
 
 def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_data: Dict[str, Any]) -> bytes:
-    '''Генерирует PDF из шаблона с подстановкой данных'''
+    '''Генерирует PDF заполняя поля формы из шаблона'''
     
     # Получаем file_data из шаблона
     file_data = template['file_data']
@@ -181,63 +176,36 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     elif isinstance(file_data, bytes):
         template_pdf_bytes = file_data
     elif isinstance(file_data, str):
-        # Если строка - это base64
         file_data = file_data.strip().replace('\n', '').replace('\r', '')
         template_pdf_bytes = base64.b64decode(file_data)
     else:
         raise ValueError(f'Unexpected file_data type: {type(file_data)}')
     
-    # Проверяем что это действительно PDF (начинается с %PDF)
+    # Проверяем что это действительно PDF
     if not template_pdf_bytes.startswith(b'%PDF'):
         raise ValueError(f'Invalid PDF header: {template_pdf_bytes[:20]}')
     
     template_pdf = BytesIO(template_pdf_bytes)
     
-    # Читаем шаблон (strict=False для игнорирования ошибок формата)
+    # Читаем PDF-форму
     reader = PdfReader(template_pdf, strict=False)
     writer = PdfWriter()
     
-    # Получаем размер первой страницы PDF для конвертации координат
-    first_page = reader.pages[0]
-    page_height = float(first_page.mediabox.height)
+    # Копируем все страницы
+    writer.append(reader)
     
-    # Создаем overlay с текстом
-    packet = BytesIO()
-    can = canvas.Canvas(packet, pagesize=(float(first_page.mediabox.width), page_height))
+    # Подготавливаем данные для заполнения полей формы
+    form_data = prepare_form_data(contract, related_data)
     
-    # Обрабатываем маппинги полей
-    field_mappings = template.get('field_mappings', [])
-    print(f'[DEBUG] Field mappings count: {len(field_mappings)}')
-    print(f'[DEBUG] PDF page height: {page_height}')
+    print(f'[DEBUG] Form data to fill: {form_data}')
     
-    for mapping in field_mappings:
-        # Координаты из браузера (от верха страницы)
-        x_browser = mapping.get('x', 0)
-        y_browser = mapping.get('y', 0)
-        font_size = mapping.get('fontSize', 12)
-        field_label = mapping.get('fieldLabel', '')
-        
-        # Конвертируем Y из браузерных координат (от верха) в PDF координаты (от низа)
-        y_pdf = page_height - y_browser - font_size
-        
-        # Получаем значение поля
-        value = resolve_field_value(field_label, contract, related_data)
-        print(f'[DEBUG] Field: {field_label} -> Value: {value}')
-        print(f'[DEBUG]   Browser coords: ({x_browser}, {y_browser}) -> PDF coords: ({x_browser}, {y_pdf})')
-        
-        # Рисуем текст на canvas
-        can.setFont('Helvetica', font_size)
-        can.drawString(x_browser, y_pdf, str(value))
-    
-    can.save()
-    
-    # Накладываем overlay на шаблон
-    packet.seek(0)
-    overlay_pdf = PdfReader(packet, strict=False)
-    
-    page = reader.pages[0]
-    page.merge_page(overlay_pdf.pages[0])
-    writer.add_page(page)
+    # Заполняем поля формы на всех страницах
+    for page in writer.pages:
+        try:
+            writer.update_page_form_field_values(page, form_data)
+        except Exception as e:
+            print(f'[WARNING] Could not update form fields: {e}')
+            # Если нет полей формы - ничего страшного, просто вернем оригинал
     
     # Записываем результат
     output = BytesIO()
@@ -247,79 +215,99 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     return output.getvalue()
 
 
-def resolve_field_value(field_label: str, contract: Dict[str, Any], related_data: Dict[str, Any]) -> str:
-    '''Разрешает значение поля из формулы с тегами'''
+def prepare_form_data(contract: Dict[str, Any], related_data: Dict[str, Any]) -> Dict[str, str]:
+    '''Подготавливает данные для заполнения полей PDF-формы'''
     
-    # Маппинг тегов контрагентов на related_data (приоритет)
-    entity_tags = {
-        'Заказчик': ('customer', 'name'),
-        'Перевозчик': ('carrier', 'name'),
-        'Грузоотправитель': ('loadingSeller', 'name'),
-        'Грузополучатель': ('unloadingBuyer', 'name'),
-    }
+    form_data = {}
     
-    # Заменяем теги контрагентов из related_data
-    for tag, (entity_key, field_key) in entity_tags.items():
-        if f'<{tag}>' in field_label:
-            value = ''
-            if entity_key in related_data and related_data[entity_key]:
-                value = related_data[entity_key].get(field_key, '')
-            field_label = field_label.replace(f'<{tag}>', str(value) if value else '')
+    # Данные договора
+    if contract.get('contract_number'):
+        form_data['contract_number'] = str(contract['contract_number'])
     
-    # Маппинг тегов на поля договора
-    field_mapping = {
-        'Номер договора': 'contract_number',
-        'Дата договора': 'contract_date',
-        'Груз': 'cargo',
-        'Адреса погрузки': 'loading_addresses',
-        'Адреса разгрузки': 'unloading_addresses',
-        'Дата погрузки': 'loading_date',
-        'Дата разгрузки': 'unloading_date',
-        'Сумма (руб.)': 'payment_amount',
-        'Водитель ФИО': 'driver_full_name',
-        'Водитель телефон': 'driver_phone',
-        'ТС: Номер тягача': 'vehicle_registration_number',
-        'ТС: Номер прицепа': 'vehicle_trailer_number',
-    }
+    if contract.get('contract_date'):
+        form_data['contract_date'] = str(contract['contract_date'])
     
-    # Простая замена одного тега
-    for tag, field_name in field_mapping.items():
-        if f'<{tag}>' in field_label:
-            value = contract.get(field_name, '')
-            if isinstance(value, list):
-                value = ', '.join(value)
-            field_label = field_label.replace(f'<{tag}>', str(value) if value else '')
+    if contract.get('cargo'):
+        form_data['cargo'] = str(contract['cargo'])
     
-    # Обработка вложенных полей (customer.inn, carrier.kpp и т.д.)
-    import re
-    nested_pattern = r'<(Заказчик|Перевозчик|Грузоотправитель|Грузополучатель): (.+?)>'
-    matches = re.findall(nested_pattern, field_label)
+    if contract.get('loading_addresses'):
+        addresses = contract['loading_addresses']
+        form_data['loading_addresses'] = ', '.join(addresses) if isinstance(addresses, list) else str(addresses)
     
-    for entity_ru, field_ru in matches:
-        entity_map = {
-            'Заказчик': 'customer',
-            'Перевозчик': 'carrier',
-            'Грузоотправитель': 'loadingSeller',
-            'Грузополучатель': 'unloadingBuyer'
-        }
-        
-        field_map = {
-            'ИНН': 'inn',
-            'КПП': 'kpp',
-            'ОГРН': 'ogrn',
-            'Юр. адрес': 'legal_address',
-            'Факт. адрес': 'actual_address',
-            'Директор': 'director_name',
-            'Бухгалтер': 'accountant_name',
-            'Телефон': 'phone',
-            'Email': 'email'
-        }
-        
-        entity_key = entity_map.get(entity_ru)
-        field_key = field_map.get(field_ru)
-        
-        if entity_key and field_key and entity_key in related_data:
-            value = related_data[entity_key].get(field_key, '') if related_data[entity_key] else ''
-            field_label = field_label.replace(f'<{entity_ru}: {field_ru}>', str(value) if value else '')
+    if contract.get('unloading_addresses'):
+        addresses = contract['unloading_addresses']
+        form_data['unloading_addresses'] = ', '.join(addresses) if isinstance(addresses, list) else str(addresses)
     
-    return field_label
+    if contract.get('loading_date'):
+        form_data['loading_date'] = str(contract['loading_date'])
+    
+    if contract.get('unloading_date'):
+        form_data['unloading_date'] = str(contract['unloading_date'])
+    
+    if contract.get('payment_amount'):
+        form_data['payment_amount'] = str(contract['payment_amount'])
+    
+    if contract.get('driver_full_name'):
+        form_data['driver_full_name'] = str(contract['driver_full_name'])
+    
+    if contract.get('driver_phone'):
+        form_data['driver_phone'] = str(contract['driver_phone'])
+    
+    if contract.get('vehicle_registration_number'):
+        form_data['vehicle_registration_number'] = str(contract['vehicle_registration_number'])
+    
+    if contract.get('vehicle_trailer_number'):
+        form_data['vehicle_trailer_number'] = str(contract['vehicle_trailer_number'])
+    
+    if contract.get('temperature_mode'):
+        form_data['temperature_mode'] = str(contract['temperature_mode'])
+    
+    if contract.get('additional_conditions'):
+        form_data['additional_conditions'] = str(contract['additional_conditions'])
+    
+    # Данные контрагентов
+    if 'customer' in related_data and related_data['customer']:
+        customer = related_data['customer']
+        if customer.get('name'):
+            form_data['customer_name'] = str(customer['name'])
+        if customer.get('inn'):
+            form_data['customer_inn'] = str(customer['inn'])
+        if customer.get('kpp'):
+            form_data['customer_kpp'] = str(customer['kpp'])
+        if customer.get('ogrn'):
+            form_data['customer_ogrn'] = str(customer['ogrn'])
+        if customer.get('legal_address'):
+            form_data['customer_legal_address'] = str(customer['legal_address'])
+        if customer.get('director'):
+            form_data['customer_director'] = str(customer['director'])
+    
+    if 'carrier' in related_data and related_data['carrier']:
+        carrier = related_data['carrier']
+        if carrier.get('name'):
+            form_data['carrier_name'] = str(carrier['name'])
+        if carrier.get('inn'):
+            form_data['carrier_inn'] = str(carrier['inn'])
+        if carrier.get('kpp'):
+            form_data['carrier_kpp'] = str(carrier['kpp'])
+        if carrier.get('ogrn'):
+            form_data['carrier_ogrn'] = str(carrier['ogrn'])
+        if carrier.get('legal_address'):
+            form_data['carrier_legal_address'] = str(carrier['legal_address'])
+        if carrier.get('director'):
+            form_data['carrier_director'] = str(carrier['director'])
+    
+    if 'loadingSeller' in related_data and related_data['loadingSeller']:
+        seller = related_data['loadingSeller']
+        if seller.get('name'):
+            form_data['loading_seller_name'] = str(seller['name'])
+        if seller.get('inn'):
+            form_data['loading_seller_inn'] = str(seller['inn'])
+    
+    if 'unloadingBuyer' in related_data and related_data['unloadingBuyer']:
+        buyer = related_data['unloadingBuyer']
+        if buyer.get('name'):
+            form_data['unloading_buyer_name'] = str(buyer['name'])
+        if buyer.get('inn'):
+            form_data['unloading_buyer_inn'] = str(buyer['inn'])
+    
+    return form_data
