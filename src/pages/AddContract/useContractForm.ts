@@ -52,6 +52,8 @@ export function useContractForm() {
     setIsSaving(true);
 
     try {
+      console.log('Сохранение договора...', { contractNumber, cargo, drivers, vehicles });
+      
       // Копируем данные водителя
       let driverFullName = '';
       let driverPhone = '';
@@ -84,7 +86,7 @@ export function useContractForm() {
         }
       }
 
-      await createContract({
+      const contractData = {
         contractNumber,
         contractDate,
         customerId,
@@ -114,7 +116,11 @@ export function useContractForm() {
         vehicleRegistrationNumber,
         vehicleTrailerNumber,
         vehicleBrand: vehicleBrandStr
-      });
+      };
+      
+      console.log('Данные для отправки:', contractData);
+      
+      await createContract(contractData);
 
       toast({
         title: 'Успешно сохранено',
@@ -123,6 +129,7 @@ export function useContractForm() {
 
       onBack();
     } catch (error) {
+      console.error('Ошибка сохранения договора:', error);
       toast({
         variant: 'destructive',
         title: 'Ошибка',
