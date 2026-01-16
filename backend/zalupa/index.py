@@ -8,7 +8,6 @@ from vehicles import handle_vehicles
 from contractors import handle_contractors
 from templates import handle_templates
 from orders import handle_orders
-from roles import handle_roles
 from users import handle_users
 from telegram import handle_telegram
 from invites import handle_invites
@@ -134,8 +133,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             result = handle_templates(method, event, cursor, conn, cors_headers)
         elif resource == 'orders':
             result = handle_orders(method, event, cursor, conn, cors_headers)
-        elif resource == 'roles':
-            result = handle_roles(method, event, cursor, conn, cors_headers)
         elif resource == 'users':
             result = handle_users(method, event, cursor, conn, cors_headers)
         elif resource == 'telegram':

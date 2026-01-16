@@ -19,20 +19,10 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         if user_id:
             cursor.execute('''
                 SELECT 
-                    u.id, u.username, u.email, u.full_name, u.is_active, 
-                    u.created_at, u.updated_at,
-                    json_agg(
-                        json_build_object(
-                            'role_id', r.id,
-                            'role_name', r.name,
-                            'role_display_name', r.display_name
-                        )
-                    ) FILTER (WHERE r.id IS NOT NULL) as roles
-                FROM users u
-                LEFT JOIN user_roles ur ON u.id = ur.user_id
-                LEFT JOIN roles r ON ur.role_id = r.id
-                WHERE u.id = %s
-                GROUP BY u.id
+                    id, username, email, full_name, is_active, is_admin,
+                    created_at, updated_at
+                FROM users
+                WHERE id = %s
             ''', (user_id,))
             user = cursor.fetchone()
 
@@ -54,20 +44,10 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         try:
             cursor.execute('''
                 SELECT 
-                    u.id, u.username, u.email, u.full_name, u.is_active, 
-                    u.created_at, u.updated_at,
-                    json_agg(
-                        json_build_object(
-                            'role_id', r.id,
-                            'role_name', r.name,
-                            'role_display_name', r.display_name
-                        )
-                    ) FILTER (WHERE r.id IS NOT NULL) as roles
-                FROM users u
-                LEFT JOIN user_roles ur ON u.id = ur.user_id
-                LEFT JOIN roles r ON ur.role_id = r.id
-                GROUP BY u.id
-                ORDER BY u.created_at DESC
+                    id, username, email, full_name, is_active, is_admin,
+                    created_at, updated_at
+                FROM users
+                ORDER BY created_at DESC
             ''')
             users = cursor.fetchall()
             print(f"[DEBUG] GET /users found {len(users)} users")
@@ -96,7 +76,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         full_name = body.get('full_name', '').strip()
         phone = body.get('phone', '').strip()
         password = body.get('password', '').strip()
-        role_ids = body.get('role_ids', [])
+        is_admin = body.get('is_admin', False)
 
         print(f"[DEBUG] Parsed: username={username}, email={email}, full_name={full_name}, password={'***' if password else 'EMPTY'}")
 
@@ -129,18 +109,12 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
                     'isBase64Encoded': False
                 }
             
-            print(f"[DEBUG] Executing INSERT with username={username}, email={email}")
+            print(f"[DEBUG] Executing INSERT with username={username}, email={email}, is_admin={is_admin}")
             cursor.execute(
-                'INSERT INTO users (username, email, full_name, phone, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id',
-                (username, email, full_name, phone or None, password)
+                'INSERT INTO users (username, email, full_name, phone, password_hash, is_admin) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id',
+                (username, email, full_name, phone or None, password, is_admin)
             )
             user_id = cursor.fetchone()[0]
-
-            for role_id in role_ids:
-                cursor.execute(
-                    'INSERT INTO user_roles (user_id, role_id) VALUES (%s, %s)',
-                    (user_id, role_id)
-                )
 
             conn.commit()
 
@@ -178,7 +152,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         full_name = body.get('full_name', '').strip()
         phone = body.get('phone', '').strip()
         is_active = body.get('is_active', True)
-        role_ids = body.get('role_ids', [])
+        is_admin = body.get('is_admin', False)
 
         cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
         if not cursor.fetchone():
@@ -192,16 +166,8 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
         try:
             if username and email and full_name:
                 cursor.execute(
-                    'UPDATE users SET username = %s, email = %s, full_name = %s, phone = %s, is_active = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s',
-                    (username, email, full_name, phone, is_active, user_id)
-                )
-
-            cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
-
-            for role_id in role_ids:
-                cursor.execute(
-                    'INSERT INTO user_roles (user_id, role_id) VALUES (%s, %s)',
-                    (user_id, role_id)
+                    'UPDATE users SET username = %s, email = %s, full_name = %s, phone = %s, is_active = %s, is_admin = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s',
+                    (username, email, full_name, phone, is_active, is_admin, user_id)
                 )
 
             conn.commit()
@@ -245,10 +211,6 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
                     'isBase64Encoded': False
                 }
 
-            # Удаляем связанные записи
-            cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
-            print(f"[DEBUG] Deleted user_roles for user {user_id}")
-            
             cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
             print(f"[DEBUG] Deleted user {user_id}")
 
