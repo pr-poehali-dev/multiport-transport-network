@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
+import AddRoles from './AddRoles';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Permission {
   resource: string;
@@ -45,24 +50,11 @@ const RESOURCES = [
 export default function Roles({ onMenuClick }: RolesProps) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const { toast } = useToast();
-
-  const [formData, setFormData] = useState({
-    name: '',
-    display_name: '',
-    description: '',
-    permissions: RESOURCES.map(r => ({
-      resource: r.value,
-      resourceLabel: r.label,
-      can_create: false,
-      can_read: false,
-      can_update: false,
-      can_remove: false,
-    }))
-  });
 
   useEffect(() => {
     loadRoles();
@@ -87,89 +79,26 @@ export default function Roles({ onMenuClick }: RolesProps) {
     }
   };
 
-  const handleCreateRole = () => {
-    setIsEditMode(false);
-    setFormData({
-      name: '',
-      display_name: '',
-      description: '',
-      permissions: RESOURCES.map(r => ({
-        resource: r.value,
-        resourceLabel: r.label,
-        can_create: false,
-        can_read: false,
-        can_update: false,
-        can_remove: false,
-      }))
+  const handleRefresh = () => {
+    loadRoles();
+    toast({
+      title: 'Обновлено',
+      description: 'Список ролей обновлён'
     });
-    setIsDialogOpen(true);
+  };
+
+  const handleBackFromAdd = () => {
+    setIsAdding(false);
+    setRoleToEdit(null);
+    loadRoles();
   };
 
   const handleEditRole = (role: Role) => {
-    setIsEditMode(true);
-    setSelectedRole(role);
-    setFormData({
-      name: role.name,
-      display_name: role.display_name,
-      description: role.description,
-      permissions: RESOURCES.map(r => {
-        const existingPerm = role.permissions.find(p => p.resource === r.value);
-        return {
-          resource: r.value,
-          resourceLabel: r.label,
-          can_create: existingPerm?.can_create || false,
-          can_read: existingPerm?.can_read || false,
-          can_update: existingPerm?.can_update || false,
-          can_remove: existingPerm?.can_remove || false,
-        };
-      })
-    });
-    setIsDialogOpen(true);
+    setRoleToEdit(role);
+    setIsAdding(true);
   };
 
-  const handleSaveRole = async () => {
-    if (!formData.display_name.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Укажите название роли'
-      });
-      return;
-    }
-
-    try {
-      const url = isEditMode && selectedRole
-        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles&id=${selectedRole.id}`
-        : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles';
-
-      const response = await fetch(url, {
-        method: isEditMode ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Успешно',
-          description: isEditMode ? 'Роль обновлена' : 'Роль создана'
-        });
-        setIsDialogOpen(false);
-        loadRoles();
-      } else {
-        throw new Error(data.error || 'Ошибка сохранения');
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось сохранить роль'
-      });
-    }
-  };
-
-  const handleDeleteRole = async (role: Role) => {
+  const handleDeleteClick = (role: Role) => {
     if (role.is_system) {
       toast({
         variant: 'destructive',
@@ -178,14 +107,16 @@ export default function Roles({ onMenuClick }: RolesProps) {
       });
       return;
     }
+    setRoleToDelete(role);
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirm(`Удалить роль "${role.display_name}"?`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!roleToDelete) return;
 
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles&id=${role.id}`,
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=roles&id=${roleToDelete.id}`,
         { method: 'DELETE' }
       );
 
@@ -193,9 +124,11 @@ export default function Roles({ onMenuClick }: RolesProps) {
 
       if (response.ok) {
         toast({
-          title: 'Успешно',
-          description: 'Роль удалена'
+          title: 'Роль удалена',
+          description: data.message || 'Роль успешно удалена из системы'
         });
+        setDeleteDialogOpen(false);
+        setRoleToDelete(null);
         loadRoles();
       } else {
         throw new Error(data.error || 'Ошибка удаления');
@@ -209,206 +142,114 @@ export default function Roles({ onMenuClick }: RolesProps) {
     }
   };
 
-  const togglePermission = (resourceIndex: number, permType: 'can_create' | 'can_read' | 'can_update' | 'can_remove') => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.map((perm, idx) =>
-        idx === resourceIndex ? { ...perm, [permType]: !perm[permType] } : perm
-      )
-    }));
-  };
-
-  const toggleAllPermissions = (resourceIndex: number, enable: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.map((perm, idx) =>
-        idx === resourceIndex ? {
-          ...perm,
-          can_create: enable,
-          can_read: enable,
-          can_update: enable,
-          can_remove: enable
-        } : perm
-      )
-    }));
-  };
-
   const getPermissionCount = (role: Role) => {
     return role.permissions.reduce((count, perm) => {
       return count + (perm.can_create ? 1 : 0) + (perm.can_read ? 1 : 0) + (perm.can_update ? 1 : 0) + (perm.can_remove ? 1 : 0);
     }, 0);
   };
 
+  if (isAdding) {
+    return <AddRoles role={roleToEdit || undefined} onBack={handleBackFromAdd} onMenuClick={onMenuClick} />;
+  }
+
   return (
     <div className="flex-1 flex flex-col">
       <TopBar
         title="Роли и права доступа"
         onMenuClick={onMenuClick}
+        onRefresh={handleRefresh}
+        rightButtons={
+          <Button 
+            onClick={() => setIsAdding(true)}
+            className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+          >
+            <Icon name="Plus" size={18} />
+            <span className="hidden sm:inline">Добавить</span>
+          </Button>
+        }
       />
 
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Управление ролями</h2>
-              <p className="text-muted-foreground mt-1">Создавайте роли и настраивайте права доступа</p>
-            </div>
-            <Button onClick={handleCreateRole} className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90">
-              <Icon name="Plus" size={20} className="mr-2" />
-              Создать роль
-            </Button>
+        {loading ? (
+          <div className="text-center py-20">
+            <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
+            <p className="text-muted-foreground">Загрузка...</p>
           </div>
-
-          {loading ? (
-            <div className="text-center py-20">
-              <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
-              <p className="text-muted-foreground">Загрузка...</p>
-            </div>
-          ) : roles.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground">
-              <Icon name="Shield" size={48} className="mx-auto mb-4 opacity-20" />
-              <p>Нажмите "Создать роль" для добавления</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roles.map((role) => (
-                <div
-                  key={role.id}
-                  className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[#0ea5e9]/10 rounded">
-                      <Icon name="Shield" size={24} className="text-[#0ea5e9]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{role.display_name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">{getPermissionCount(role)} разрешений</p>
-                      {role.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{role.description}</p>
-                      )}
-                      {role.is_system && (
-                        <Badge variant="outline" className="text-xs mt-2">
-                          <Icon name="Lock" size={12} className="mr-1" />
-                          Системная
-                        </Badge>
-                      )}
-                    </div>
-                    {!role.is_system && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                          onClick={() => handleEditRole(role)}
-                        >
-                          <Icon name="Pencil" size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                          onClick={() => handleDeleteRole(role)}
-                        >
-                          <Icon name="Trash2" size={16} />
-                        </Button>
-                      </div>
+        ) : roles.length === 0 ? (
+          <div className="text-center py-20 text-muted-foreground">
+            <Icon name="Shield" size={48} className="mx-auto mb-4 opacity-20" />
+            <p>Нажмите "+ Добавить" для создания роли</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roles.map((role) => (
+              <div
+                key={role.id}
+                className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-[#0ea5e9]/10 rounded">
+                    <Icon name="Shield" size={24} className="text-[#0ea5e9]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm truncate">{role.display_name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{getPermissionCount(role)} разрешений</p>
+                    {role.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{role.description}</p>
+                    )}
+                    {role.is_system && (
+                      <Badge variant="outline" className="text-xs mt-2">
+                        <Icon name="Lock" size={12} className="mr-1" />
+                        Системная
+                      </Badge>
                     )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{isEditMode ? 'Редактировать роль' : 'Создать роль'}</DialogTitle>
-                <DialogDescription>
-                  Настройте права доступа для новой роли
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6 py-4">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="display_name">Название роли *</Label>
-                    <Input
-                      id="display_name"
-                      placeholder="Логист"
-                      value={formData.display_name}
-                      onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Описание</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Управляет заказами и маршрутами"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Права доступа</h3>
-                  {formData.permissions.map((perm, idx) => (
-                    <Card key={idx} className="border-border">
-                      <CardContent className="pt-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="font-medium">{perm.resourceLabel}</div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleAllPermissions(idx, !perm.can_read)}
-                            className="text-xs h-7"
-                          >
-                            {perm.can_read ? 'Снять все' : 'Выбрать все'}
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                          {[
-                            { key: 'can_create', label: 'Создание', icon: 'Plus' },
-                            { key: 'can_read', label: 'Чтение', icon: 'Eye' },
-                            { key: 'can_update', label: 'Изменение', icon: 'Pencil' },
-                            { key: 'can_remove', label: 'Удаление', icon: 'Trash2' },
-                          ].map((action) => (
-                            <div key={action.key} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`${perm.resource}-${action.key}`}
-                                checked={perm[action.key as keyof Permission] as boolean}
-                                onCheckedChange={() => togglePermission(idx, action.key as any)}
-                              />
-                              <Label
-                                htmlFor={`${perm.resource}-${action.key}`}
-                                className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                              >
-                                <Icon name={action.icon as any} size={14} />
-                                {action.label}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {!role.is_system && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                        onClick={() => handleEditRole(role)}
+                      >
+                        <Icon name="Pencil" size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleDeleteClick(role)}
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Отмена
-                </Button>
-                <Button onClick={handleSaveRole} className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90">
-                  {isEditMode ? 'Сохранить' : 'Создать'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить роль?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие нельзя отменить. Роль будет удалена из системы.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
