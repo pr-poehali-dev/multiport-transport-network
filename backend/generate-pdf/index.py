@@ -242,15 +242,27 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
 def resolve_field_value(field_label: str, contract: Dict[str, Any], related_data: Dict[str, Any]) -> str:
     '''Разрешает значение поля из формулы с тегами'''
     
+    # Маппинг тегов контрагентов на related_data (приоритет)
+    entity_tags = {
+        'Заказчик': ('customer', 'name'),
+        'Перевозчик': ('carrier', 'name'),
+        'Грузоотправитель': ('loadingSeller', 'name'),
+        'Грузополучатель': ('unloadingBuyer', 'name'),
+    }
+    
+    # Заменяем теги контрагентов из related_data
+    for tag, (entity_key, field_key) in entity_tags.items():
+        if f'<{tag}>' in field_label:
+            value = ''
+            if entity_key in related_data and related_data[entity_key]:
+                value = related_data[entity_key].get(field_key, '')
+            field_label = field_label.replace(f'<{tag}>', str(value) if value else '')
+    
     # Маппинг тегов на поля договора
     field_mapping = {
         'Номер договора': 'contract_number',
         'Дата договора': 'contract_date',
-        'Заказчик': 'customer_name',
-        'Перевозчик': 'carrier_name',
         'Груз': 'cargo',
-        'Грузоотправитель': 'loading_seller_name',
-        'Грузополучатель': 'unloading_buyer_name',
         'Адреса погрузки': 'loading_addresses',
         'Адреса разгрузки': 'unloading_addresses',
         'Дата погрузки': 'loading_date',
