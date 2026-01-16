@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { getTemplates, Template } from '@/api/templates';
-import { generatePdf, downloadPdf } from '@/api/pdf';
+import { generatePdf, openPdfInNewTab } from '@/api/pdf';
 import { useToast } from '@/hooks/use-toast';
 
 interface PrintContractDialogProps {
@@ -86,11 +86,11 @@ function PrintContractDialog({
         contractId: contractId
       });
       
-      downloadPdf(result.pdfData, result.fileName);
+      openPdfInNewTab(result.pdfData);
       
       toast({
         title: 'Успешно!',
-        description: `Документ "${result.fileName}" скачан`
+        description: `Документ "${result.fileName}" открыт в новой вкладке`
       });
       
       onOpenChange(false);

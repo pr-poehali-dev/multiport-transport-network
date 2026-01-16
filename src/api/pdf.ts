@@ -31,7 +31,7 @@ export async function generatePdf(request: GeneratePdfRequest): Promise<Generate
   return response.json();
 }
 
-export function downloadPdf(pdfData: string, fileName: string) {
+export function openPdfInNewTab(pdfData: string) {
   const byteCharacters = atob(pdfData);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -41,11 +41,5 @@ export function downloadPdf(pdfData: string, fileName: string) {
   const blob = new Blob([byteArray], { type: 'application/pdf' });
   
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  window.open(url, '_blank');
 }
