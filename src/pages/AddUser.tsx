@@ -178,8 +178,11 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     try {
       const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=user_invite&user_id=${userId}`);
       const data = await response.json();
+      console.log('Загрузка инвайта для user_id:', userId, 'результат:', data);
       if (data.invite) {
         setExistingInvite(data.invite);
+      } else {
+        setExistingInvite(null);
       }
     } catch (error) {
       console.error('Ошибка загрузки инвайта:', error);
@@ -372,14 +375,19 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
-          {user?.id && existingInvite && (
+          {user?.id && (
             <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="Link" size={20} className="text-[#0ea5e9]" />
                   <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
                 </div>
-                {existingInvite.is_used ? (
+                {loadingInvite ? (
+                  <Badge variant="outline">
+                    <Icon name="Loader2" size={12} className="mr-1 animate-spin" />
+                    Загрузка...
+                  </Badge>
+                ) : existingInvite?.is_used ? (
                   <Badge variant="outline" className="text-orange-600 border-orange-600">
                     <Icon name="CheckCircle2" size={12} className="mr-1" />
                     Использована
@@ -394,9 +402,11 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
               <p className="text-sm text-muted-foreground">
                 Отправьте эту ссылку пользователю для подключения к боту
               </p>
-              <div className="flex gap-2">
-                <Input 
-                  value={existingInvite.invite_link} 
+              {existingInvite ? (
+                <>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={existingInvite.invite_link} 
                   readOnly 
                   className="font-mono text-sm"
                 />
@@ -404,15 +414,15 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   onClick={() => handleCopyInvite(existingInvite.invite_link)}
                   className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                 >
-                  <Icon name="Copy" size={18} />
-                  Скопировать
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Icon name="Info" size={14} />
-                <span>Использований: {existingInvite.current_uses}/{existingInvite.max_uses}</span>
-              </div>
-              {existingInvite.is_used && (
+                      <Icon name="Copy" size={18} />
+                      Скопировать
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Icon name="Info" size={14} />
+                    <span>Использований: {existingInvite.current_uses}/{existingInvite.max_uses}</span>
+                  </div>
+                  {existingInvite.is_used && (
                 <Button 
                   onClick={handleRegenerateInvite}
                   disabled={regeneratingInvite}
@@ -429,8 +439,31 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       <Icon name="RefreshCw" size={16} />
                       Сгенерировать новую ссылку
                     </>
+                    )}
+                  </Button>
                   )}
-                </Button>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-3">Инвайт-ссылка ещё не создана</p>
+                  <Button 
+                    onClick={handleRegenerateInvite}
+                    disabled={regeneratingInvite}
+                    className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
+                  >
+                    {regeneratingInvite ? (
+                      <>
+                        <Icon name="Loader2" size={16} className="animate-spin" />
+                        Генерация...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Plus" size={16} />
+                        Создать инвайт-ссылку
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           )}
