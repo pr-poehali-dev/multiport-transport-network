@@ -118,11 +118,12 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const saveUserData = async () => {
-    if (!fullName.trim() || !password.trim()) {
+    // Пароль обязателен только при создании нового пользователя
+    if (!fullName.trim() || (!isEditMode && !password.trim())) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: 'Заполните обязательные поля: ФИО и Пароль'
+        description: 'Заполните обязательные поля: ФИО' + (!isEditMode ? ' и Пароль' : '')
       });
       return null;
     }
@@ -133,10 +134,14 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         username: username.trim(),
         email: email.trim(),
         phone: phone.trim(),
-        password: password.trim(),
         is_active: isActive,
         role_ids: roleIds
       };
+      
+      // Добавляем пароль только если он введён (при создании или изменении)
+      if (password.trim()) {
+        userData.password = password.trim();
+      }
 
       const data = isEditMode 
         ? await updateUser(user?.id || createdUserId!, userData)
@@ -377,13 +382,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Пароль *</Label>
+                  <Label htmlFor="password">Пароль {!isEditMode && '*'}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={isEditMode ? "Оставьте пустым, чтобы не менять" : "••••••••"}
                   />
                 </div>
               </div>
