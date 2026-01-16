@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { createOrder, updateOrder, Order } from '@/api/orders';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +16,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import OrderInfoSection from './AddOrders/OrderInfoSection';
 import RouteSection from './AddOrders/RouteSection';
-import OrderActions from './AddOrders/OrderActions';
 import { useOrderData } from './AddOrders/useOrderData';
 import { useOrderForm } from './AddOrders/useOrderForm';
 
@@ -167,6 +168,18 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
       <TopBar 
         title={isEditMode ? "Редактирование заказа" : "Новый заказ"}
         onMenuClick={onMenuClick}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCancel} size="sm">
+              <Icon name="X" size={16} className="mr-1" />
+              Отменить
+            </Button>
+            <Button onClick={handleSave} size="sm" className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90">
+              <Icon name="Save" size={16} className="mr-1" />
+              {isEditMode ? 'Обновить' : 'Сохранить в БД'}
+            </Button>
+          </div>
+        }
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -219,12 +232,6 @@ function AddOrders({ order, onBack, onMenuClick }: AddOrdersProps) {
             onAddStop={handleAddStop}
             onRemoveStop={handleRemoveStop}
             onUpdateStop={handleUpdateStop}
-          />
-
-          <OrderActions
-            onCancel={handleCancel}
-            onSave={handleSave}
-            isEditMode={isEditMode}
           />
         </div>
       </div>

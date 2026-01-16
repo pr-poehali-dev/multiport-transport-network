@@ -18,14 +18,14 @@ import { Route } from './types';
 interface RouteSectionProps {
   routes: Route[];
   isOrderLocked: boolean;
-  handleAddRoute: () => void;
-  handleRemoveRoute: (id: string) => void;
-  handleUpdateRoute: (id: string, field: 'from' | 'to' | 'vehicleId' | 'driverName' | 'loadingDate', value: string) => void;
-  handleSaveAndGo: (routeId: string, routeIndex: number) => void;
-  handleEditRoute: (routeId: string) => void;
-  handleAddStop: (routeId: string) => void;
-  handleRemoveStop: (routeId: string, stopId: string) => void;
-  handleUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address' | 'note', value: string) => void;
+  onAddRoute: () => void;
+  onRemoveRoute: (id: string) => void;
+  onUpdateRoute: (id: string, field: 'from' | 'to' | 'vehicleId' | 'driverName' | 'loadingDate', value: string) => void;
+  onSaveAndGo: (routeId: string, routeIndex: number) => void;
+  onEditRoute: (routeId: string) => void;
+  onAddStop: (routeId: string) => void;
+  onRemoveStop: (routeId: string, stopId: string) => void;
+  onUpdateStop: (routeId: string, stopId: string, field: 'type' | 'address' | 'note', value: string) => void;
   vehicles: Vehicle[];
   drivers: Driver[];
   searchVehicle: Record<string, string>;
@@ -33,22 +33,20 @@ interface RouteSectionProps {
   showVehicleList: Record<string, boolean>;
   setShowVehicleList: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   vehicleInputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
-  getFilteredVehicles: (routeId: string) => Vehicle[];
-  handleSelectVehicle: (routeId: string, vehicle: Vehicle) => void;
   loadingVehicles: boolean;
 }
 
 export default function RouteSection({
   routes,
   isOrderLocked,
-  handleAddRoute,
-  handleRemoveRoute,
-  handleUpdateRoute,
-  handleSaveAndGo,
-  handleEditRoute,
-  handleAddStop,
-  handleRemoveStop,
-  handleUpdateStop,
+  onAddRoute,
+  onRemoveRoute,
+  onUpdateRoute,
+  onSaveAndGo,
+  onEditRoute,
+  onAddStop,
+  onRemoveStop,
+  onUpdateStop,
   vehicles,
   drivers,
   searchVehicle,
@@ -56,14 +54,32 @@ export default function RouteSection({
   showVehicleList,
   setShowVehicleList,
   vehicleInputRefs,
-  getFilteredVehicles,
-  handleSelectVehicle,
   loadingVehicles,
 }: RouteSectionProps) {
+  const getFilteredVehicles = (routeId: string) => {
+    const query = (searchVehicle[routeId] || '').toLowerCase();
+    if (!query) return vehicles;
+    return vehicles.filter(v => 
+      v.registrationNumber.toLowerCase().includes(query) ||
+      v.trailerNumber?.toLowerCase().includes(query)
+    );
+  };
+
+  const handleSelectVehicle = (routeId: string, vehicle: Vehicle) => {
+    const driver = drivers.find(d => d.id === vehicle.driverId);
+    const driverName = driver 
+      ? `${driver.lastName} ${driver.firstName}${driver.middleName ? ' ' + driver.middleName : ''}`
+      : '';
+    
+    onUpdateRoute(routeId, 'vehicleId', vehicle.id.toString());
+    onUpdateRoute(routeId, 'driverName', driverName);
+    setSearchVehicle(prev => ({ ...prev, [routeId]: `${vehicle.registrationNumber} / ${vehicle.trailerNumber}` }));
+    setShowVehicleList(prev => ({ ...prev, [routeId]: false }));
+  };
   if (routes.length === 0 && isOrderLocked) {
     return (
       <button
-        onClick={handleAddRoute}
+        onClick={onAddRoute}
         className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
       >
         <Icon name="Plus" size={20} />
@@ -91,7 +107,7 @@ export default function RouteSection({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleRemoveRoute(route.id)}
+                  onClick={() => onRemoveRoute(route.id)}
                   className="hover:bg-red-50 hover:text-red-600"
                 >
                   <Icon name="Trash2" size={18} />
@@ -105,7 +121,7 @@ export default function RouteSection({
                 <AddressInput
                   placeholder="Город отправления"
                   value={route.from}
-                  onChange={(value) => handleUpdateRoute(route.id, 'from', value)}
+                  onChange={(value) => onUpdateRoute(route.id, 'from', value)}
                   disabled={isRouteDisabled}
                 />
               </div>
@@ -115,7 +131,7 @@ export default function RouteSection({
                 <AddressInput
                   placeholder="Город назначения"
                   value={route.to}
-                  onChange={(value) => handleUpdateRoute(route.id, 'to', value)}
+                  onChange={(value) => onUpdateRoute(route.id, 'to', value)}
                   disabled={isRouteDisabled}
                 />
               </div>
@@ -188,7 +204,7 @@ export default function RouteSection({
                 <Input
                   type="date"
                   value={route.loadingDate}
-                  onChange={(e) => handleUpdateRoute(route.id, 'loadingDate', e.target.value)}
+                  onChange={(e) => onUpdateRoute(route.id, 'loadingDate', e.target.value)}
                   disabled={isRouteDisabled}
                 />
               </div>
@@ -203,7 +219,7 @@ export default function RouteSection({
                       <div className="flex gap-2 items-start">
                         <Select
                           value={stop.type}
-                          onValueChange={(value) => handleUpdateStop(route.id, stop.id, 'type', value)}
+                          onValueChange={(value) => onUpdateStop(route.id, stop.id, 'type', value)}
                           disabled={isRouteDisabled}
                         >
                           <SelectTrigger className="w-[140px]">
@@ -219,7 +235,7 @@ export default function RouteSection({
                           <AddressInput
                             placeholder="Адрес"
                             value={stop.address}
-                            onChange={(value) => handleUpdateStop(route.id, stop.id, 'address', value)}
+                            onChange={(value) => onUpdateStop(route.id, stop.id, 'address', value)}
                             disabled={isRouteDisabled}
                           />
                         </div>
@@ -227,7 +243,7 @@ export default function RouteSection({
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleRemoveStop(route.id, stop.id)}
+                            onClick={() => onRemoveStop(route.id, stop.id)}
                             className="hover:bg-red-50 hover:text-red-600"
                           >
                             <Icon name="Trash2" size={18} />
@@ -237,7 +253,7 @@ export default function RouteSection({
                       <Input
                         placeholder="Примечание"
                         value={stop.note}
-                        onChange={(e) => handleUpdateStop(route.id, stop.id, 'note', e.target.value)}
+                        onChange={(e) => onUpdateStop(route.id, stop.id, 'note', e.target.value)}
                         disabled={isRouteDisabled}
                       />
                     </div>
@@ -248,7 +264,7 @@ export default function RouteSection({
 
             {!isRouteDisabled && (
               <button
-                onClick={() => handleAddStop(route.id)}
+                onClick={() => onAddStop(route.id)}
                 className="w-full border border-dashed border-border rounded-lg p-2 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 <Icon name="Plus" size={16} />
@@ -258,7 +274,7 @@ export default function RouteSection({
 
             {!isRouteDisabled && (
               <Button
-                onClick={() => handleSaveAndGo(route.id, index)}
+                onClick={() => onSaveAndGo(route.id, index)}
                 className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
               >
                 <Icon name="Lock" size={18} />
@@ -268,7 +284,7 @@ export default function RouteSection({
 
             {isRouteDisabled && (
               <Button
-                onClick={() => handleEditRoute(route.id)}
+                onClick={() => onEditRoute(route.id)}
                 className="w-full bg-orange-600 hover:bg-orange-700 text-white gap-2"
               >
                 <Icon name="Pencil" size={18} />
@@ -281,7 +297,7 @@ export default function RouteSection({
 
       {isOrderLocked && routes.every(r => r.isLocked) && (
         <button
-          onClick={handleAddRoute}
+          onClick={onAddRoute}
           className="w-full border border-dashed border-border rounded-lg p-3 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
         >
           <Icon name="Plus" size={18} />
