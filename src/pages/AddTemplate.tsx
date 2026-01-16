@@ -27,9 +27,10 @@ interface AddTemplateProps {
   editMode?: boolean;
   templateId?: number;
   existingMappings?: FieldMapping[];
+  defaultTable?: string;
 }
 
-function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templateId, existingMappings = [] }: AddTemplateProps) {
+function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templateId, existingMappings = [], defaultTable = 'contracts' }: AddTemplateProps) {
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -252,6 +253,7 @@ function AddTemplate({ onBack, onMenuClick, initialData, editMode = false, templ
         open={showAssignMenu}
         onOpenChange={setShowAssignMenu}
         onAssign={handleAssignField}
+        defaultTable={defaultTable}
       />
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

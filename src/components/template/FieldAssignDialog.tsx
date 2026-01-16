@@ -26,21 +26,27 @@ interface FieldAssignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAssign: (formula: string, fields: string[]) => void;
+  defaultTable?: string;
 }
 
-function FieldAssignDialog({ open, onOpenChange, onAssign }: FieldAssignDialogProps) {
+function FieldAssignDialog({ open, onOpenChange, onAssign, defaultTable = '' }: FieldAssignDialogProps) {
   const [formula, setFormula] = useState<string>('');
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<string>('');
+  const [selectedTable, setSelectedTable] = useState<string>(defaultTable);
 
   useEffect(() => {
     if (!open) {
       setFormula('');
       setCursorPosition(0);
-      setSelectedTable('');
     }
   }, [open]);
+
+  useEffect(() => {
+    if (defaultTable && open) {
+      setSelectedTable(defaultTable);
+    }
+  }, [defaultTable, open]);
 
   const currentTableFields = TABLE_OPTIONS.find(t => t.value === selectedTable)?.fields || [];
 
