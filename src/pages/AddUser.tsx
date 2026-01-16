@@ -1,24 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
-import { Badge } from '@/components/ui/badge';
 import { createUser, updateUser, User } from '@/api/users';
 import { API_CONFIG, apiRequest } from '@/api/config';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import UserBasicInfoSection from './AddUser/UserBasicInfoSection';
+import UserInviteSection from './AddUser/UserInviteSection';
+import CancelConfirmDialog from './AddUser/CancelConfirmDialog';
 
 interface Role {
   role_id: number;
@@ -50,11 +39,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
   const [searchRole, setSearchRole] = useState('');
   const [showRoleList, setShowRoleList] = useState(false);
-  const roleSectionRef = useRef<HTMLDivElement>(null);
   const [showInviteSection, setShowInviteSection] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<number | null>(user?.id || null);
   
-  // Основная информация
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -70,7 +57,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
-      // Показываем секцию инвайта если есть данные
       const hasInvite = user.id;
       setShowInviteSection(!!hasInvite);
     }
@@ -84,18 +70,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
       }
     }
   }, [roleIds, roles]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (roleSectionRef.current && !roleSectionRef.current.contains(target)) {
-        setShowRoleList(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const loadRoles = async () => {
     try {
@@ -118,7 +92,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const saveUserData = async () => {
-    // Пароль обязателен только при создании нового пользователя
     if (!fullName.trim() || (!isEditMode && !password.trim())) {
       toast({
         variant: 'destructive',
@@ -138,7 +111,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         role_ids: roleIds
       };
       
-      // Добавляем пароль только если он введён (при создании или изменении)
       if (password.trim()) {
         userData.password = password.trim();
       }
@@ -147,7 +119,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         ? await updateUser(user?.id || createdUserId!, userData)
         : await createUser(userData);
 
-      // Если создан новый пользователь, сохраняем его ID и переключаемся в режим редактирования
       if (!isEditMode && data.id) {
         setCreatedUserId(data.id);
         setIsEditMode(true);
@@ -197,6 +168,25 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     } finally {
       setLoadingInvite(false);
     }
+  };
+
+  const handleSaveAndShowInvite = async () => {
+    if (!createdUserId && !user?.id) {
+      setIsSaving(true);
+      const data = await saveUserData();
+      setIsSaving(false);
+      
+      if (!data || !data.id) {
+        return;
+      }
+      
+      toast({
+        title: 'Успешно',
+        description: 'Пользователь создан'
+      });
+    }
+    
+    setShowInviteSection(true);
   };
 
   const handleCreateInvite = async () => {
@@ -354,301 +344,52 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
 
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
-          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
-              <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">ФИО *</Label>
-                <Input
-                  id="full_name"
-                  value={fullName}
-                  onChange={(e) => handleFullNameChange(e.target.value)}
-                  placeholder="Иванов Иван Иванович"
-                />
-              </div>
+          <UserBasicInfoSection
+            fullName={fullName}
+            setFullName={setFullName}
+            username={username}
+            setUsername={setUsername}
+            email={email}
+            setEmail={setEmail}
+            phone={phone}
+            setPhone={setPhone}
+            password={password}
+            setPassword={setPassword}
+            isActive={isActive}
+            setIsActive={setIsActive}
+            isEditMode={isEditMode}
+            roles={roles}
+            roleIds={roleIds}
+            setRoleIds={setRoleIds}
+            searchRole={searchRole}
+            setSearchRole={setSearchRole}
+            showRoleList={showRoleList}
+            setShowRoleList={setShowRoleList}
+            onFullNameChange={handleFullNameChange}
+          />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Логин</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="ivanov_ii"
-                    disabled={isEditMode}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Пароль {!isEditMode && '*'}</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={isEditMode ? "Оставьте пустым, чтобы не менять" : "••••••••"}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ivanov@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Телефон</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+7 (999) 123-45-67"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 items-end">
-                <div ref={roleSectionRef} className="space-y-2 relative">
-                  <Label htmlFor="role">Роль</Label>
-                  <div className="relative">
-                    <Input
-                      id="role"
-                      placeholder="Начните вводить название роли..."
-                      value={searchRole}
-                      onChange={(e) => {
-                        setSearchRole(e.target.value);
-                        setShowRoleList(true);
-                      }}
-                      onFocus={() => setShowRoleList(true)}
-                    />
-                    
-                    {showRoleList && roles.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {roles
-                          .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
-                                      r.name.toLowerCase().includes(searchRole.toLowerCase()))
-                          .map(role => (
-                            <button
-                              key={role.id}
-                              type="button"
-                              onClick={() => {
-                                setRoleIds([role.id]);
-                                setSearchRole(role.display_name);
-                                setShowRoleList(false);
-                              }}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
-                            >
-                              <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{role.display_name}</p>
-                                {role.description && (
-                                  <p className="text-xs text-muted-foreground">{role.description}</p>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between h-10 px-3 border border-border rounded-md bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm font-normal mb-0">Статус</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {isActive ? 'Активен' : 'Заблокирован'}
-                    </span>
-                  </div>
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={setIsActive}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {!showInviteSection ? (
-            <button
-              onClick={async () => {
-                // Если пользователь ещё не сохранён, сохраняем его
-                if (!createdUserId && !user?.id) {
-                  setIsSaving(true);
-                  const data = await saveUserData();
-                  setIsSaving(false);
-                  
-                  if (!data || !data.id) {
-                    return; // Ошибка валидации или сохранения
-                  }
-                  
-                  toast({
-                    title: 'Успешно',
-                    description: 'Пользователь создан'
-                  });
-                }
-                
-                setShowInviteSection(true);
-              }}
-              disabled={isSaving}
-              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <Icon name="Loader2" size={20} className="animate-spin" />
-                  <span>Сохранение...</span>
-                </>
-              ) : (
-                <>
-                  <Icon name="Plus" size={20} />
-                  <span>Добавить инвайт-ссылку</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="Link" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {loadingInvite ? (
-                    <Badge variant="outline">
-                      <Icon name="Loader2" size={12} className="mr-1 animate-spin" />
-                      Загрузка...
-                    </Badge>
-                  ) : existingInvite?.is_used ? (
-                    <Badge variant="outline" className="text-orange-600 border-orange-600">
-                      <Icon name="CheckCircle2" size={12} className="mr-1" />
-                      Использована
-                    </Badge>
-                  ) : existingInvite ? (
-                    <Badge variant="default" className="bg-green-500">
-                      <Icon name="Clock" size={12} className="mr-1" />
-                      Активна
-                    </Badge>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setShowInviteSection(false);
-                      setExistingInvite(null);
-                    }}
-                    className="hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Icon name="Trash2" size={18} />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Отправьте эту ссылку пользователю для подключения к боту
-              </p>
-              {existingInvite ? (
-                <>
-                  <div className="flex gap-2">
-                    <Input 
-                      value={existingInvite.invite_link} 
-                      readOnly 
-                      className="font-mono text-sm"
-                    />
-                    <Button 
-                      onClick={() => handleCopyInvite(existingInvite.invite_link)}
-                      className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
-                    >
-                      <Icon name="Copy" size={18} />
-                      Скопировать
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Icon name="Info" size={14} />
-                    <span>Использований: {existingInvite.current_uses}/{existingInvite.max_uses}</span>
-                  </div>
-                  {existingInvite.is_used && (
-                    <Button 
-                      onClick={handleRegenerateInvite}
-                      disabled={regeneratingInvite}
-                      variant="outline"
-                      className="w-full gap-2"
-                    >
-                      {regeneratingInvite ? (
-                        <>
-                          <Icon name="Loader2" size={16} className="animate-spin" />
-                          Генерация...
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="RefreshCw" size={16} />
-                          Сгенерировать новую ссылку
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground mb-3">Инвайт-ссылка ещё не создана</p>
-                  <Button 
-                    onClick={handleCreateInvite}
-                    disabled={regeneratingInvite || (!user?.id && !createdUserId)}
-                    className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
-                  >
-                    {regeneratingInvite ? (
-                      <>
-                        <Icon name="Loader2" size={16} className="animate-spin" />
-                        Генерация...
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="Plus" size={16} />
-                        Создать инвайт-ссылку
-                      </>
-                    )}
-                  </Button>
-                  {!user?.id && !createdUserId && (
-                    <p className="text-xs text-muted-foreground mt-2">Сначала сохраните пользователя</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <UserInviteSection
+            showInviteSection={showInviteSection}
+            setShowInviteSection={setShowInviteSection}
+            existingInvite={existingInvite}
+            setExistingInvite={setExistingInvite}
+            loadingInvite={loadingInvite}
+            regeneratingInvite={regeneratingInvite}
+            isSaving={isSaving}
+            userId={user?.id || createdUserId}
+            onSaveAndShowInvite={handleSaveAndShowInvite}
+            onCreateInvite={handleCreateInvite}
+            onRegenerateInvite={handleRegenerateInvite}
+            onCopyInvite={handleCopyInvite}
+          />
         </div>
       </div>
 
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
-              Подтверждение отмены
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base pt-2">
-              Данное действие приведет к потере всех введенных данных. Вы уверены, что хотите выйти без сохранения?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="gap-2">
-              <Icon name="ArrowLeft" size={16} />
-              Продолжить редактирование
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmCancel}
-              className="bg-red-600 hover:bg-red-700 gap-2"
-            >
-              <Icon name="LogOut" size={16} />
-              Выйти без сохранения
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelConfirmDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirm={confirmCancel}
+      />
     </div>
   );
 }
