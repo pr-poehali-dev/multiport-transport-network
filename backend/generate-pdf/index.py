@@ -197,29 +197,37 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     reader = PdfReader(template_pdf, strict=False)
     writer = PdfWriter()
     
+    # Получаем размер первой страницы PDF для конвертации координат
+    first_page = reader.pages[0]
+    page_height = float(first_page.mediabox.height)
+    
     # Создаем overlay с текстом
     packet = BytesIO()
-    can = canvas.Canvas(packet, pagesize=A4)
+    can = canvas.Canvas(packet, pagesize=(float(first_page.mediabox.width), page_height))
     
     # Обрабатываем маппинги полей
     field_mappings = template.get('field_mappings', [])
     print(f'[DEBUG] Field mappings count: {len(field_mappings)}')
-    print(f'[DEBUG] Contract data: {contract}')
-    print(f'[DEBUG] Related data: {related_data}')
+    print(f'[DEBUG] PDF page height: {page_height}')
     
     for mapping in field_mappings:
-        x = mapping.get('x', 0)
-        y = mapping.get('y', 0)
+        # Координаты из браузера (от верха страницы)
+        x_browser = mapping.get('x', 0)
+        y_browser = mapping.get('y', 0)
         font_size = mapping.get('fontSize', 12)
         field_label = mapping.get('fieldLabel', '')
         
+        # Конвертируем Y из браузерных координат (от верха) в PDF координаты (от низа)
+        y_pdf = page_height - y_browser - font_size
+        
         # Получаем значение поля
         value = resolve_field_value(field_label, contract, related_data)
-        print(f'[DEBUG] Field: {field_label} -> Value: {value} at ({x}, {y})')
+        print(f'[DEBUG] Field: {field_label} -> Value: {value}')
+        print(f'[DEBUG]   Browser coords: ({x_browser}, {y_browser}) -> PDF coords: ({x_browser}, {y_pdf})')
         
         # Рисуем текст на canvas
         can.setFont('Helvetica', font_size)
-        can.drawString(x, y, str(value))
+        can.drawString(x_browser, y_pdf, str(value))
     
     can.save()
     
