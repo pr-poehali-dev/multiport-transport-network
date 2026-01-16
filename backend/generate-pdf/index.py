@@ -203,6 +203,9 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     
     # Обрабатываем маппинги полей
     field_mappings = template.get('field_mappings', [])
+    print(f'[DEBUG] Field mappings count: {len(field_mappings)}')
+    print(f'[DEBUG] Contract data: {contract}')
+    print(f'[DEBUG] Related data: {related_data}')
     
     for mapping in field_mappings:
         x = mapping.get('x', 0)
@@ -212,6 +215,7 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
         
         # Получаем значение поля
         value = resolve_field_value(field_label, contract, related_data)
+        print(f'[DEBUG] Field: {field_label} -> Value: {value} at ({x}, {y})')
         
         # Рисуем текст на canvas
         can.setFont('Helvetica', font_size)
