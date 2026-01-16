@@ -10,14 +10,20 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
     if action == 'config':
         if method == 'GET':
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute('SELECT * FROM telegram_config WHERE id = 1')
+            cursor.execute('''
+                SELECT 
+                    id, bot_token, bot_username, admin_telegram_id, is_connected,
+                    to_char(last_check, 'YYYY-MM-DD"T"HH24:MI:SS') as last_check,
+                    to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+                    to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at
+                FROM telegram_config WHERE id = 1
+            ''')
             config = cursor.fetchone()
             
             if config:
                 result = dict(config)
                 if result.get('bot_token'):
                     result['bot_token_masked'] = '***' + result['bot_token'][-4:] if len(result['bot_token']) > 4 else '***'
-                    result['bot_token'] = result['bot_token']
                 return {
                     'statusCode': 200,
                     'headers': cors_headers,
