@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from io import BytesIO
 from pypdf import PdfReader, PdfWriter
+import pikepdf
 
 def handler(event: dict, context) -> dict:
     '''API для генерации PDF документов по шаблонам'''
@@ -205,22 +206,31 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
             writer.update_page_form_field_values(page, form_data, auto_regenerate=False)
         except Exception as e:
             print(f'[WARNING] Could not update form fields: {e}')
-            # Если нет полей формы - ничего страшного, просто вернем оригинал
     
-    # Flatten форму - превращаем поля в обычный текст (убираем редактируемость и рамки)
+    # Сохраняем заполненную форму во временный буфер
+    temp_output = BytesIO()
+    writer.write(temp_output)
+    temp_output.seek(0)
+    
+    # Используем pikepdf для правильного flatten (превращение полей в текст)
     try:
-        # Удаляем AcroForm чтобы убрать интерактивность полей
-        if "/AcroForm" in writer._root_object:
-            writer._root_object.pop("/AcroForm")
+        with pikepdf.open(temp_output) as pdf:
+            # Flatten - превращаем интерактивные поля в обычный текст
+            if '/AcroForm' in pdf.Root:
+                for page in pdf.pages:
+                    if '/Annots' in page:
+                        page.Annots = pikepdf.Array([])
+                del pdf.Root.AcroForm
+            
+            # Сохраняем результат
+            output = BytesIO()
+            pdf.save(output)
+            output.seek(0)
+            return output.getvalue()
     except Exception as e:
-        print(f'[WARNING] Could not flatten form: {e}')
-    
-    # Записываем результат
-    output = BytesIO()
-    writer.write(output)
-    output.seek(0)
-    
-    return output.getvalue()
+        print(f'[WARNING] Flatten failed: {e}, returning form as-is')
+        temp_output.seek(0)
+        return temp_output.getvalue()
 
 
 def prepare_form_data(contract: Dict[str, Any], related_data: Dict[str, Any]) -> Dict[str, str]:
