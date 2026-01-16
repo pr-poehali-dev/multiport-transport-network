@@ -196,7 +196,6 @@ export default function Roles({ onMenuClick }: RolesProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate">{role.display_name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{getPermissionCount(role)} разрешений</p>
                     {role.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{role.description}</p>
                     )}
