@@ -127,9 +127,10 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     setIsSaving(true);
 
     try {
-      const isEdit = !!user;
+      const isEdit = !!user || !!createdUserId;
+      const userId = user?.id || createdUserId;
       const url = isEdit
-        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${user.id}`
+        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${userId}`
         : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users';
 
       const response = await fetch(url, {
@@ -153,9 +154,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         description: isEdit ? 'Пользователь обновлён' : 'Пользователь создан'
       });
       
-      if (isEdit) {
-        onBack();
-      }
+      onBack();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -308,9 +307,10 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     setIsSaving(true);
 
     try {
-      const isEdit = !!user;
+      const isEdit = !!user || !!createdUserId;
+      const userId = user?.id || createdUserId;
       const url = isEdit
-        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${user.id}`
+        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${userId}`
         : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users';
 
       const response = await fetch(url, {
