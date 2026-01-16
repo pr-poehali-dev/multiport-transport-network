@@ -25,6 +25,7 @@ export function useContractForm() {
   const [paymentTerms, setPaymentTerms] = useState('');
   const [driverId, setDriverId] = useState<number | undefined>();
   const [driverLicense, setDriverLicense] = useState('');
+  const [vehicleId, setVehicleId] = useState<number | undefined>();
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -101,6 +102,8 @@ export function useContractForm() {
     setDriverId,
     driverLicense,
     setDriverLicense,
+    vehicleId,
+    setVehicleId,
     isSaving,
     handleSave
   };

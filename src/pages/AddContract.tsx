@@ -18,6 +18,7 @@ import { useContractData } from './AddContract/useContractData';
 import { useContractForm } from './AddContract/useContractForm';
 import ContractorSelect from './AddContract/ContractorSelect';
 import DriverSelect from './AddContract/DriverSelect';
+import VehicleSelect from './AddContract/VehicleSelect';
 
 interface AddContractProps {
   onBack: () => void;
@@ -71,6 +72,8 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
     driverId,
     setDriverId,
     setDriverLicense,
+    vehicleId,
+    setVehicleId,
     isSaving,
     handleSave
   } = useContractForm();
@@ -400,6 +403,23 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                   setDriverId(driver.id);
                   setDriverLicense(license);
                 }}
+              />
+            </div>
+          </div>
+
+          {/* Данные автомобиля */}
+          <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Icon name="Truck" size={20} className="text-[#0ea5e9]" />
+              <h2 className="text-base lg:text-lg font-semibold text-foreground">Данные автомобиля</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <VehicleSelect
+                vehicles={vehicles}
+                loadingData={loadingData}
+                selectedId={vehicleId}
+                onSelect={(vehicle) => setVehicleId(vehicle.id)}
               />
             </div>
           </div>
