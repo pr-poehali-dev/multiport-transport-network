@@ -9,6 +9,16 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TelegramSetting {
   id: number;
@@ -54,6 +64,9 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   const [adminVerified, setAdminVerified] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [originalData, setOriginalData] = useState({ botToken: '', botUsername: '', adminTelegramId: '' });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,11 +80,17 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
       const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=config');
       const data = await response.json();
       if (data.config) {
-        setBotToken(data.config.bot_token || '');
-        setBotUsername(data.config.bot_username || '');
+        const token = data.config.bot_token || '';
+        const username = data.config.bot_username || '';
+        const adminId = data.config.admin_telegram_id?.toString() || '';
+        
+        setBotToken(token);
+        setBotUsername(username);
+        setAdminTelegramId(adminId);
         setIsConnected(data.config.is_connected || false);
-        setAdminTelegramId(data.config.admin_telegram_id?.toString() || '');
         setAdminVerified(!!data.config.admin_telegram_id);
+        
+        setOriginalData({ botToken: token, botUsername: username, adminTelegramId: adminId });
       }
     } catch (error) {
       console.error('Ошибка загрузки конфига:', error);
@@ -150,6 +169,35 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const handleEdit = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (botToken !== originalData.botToken || botUsername !== originalData.botUsername || adminTelegramId !== originalData.adminTelegramId) {
+      setShowCancelDialog(true);
+    } else {
+      setIsEditMode(false);
+    }
+  };
+
+  const confirmCancelEdit = () => {
+    setBotToken(originalData.botToken);
+    setBotUsername(originalData.botUsername);
+    setAdminTelegramId(originalData.adminTelegramId);
+    setIsEditMode(false);
+    setShowCancelDialog(false);
+  };
+
+  const handleSave = async () => {
+    setIsEditMode(false);
+    setOriginalData({ botToken, botUsername, adminTelegramId });
+    toast({
+      title: 'Сохранено',
+      description: 'Изменения успешно сохранены'
+    });
   };
 
   const handleVerifyAdmin = async () => {
@@ -266,6 +314,36 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
       <TopBar
         title="Telegram Бот"
         onMenuClick={onMenuClick}
+        rightButtons={
+          isEditMode ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                className="gap-2"
+              >
+                <Icon name="X" size={18} />
+                <span className="hidden sm:inline">Отмена</span>
+              </Button>
+              <Button 
+                onClick={handleSave}
+                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+              >
+                <Icon name="Check" size={18} />
+                <span className="hidden sm:inline">Сохранить</span>
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleEdit}
+              className="gap-2"
+            >
+              <Icon name="Edit" size={18} />
+              <span className="hidden sm:inline">Редактировать</span>
+            </Button>
+          )
+        }
       />
 
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
@@ -300,7 +378,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
-                  disabled={isConnected}
+                  disabled={!isEditMode || isConnected}
                 />
                 <p className="text-xs text-muted-foreground">
                   Получите токен у @BotFather в Telegram
@@ -313,12 +391,12 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="your_bot"
                   value={botUsername}
                   onChange={(e) => setBotUsername(e.target.value)}
-                  disabled={isConnected}
+                  disabled={!isEditMode || isConnected}
                 />
               </div>
               <Button 
                 onClick={handleConnectBot}
-                disabled={isConnected || isConnecting}
+                disabled={isConnected || isConnecting || !isEditMode}
                 className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
               >
                 {isConnecting ? (
@@ -366,7 +444,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                   placeholder="123456789"
                   value={adminTelegramId}
                   onChange={(e) => setAdminTelegramId(e.target.value)}
-                  disabled={adminVerified || !isConnected}
+                  disabled={!isEditMode || adminVerified || !isConnected}
                 />
                 <p className="text-xs text-muted-foreground">
                   {!isConnected ? 'Сначала подключите бота' : 'Чтобы узнать свой ID, напишите боту @userinfobot'}
@@ -374,7 +452,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
               </div>
               <Button 
                 onClick={handleVerifyAdmin}
-                disabled={adminVerified || isCheckingAdmin || !isConnected}
+                disabled={adminVerified || isCheckingAdmin || !isConnected || !isEditMode}
                 className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
               >
                 {isCheckingAdmin ? (
@@ -488,6 +566,33 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Все несохранённые изменения будут потеряны. Вы уверены, что хотите выйти без сохранения?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancelEdit}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
