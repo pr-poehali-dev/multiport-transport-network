@@ -4,10 +4,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Role {
   role_id: number;
@@ -40,6 +51,7 @@ interface AddUserProps {
 export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [inviteLink, setInviteLink] = useState<string>('');
   const [showInviteSection, setShowInviteSection] = useState(false);
@@ -169,7 +181,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full">
       <TopBar
         title={user ? 'Редактировать пользователя' : 'Добавить пользователя'}
         onMenuClick={onMenuClick}
@@ -177,67 +189,90 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={onBack}
-            className="hover:bg-[#0ea5e9]/10"
+            onClick={() => setShowCancelDialog(true)}
+            className="hover:bg-gray-100"
           >
             <Icon name="ArrowLeft" size={20} />
           </Button>
         }
+        rightButtons={
+          !showInviteSection && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(true)}
+                className="gap-2"
+              >
+                <Icon name="X" size={18} />
+                <span className="hidden sm:inline">Отменить</span>
+              </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <Icon name="Loader2" size={18} className="animate-spin" />
+                    <span className="hidden sm:inline">Сохранение...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Check" size={18} />
+                    <span className="hidden sm:inline">Сохранить</span>
+                  </>
+                )}
+              </Button>
+            </>
+          )
+        }
       />
 
-      <div className="flex-1 p-4 lg:p-6 overflow-auto">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
+        <div className="max-w-3xl mx-auto space-y-4">
           
-          {/* Инвайт-ссылка (если только что создали пользователя) */}
           {showInviteSection && inviteLink && (
-            <Card className="border-[#0ea5e9]">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Icon name="Link" size={24} className="text-[#0ea5e9]" />
-                  <CardTitle>Инвайт-ссылка для Telegram</CardTitle>
-                </div>
-                <CardDescription>
-                  Отправьте эту ссылку пользователю для подключения к боту
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input 
-                    value={inviteLink} 
-                    readOnly 
-                    className="font-mono text-sm"
-                  />
-                  <Button 
-                    onClick={handleCopyInvite}
-                    className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
-                  >
-                    <Icon name="Copy" size={18} className="mr-2" />
-                    Скопировать
-                  </Button>
-                </div>
+            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Icon name="Link" size={20} className="text-[#0ea5e9]" />
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Отправьте эту ссылку пользователю для подключения к боту
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  value={inviteLink} 
+                  readOnly 
+                  className="font-mono text-sm"
+                />
                 <Button 
-                  onClick={onBack} 
-                  className="w-full"
-                  variant="outline"
+                  onClick={handleCopyInvite}
+                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                 >
-                  Закрыть
+                  <Icon name="Copy" size={18} />
+                  Скопировать
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+              <Button 
+                onClick={onBack} 
+                className="w-full"
+                variant="outline"
+              >
+                Закрыть
+              </Button>
+            </div>
           )}
 
-          {/* Основная форма */}
           {!showInviteSection && (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Основная информация</CardTitle>
-                  <CardDescription>
-                    ФИО пользователя и данные для входа
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
+              <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
                     <Label htmlFor="full_name">ФИО *</Label>
                     <Input
                       id="full_name"
@@ -247,7 +282,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="username">Логин *</Label>
                     <Input
                       id="username"
@@ -263,7 +298,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     )}
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
@@ -274,32 +309,27 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Checkbox
-                      id="is_active"
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Статус пользователя</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {formData.is_active ? 'Аккаунт активен' : 'Аккаунт заблокирован'}
+                      </p>
+                    </div>
+                    <Switch
                       checked={formData.is_active}
-                      onCheckedChange={(checked) => 
-                        setFormData({ ...formData, is_active: checked as boolean })
-                      }
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                     />
-                    <label
-                      htmlFor="is_active"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Активен
-                    </label>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Роли</CardTitle>
-                  <CardDescription>
-                    Назначьте роли для определения прав доступа
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+              <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Shield" size={20} className="text-[#0ea5e9]" />
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Роли и права доступа</h2>
+                </div>
+                <div className="space-y-3">
                   <div className="space-y-3">
                     {roles.map((role) => (
                       <div
@@ -348,40 +378,42 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3">
-                <Button 
-                  onClick={onBack} 
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isSaving}
-                >
-                  Отмена
-                </Button>
-                <Button 
-                  onClick={handleSave}
-                  className="flex-1 bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                      Сохранение...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="Save" size={18} className="mr-2" />
-                      {user ? 'Сохранить изменения' : 'Создать пользователя'}
-                    </>
-                  )}
-                </Button>
+                </div>
               </div>
             </>
           )}
         </div>
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={24} className="text-orange-500" />
+              Подтверждение отмены
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2">
+              Данное действие приведет к потере всех введенных данных. Вы уверены, что хотите выйти без сохранения?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="gap-2">
+              <Icon name="ArrowLeft" size={16} />
+              Продолжить редактирование
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowCancelDialog(false);
+                onBack();
+              }}
+              className="bg-red-600 hover:bg-red-700 gap-2"
+            >
+              <Icon name="LogOut" size={16} />
+              Выйти без сохранения
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
