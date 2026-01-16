@@ -293,7 +293,6 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 loadingData={loadingData}
                 selectedId={loadingSellerId}
                 onSelect={(contractor) => setLoadingSellerId(contractor.id)}
-                showDetails
                 showAddressSelect
                 selectedAddress={loadingAddress}
                 onSelectAddress={setLoadingAddress}
@@ -327,7 +326,6 @@ function AddContract({ onBack, onMenuClick }: AddContractProps) {
                 loadingData={loadingData}
                 selectedId={unloadingBuyerId}
                 onSelect={(contractor) => setUnloadingBuyerId(contractor.id)}
-                showDetails
                 showAddressSelect
                 selectedAddress={unloadingAddress}
                 onSelectAddress={setUnloadingAddress}
