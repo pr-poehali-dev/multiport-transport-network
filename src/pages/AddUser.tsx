@@ -196,76 +196,38 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
           </Button>
         }
         rightButtons={
-          !showInviteSection && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setShowCancelDialog(true)}
-                className="gap-2"
-              >
-                <Icon name="X" size={18} />
-                <span className="hidden sm:inline">Отменить</span>
-              </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
-              >
-                {isSaving ? (
-                  <>
-                    <Icon name="Loader2" size={18} className="animate-spin" />
-                    <span className="hidden sm:inline">Сохранение...</span>
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Check" size={18} />
-                    <span className="hidden sm:inline">Сохранить</span>
-                  </>
-                )}
-              </Button>
-            </>
-          )
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(true)}
+              className="gap-2"
+            >
+              <Icon name="X" size={18} />
+              <span className="hidden sm:inline">Отменить</span>
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 text-white gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <Icon name="Loader2" size={18} className="animate-spin" />
+                  <span className="hidden sm:inline">Сохранение...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="Check" size={18} />
+                  <span className="hidden sm:inline">Сохранить</span>
+                </>
+              )}
+            </Button>
+          </>
         }
       />
 
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
-          
-          {showInviteSection && inviteLink && (
-            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Icon name="Link" size={20} className="text-[#0ea5e9]" />
-                <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Отправьте эту ссылку пользователю для подключения к боту
-              </p>
-              <div className="flex gap-2">
-                <Input 
-                  value={inviteLink} 
-                  readOnly 
-                  className="font-mono text-sm"
-                />
-                <Button 
-                  onClick={handleCopyInvite}
-                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
-                >
-                  <Icon name="Copy" size={18} />
-                  Скопировать
-                </Button>
-              </div>
-              <Button 
-                onClick={onBack} 
-                className="w-full"
-                variant="outline"
-              >
-                Закрыть
-              </Button>
-            </div>
-          )}
-
-          {!showInviteSection && (
-            <>
               <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
@@ -380,7 +342,38 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   )}
                 </div>
               </div>
-            </>
+
+          {showInviteSection && inviteLink && (
+            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Icon name="Link" size={20} className="text-[#0ea5e9]" />
+                <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Отправьте эту ссылку пользователю для подключения к боту
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  value={inviteLink} 
+                  readOnly 
+                  className="font-mono text-sm"
+                />
+                <Button 
+                  onClick={handleCopyInvite}
+                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
+                >
+                  <Icon name="Copy" size={18} />
+                  Скопировать
+                </Button>
+              </div>
+              <Button 
+                onClick={onBack} 
+                className="w-full"
+                variant="outline"
+              >
+                Закрыть
+              </Button>
+            </div>
           )}
         </div>
       </div>
