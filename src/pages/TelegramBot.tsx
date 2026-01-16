@@ -66,7 +66,13 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const [adminVerified, setAdminVerified] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [originalData, setOriginalData] = useState({ botToken: '', botUsername: '', adminTelegramId: '' });
+  const [originalData, setOriginalData] = useState({ 
+    botToken: '', 
+    botUsername: '', 
+    adminTelegramId: '',
+    isConnected: false,
+    adminVerified: false
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,10 +93,19 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
         setBotToken(token);
         setBotUsername(username);
         setAdminTelegramId(adminId);
-        setIsConnected(data.config.is_connected || false);
-        setAdminVerified(!!data.config.admin_telegram_id);
+        const connected = data.config.is_connected || false;
+        const verified = !!data.config.admin_telegram_id;
         
-        setOriginalData({ botToken: token, botUsername: username, adminTelegramId: adminId });
+        setIsConnected(connected);
+        setAdminVerified(verified);
+        
+        setOriginalData({ 
+          botToken: token, 
+          botUsername: username, 
+          adminTelegramId: adminId,
+          isConnected: connected,
+          adminVerified: verified
+        });
       }
     } catch (error) {
       console.error('Ошибка загрузки конфига:', error);
@@ -173,6 +188,8 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
 
   const handleEdit = () => {
     setIsEditMode(true);
+    setIsConnected(false);
+    setAdminVerified(false);
   };
 
   const handleCancelEdit = () => {
@@ -183,13 +200,21 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     setBotToken(originalData.botToken);
     setBotUsername(originalData.botUsername);
     setAdminTelegramId(originalData.adminTelegramId);
+    setIsConnected(originalData.isConnected);
+    setAdminVerified(originalData.adminVerified);
     setIsEditMode(false);
     setShowCancelDialog(false);
   };
 
   const handleSave = async () => {
     setIsEditMode(false);
-    setOriginalData({ botToken, botUsername, adminTelegramId });
+    setOriginalData({ 
+      botToken, 
+      botUsername, 
+      adminTelegramId,
+      isConnected,
+      adminVerified
+    });
     toast({
       title: 'Сохранено',
       description: 'Изменения успешно сохранены'
