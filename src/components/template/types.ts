@@ -101,6 +101,46 @@ export const CONTRACT_FIELDS = [
   { value: 'vehicleRegistrationNumber', label: 'ТС: Номер тягача' },
   { value: 'vehicleTrailerNumber', label: 'ТС: Номер прицепа' },
   { value: 'vehicleBrand', label: 'ТС: Марка' },
+  
+  // Реквизиты заказчика (customer)
+  { value: 'customer.inn', label: 'Заказчик: ИНН' },
+  { value: 'customer.kpp', label: 'Заказчик: КПП' },
+  { value: 'customer.ogrn', label: 'Заказчик: ОГРН' },
+  { value: 'customer.legalAddress', label: 'Заказчик: Юр. адрес' },
+  { value: 'customer.actualAddress', label: 'Заказчик: Факт. адрес' },
+  { value: 'customer.directorName', label: 'Заказчик: Директор' },
+  { value: 'customer.accountantName', label: 'Заказчик: Бухгалтер' },
+  { value: 'customer.phone', label: 'Заказчик: Телефон' },
+  { value: 'customer.email', label: 'Заказчик: Email' },
+  
+  // Реквизиты перевозчика (carrier)
+  { value: 'carrier.inn', label: 'Перевозчик: ИНН' },
+  { value: 'carrier.kpp', label: 'Перевозчик: КПП' },
+  { value: 'carrier.ogrn', label: 'Перевозчик: ОГРН' },
+  { value: 'carrier.legalAddress', label: 'Перевозчик: Юр. адрес' },
+  { value: 'carrier.actualAddress', label: 'Перевозчик: Факт. адрес' },
+  { value: 'carrier.directorName', label: 'Перевозчик: Директор' },
+  { value: 'carrier.accountantName', label: 'Перевозчик: Бухгалтер' },
+  { value: 'carrier.phone', label: 'Перевозчик: Телефон' },
+  { value: 'carrier.email', label: 'Перевозчик: Email' },
+  
+  // Реквизиты грузоотправителя (loadingSeller)
+  { value: 'loadingSeller.inn', label: 'Грузоотправитель: ИНН' },
+  { value: 'loadingSeller.kpp', label: 'Грузоотправитель: КПП' },
+  { value: 'loadingSeller.ogrn', label: 'Грузоотправитель: ОГРН' },
+  { value: 'loadingSeller.legalAddress', label: 'Грузоотправитель: Юр. адрес' },
+  { value: 'loadingSeller.actualAddress', label: 'Грузоотправитель: Факт. адрес' },
+  { value: 'loadingSeller.directorName', label: 'Грузоотправитель: Директор' },
+  { value: 'loadingSeller.phone', label: 'Грузоотправитель: Телефон' },
+  
+  // Реквизиты грузополучателя (unloadingBuyer)
+  { value: 'unloadingBuyer.inn', label: 'Грузополучатель: ИНН' },
+  { value: 'unloadingBuyer.kpp', label: 'Грузополучатель: КПП' },
+  { value: 'unloadingBuyer.ogrn', label: 'Грузополучатель: ОГРН' },
+  { value: 'unloadingBuyer.legalAddress', label: 'Грузополучатель: Юр. адрес' },
+  { value: 'unloadingBuyer.actualAddress', label: 'Грузополучатель: Факт. адрес' },
+  { value: 'unloadingBuyer.directorName', label: 'Грузополучатель: Директор' },
+  { value: 'unloadingBuyer.phone', label: 'Грузополучатель: Телефон' },
 ];
 
 export const TABLE_OPTIONS = [
