@@ -56,6 +56,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [existingInvite, setExistingInvite] = useState<any>(null);
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
+  const [createdUserId, setCreatedUserId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -127,12 +128,18 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         throw new Error(data.error || 'Ошибка сохранения пользователя');
       }
 
+      if (!isEdit && data.id) {
+        setCreatedUserId(data.id);
+      }
+
       toast({
         title: 'Успешно',
         description: isEdit ? 'Пользователь обновлён' : 'Пользователь создан'
       });
       
-      onBack();
+      if (isEdit) {
+        onBack();
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -162,12 +169,51 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     }
   };
 
-  const handleRegenerateInvite = async () => {
-    if (!user?.id) return;
+  const handleCreateInvite = async () => {
+    const targetUserId = user?.id || createdUserId;
+    if (!targetUserId) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Сначала сохраните пользователя'
+      });
+      return;
+    }
     
     setRegeneratingInvite(true);
     try {
-      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${user.id}`, {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: targetUserId })
+      });
+      const data = await response.json();
+      
+      if (response.ok && data.invite_link) {
+        setExistingInvite(data);
+        toast({
+          title: 'Инвайт создан',
+          description: 'Ссылка готова к отправке'
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось создать инвайт'
+      });
+    } finally {
+      setRegeneratingInvite(false);
+    }
+  };
+
+  const handleRegenerateInvite = async () => {
+    const targetUserId = user?.id || createdUserId;
+    if (!targetUserId) return;
+    
+    setRegeneratingInvite(true);
+    try {
+      const response = await fetch(`https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${targetUserId}`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -417,8 +463,8 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 <div className="text-center py-4">
                   <p className="text-sm text-muted-foreground mb-3">Инвайт-ссылка ещё не создана</p>
                   <Button 
-                    onClick={handleRegenerateInvite}
-                    disabled={regeneratingInvite}
+                    onClick={handleCreateInvite}
+                    disabled={regeneratingInvite || (!user?.id && !createdUserId)}
                     className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
                   >
                     {regeneratingInvite ? (
@@ -433,6 +479,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                       </>
                     )}
                   </Button>
+                  {!user?.id && !createdUserId && (
+                    <p className="text-xs text-muted-foreground mt-2">Сначала сохраните пользователя</p>
+                  )}
                 </div>
               )}
             </div>
