@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import TopBar from '@/components/TopBar';
 import AddContract from './AddContract';
+import PrintContractDialog from '@/components/contract/PrintContractDialog';
 import { getContracts, deleteContract, Contract } from '@/api/contracts';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -32,6 +33,8 @@ function Contracts({ onMenuClick }: ContractsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contractToDelete, setContractToDelete] = useState<number | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [contractToPrint, setContractToPrint] = useState<Contract | null>(null);
 
   const loadContracts = async () => {
     setIsLoading(true);
@@ -98,6 +101,11 @@ function Contracts({ onMenuClick }: ContractsProps) {
   const handleDeleteClick = (contractId: number) => {
     setContractToDelete(contractId);
     setDeleteDialogOpen(true);
+  };
+
+  const handlePrintClick = (contract: Contract) => {
+    setContractToPrint(contract);
+    setPrintDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -210,6 +218,14 @@ function Contracts({ onMenuClick }: ContractsProps) {
                         {contract.contractNumber}
                       </h3>
                       <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
+                          onClick={() => handlePrintClick(contract)}
+                        >
+                          <Icon name="Printer" size={16} />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -349,6 +365,13 @@ function Contracts({ onMenuClick }: ContractsProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PrintContractDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        contractId={contractToPrint?.id || 0}
+        contractNumber={contractToPrint?.contractNumber || ''}
+      />
     </div>
   );
 }
