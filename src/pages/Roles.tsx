@@ -260,69 +260,61 @@ export default function Roles({ onMenuClick }: RolesProps) {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Icon name="Loader2" size={32} className="animate-spin text-[#0ea5e9]" />
+            <div className="text-center py-20">
+              <Icon name="Loader2" size={48} className="mx-auto mb-4 animate-spin text-[#0ea5e9]" />
+              <p className="text-muted-foreground">Загрузка...</p>
+            </div>
+          ) : roles.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <Icon name="Shield" size={48} className="mx-auto mb-4 opacity-20" />
+              <p>Нажмите "Создать роль" для добавления</p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {roles.map((role) => (
-                <Card key={role.id} className="border-border hover:border-[#0ea5e9] transition-colors">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg">{role.display_name}</CardTitle>
-                          {role.is_system && (
-                            <Badge variant="outline" className="text-xs">
-                              <Icon name="Lock" size={12} className="mr-1" />
-                              Системная
-                            </Badge>
-                          )}
-                        </div>
-                        <CardDescription className="mt-1">{role.description}</CardDescription>
-                      </div>
-                      {!role.is_system && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditRole(role)}
-                            className="hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                          >
-                            <Icon name="Pencil" size={16} className="mr-2" />
-                            Редактировать
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteRole(role)}
-                            className="hover:bg-red-50 hover:text-red-600"
-                          >
-                            <Icon name="Trash2" size={16} />
-                          </Button>
-                        </div>
+                <div
+                  key={role.id}
+                  className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-[#0ea5e9]/10 rounded">
+                      <Icon name="Shield" size={24} className="text-[#0ea5e9]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm truncate">{role.display_name}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{getPermissionCount(role)} разрешений</p>
+                      {role.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{role.description}</p>
+                      )}
+                      {role.is_system && (
+                        <Badge variant="outline" className="text-xs mt-2">
+                          <Icon name="Lock" size={12} className="mr-1" />
+                          Системная
+                        </Badge>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">
-                        Права доступа: <span className="font-medium text-foreground">{getPermissionCount(role)} разрешений</span>
+                    {!role.is_system && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                          onClick={() => handleEditRole(role)}
+                        >
+                          <Icon name="Pencil" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleDeleteRole(role)}
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {role.permissions.filter(p => p.can_read || p.can_create || p.can_update || p.can_remove).map((perm, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {RESOURCES.find(r => r.value === perm.resource)?.label || perm.resource}:
-                            {perm.can_create && ' создание'}
-                            {perm.can_read && ' чтение'}
-                            {perm.can_update && ' изменение'}
-                            {perm.can_remove && ' удаление'}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}

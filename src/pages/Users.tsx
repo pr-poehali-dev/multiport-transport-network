@@ -209,92 +209,61 @@ function Users({ onMenuClick }: UsersProps) {
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Icon name="Users" size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="text-lg font-medium mb-2">
-              {searchQuery ? 'Ничего не найдено' : 'Нет пользователей'}
-            </p>
-            <p className="text-sm">
-              {searchQuery ? 'Попробуйте изменить запрос' : 'Нажмите "+ Добавить" для создания'}
-            </p>
+            <p>{searchQuery ? 'Ничего не найдено' : 'Нажмите "+ Добавить" для создания'}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredUsers.map((user) => {
-              return (
-                <div
-                  key={user.id}
-                  className="bg-white rounded-lg border border-border p-4 hover:border-[#0ea5e9] hover:shadow-md transition-all duration-200 group"
-                >
-                  {/* Заголовок */}
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="p-2 bg-[#0ea5e9]/10 rounded-full">
-                      <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className="font-semibold text-base truncate">
-                          {user.full_name}
-                        </h3>
-                        <div className="flex gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Icon name="Pencil" size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => handleDeleteClick(user.id)}
-                          >
-                            <Icon name="Trash2" size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        @{user.username}
-                      </p>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="p-4 bg-white rounded-lg border border-border hover:border-[#0ea5e9] transition-colors group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-[#0ea5e9]/10 rounded">
+                    <Icon name="UserCircle" size={24} className="text-[#0ea5e9]" />
                   </div>
-
-                  {/* Информация */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Icon name="Mail" size={16} className="text-muted-foreground flex-shrink-0" />
-                      <span className="text-muted-foreground truncate">{user.email}</span>
-                    </div>
-
-                    {/* Роли */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm truncate">{user.full_name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">@{user.username}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     {user.roles && user.roles.length > 0 && (
-                      <div className="flex items-start gap-2 pt-2">
-                        <Icon name="Shield" size={16} className="text-muted-foreground flex-shrink-0 mt-0.5" />
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles.map(role => (
-                            <Badge 
-                              key={role.role_id} 
-                              variant="outline"
-                              className="text-xs bg-[#0ea5e9]/5 border-[#0ea5e9]/20"
-                            >
-                              {role.role_display_name}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {user.roles.map((role) => (
+                          <Badge
+                            key={role.role_id}
+                            variant="secondary"
+                            className="text-xs bg-[#0ea5e9]/10 text-[#0ea5e9] px-2 py-0.5"
+                          >
+                            {role.role_display_name}
+                          </Badge>
+                        ))}
                       </div>
                     )}
-
-                    {/* Статус */}
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <span className="text-xs text-muted-foreground">
-                        {user.is_active ? 'Активен' : 'Неактивен'}
-                      </span>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(user.created_at).toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9]"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      <Icon name="Pencil" size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => handleDeleteClick(user.id)}
+                    >
+                      <Icon name="Trash2" size={16} />
+                    </Button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>
