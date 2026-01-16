@@ -51,7 +51,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [searchRole, setSearchRole] = useState('');
   const [showRoleList, setShowRoleList] = useState(false);
   const roleSectionRef = useRef<HTMLDivElement>(null);
-  const [showInviteSection, setShowInviteSection] = useState(isEditMode);
+  const [showInviteSection, setShowInviteSection] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<number | null>(user?.id || null);
   
   // Основная информация
@@ -70,6 +70,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
+      // Показываем секцию инвайта если есть данные
+      const hasInvite = user.id;
+      setShowInviteSection(!!hasInvite);
     }
   }, [user]);
 
@@ -146,12 +149,10 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         description: data.message || (isEditMode ? 'Пользователь обновлён' : 'Пользователь создан')
       });
 
-      // Если создан новый пользователь, сохраняем его ID и показываем секцию инвайта
+      // Если создан новый пользователь, сохраняем его ID
       if (!isEditMode && data.id) {
         setCreatedUserId(data.id);
-        setShowInviteSection(true);
         loadExistingInvite(data.id);
-        return; // Не выходим, чтобы можно было создать инвайт
       }
 
       onBack();
@@ -459,29 +460,50 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
             </div>
           </div>
 
-          {showInviteSection && (
+          {!showInviteSection ? (
+            <button
+              onClick={() => setShowInviteSection(true)}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="Plus" size={20} />
+              <span>Добавить инвайт-ссылку</span>
+            </button>
+          ) : (
             <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="Link" size={20} className="text-[#0ea5e9]" />
                   <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
                 </div>
-                {loadingInvite ? (
-                  <Badge variant="outline">
-                    <Icon name="Loader2" size={12} className="mr-1 animate-spin" />
-                    Загрузка...
-                  </Badge>
-                ) : existingInvite?.is_used ? (
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                    <Icon name="CheckCircle2" size={12} className="mr-1" />
-                    Использована
-                  </Badge>
-                ) : (
-                  <Badge variant="default" className="bg-green-500">
-                    <Icon name="Clock" size={12} className="mr-1" />
-                    Активна
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {loadingInvite ? (
+                    <Badge variant="outline">
+                      <Icon name="Loader2" size={12} className="mr-1 animate-spin" />
+                      Загрузка...
+                    </Badge>
+                  ) : existingInvite?.is_used ? (
+                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                      <Icon name="CheckCircle2" size={12} className="mr-1" />
+                      Использована
+                    </Badge>
+                  ) : existingInvite ? (
+                    <Badge variant="default" className="bg-green-500">
+                      <Icon name="Clock" size={12} className="mr-1" />
+                      Активна
+                    </Badge>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowInviteSection(false);
+                      setExistingInvite(null);
+                    }}
+                    className="hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Icon name="Trash2" size={18} />
+                  </Button>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground">
                 Отправьте эту ссылку пользователю для подключения к боту
