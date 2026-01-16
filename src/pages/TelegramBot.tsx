@@ -67,9 +67,10 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
       const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=config');
       const data = await response.json();
       if (data.config) {
+        setBotToken(data.config.bot_token || '');
         setBotUsername(data.config.bot_username || '');
         setIsConnected(data.config.is_connected || false);
-        setAdminTelegramId(data.config.admin_telegram_id || '');
+        setAdminTelegramId(data.config.admin_telegram_id?.toString() || '');
         setAdminVerified(!!data.config.admin_telegram_id);
       }
     } catch (error) {
