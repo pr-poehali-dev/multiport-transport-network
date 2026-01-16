@@ -31,6 +31,14 @@ interface User {
   is_active: boolean;
   roles: Role[] | null;
   created_at: string;
+  invite?: {
+    id: number;
+    code: string;
+    invite_link: string;
+    is_used: boolean;
+    current_uses: number;
+    max_uses: number;
+  } | null;
 }
 
 interface UsersProps {
@@ -47,6 +55,7 @@ function Users({ onMenuClick }: UsersProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [loadingInvites, setLoadingInvites] = useState<Record<number, boolean>>({});
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -54,8 +63,21 @@ function Users({ onMenuClick }: UsersProps) {
       const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users');
       const data = await response.json();
       if (data.users) {
-        setUsers(data.users);
-        setFilteredUsers(data.users);
+        const usersWithInvites = await Promise.all(
+          data.users.map(async (user: User) => {
+            try {
+              const inviteResponse = await fetch(
+                `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=user_invite&user_id=${user.id}`
+              );
+              const inviteData = await inviteResponse.json();
+              return { ...user, invite: inviteData.invite };
+            } catch {
+              return { ...user, invite: null };
+            }
+          })
+        );
+        setUsers(usersWithInvites);
+        setFilteredUsers(usersWithInvites);
       }
     } catch (error) {
       toast({
@@ -114,6 +136,49 @@ function Users({ onMenuClick }: UsersProps) {
   const handleDeleteClick = (userId: number) => {
     setUserToDelete(userId);
     setDeleteDialogOpen(true);
+  };
+
+  const handleRegenerateInvite = async (userId: number) => {
+    setLoadingInvites(prev => ({ ...prev, [userId]: true }));
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites&action=regenerate&user_id=${userId}`,
+        { method: 'POST' }
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Инвайт обновлён',
+          description: 'Новая инвайт-ссылка сгенерирована'
+        });
+        
+        setUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, invite: data } : u
+        ));
+        setFilteredUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, invite: data } : u
+        ));
+      } else {
+        throw new Error(data.error || 'Ошибка генерации инвайта');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось обновить инвайт'
+      });
+    } finally {
+      setLoadingInvites(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleCopyInvite = (inviteLink: string) => {
+    navigator.clipboard.writeText(inviteLink);
+    toast({
+      title: 'Скопировано',
+      description: 'Инвайт-ссылка скопирована в буфер обмена'
+    });
   };
 
   const confirmDelete = async () => {
@@ -242,6 +307,49 @@ function Users({ onMenuClick }: UsersProps) {
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(user.created_at).toLocaleDateString('ru-RU')}
                     </p>
+                    
+                    {/* Инвайт-ссылка */}
+                    {user.invite && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Icon name="Link" size={14} className="text-[#0ea5e9]" />
+                          <span className="text-xs font-medium">Инвайт-ссылка</span>
+                          {user.invite.is_used ? (
+                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
+                              Использован
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-600">
+                              Активен
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs flex-1"
+                            onClick={() => handleCopyInvite(user.invite!.invite_link)}
+                          >
+                            <Icon name="Copy" size={12} className="mr-1" />
+                            Скопировать
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleRegenerateInvite(user.id)}
+                            disabled={loadingInvites[user.id]}
+                          >
+                            {loadingInvites[user.id] ? (
+                              <Icon name="Loader2" size={12} className="animate-spin" />
+                            ) : (
+                              <Icon name="RefreshCw" size={12} />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button

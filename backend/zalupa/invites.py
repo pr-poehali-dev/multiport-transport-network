@@ -1,10 +1,110 @@
 import json
 import secrets
+import os
 from psycopg2.extras import RealDictCursor
 
 
 def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -> dict:
-    if method == 'POST':
+    params = event.get('queryStringParameters') or {}
+    action = params.get('action')
+    
+    if method == 'GET' and action == 'user_invite':
+        user_id = params.get('user_id')
+        
+        if not user_id:
+            return {
+                'statusCode': 400,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'user_id is required'}),
+                'isBase64Encoded': False
+            }
+        
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute('''
+            SELECT id, code, current_uses, max_uses, is_active
+            FROM invite_links
+            WHERE created_by = %s AND is_active = true
+            ORDER BY created_at DESC
+            LIMIT 1
+        ''', (user_id,))
+        invite = cursor.fetchone()
+        
+        if not invite:
+            return {
+                'statusCode': 200,
+                'headers': cors_headers,
+                'body': json.dumps({'invite': None}),
+                'isBase64Encoded': False
+            }
+        
+        cursor.execute('SELECT bot_username FROM telegram_config WHERE id = 1')
+        config = cursor.fetchone()
+        bot_username = config['bot_username'] if config and config.get('bot_username') else 'your_bot'
+        
+        invite_dict = dict(invite)
+        invite_dict['invite_link'] = f'https://t.me/{bot_username}?start={invite_dict["code"]}'
+        invite_dict['is_used'] = invite_dict['current_uses'] >= invite_dict['max_uses']
+        
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'invite': invite_dict}),
+            'isBase64Encoded': False
+        }
+    
+    elif method == 'POST' and action == 'regenerate':
+        user_id = params.get('user_id')
+        
+        if not user_id:
+            return {
+                'statusCode': 400,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'user_id is required'}),
+                'isBase64Encoded': False
+            }
+        
+        cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
+        if not cursor.fetchone():
+            return {
+                'statusCode': 404,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'User not found'}),
+                'isBase64Encoded': False
+            }
+        
+        cursor.execute('''
+            UPDATE invite_links 
+            SET is_active = false 
+            WHERE created_by = %s AND is_active = true
+        ''', (user_id,))
+        
+        invite_code = secrets.token_urlsafe(16)
+        cursor.execute(
+            'INSERT INTO invite_links (code, created_by, max_uses) VALUES (%s, %s, %s) RETURNING id',
+            (invite_code, user_id, 1)
+        )
+        invite_id = cursor.fetchone()[0]
+        conn.commit()
+        
+        cursor.execute('SELECT bot_username FROM telegram_config WHERE id = 1')
+        config = cursor.fetchone()
+        bot_username = config[0] if config and config[0] else 'your_bot'
+        
+        invite_link = f'https://t.me/{bot_username}?start={invite_code}'
+        
+        return {
+            'statusCode': 201,
+            'headers': cors_headers,
+            'body': json.dumps({
+                'id': invite_id,
+                'code': invite_code,
+                'invite_link': invite_link,
+                'is_used': False
+            }),
+            'isBase64Encoded': False
+        }
+    
+    elif method == 'POST':
         body = json.loads(event.get('body', '{}'))
         user_id = body.get('user_id')
 
@@ -34,7 +134,10 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
         invite_id = cursor.fetchone()[0]
         conn.commit()
 
-        bot_username = 'your_bot'
+        cursor.execute('SELECT bot_username FROM telegram_config WHERE id = 1')
+        config = cursor.fetchone()
+        bot_username = config[0] if config and config[0] else 'your_bot'
+        
         invite_link = f'https://t.me/{bot_username}?start={invite_code}'
 
         return {
