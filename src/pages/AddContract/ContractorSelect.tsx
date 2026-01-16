@@ -133,39 +133,30 @@ export default function ContractorSelect({
         <div className="space-y-2">
           <Label>Адрес {role === 'seller' ? 'погрузки' : 'разгрузки'}</Label>
           <div className="space-y-2">
-            {/* Основной адрес */}
-            {selectedContractor.actualAddress && (
-              <button
-                type="button"
-                onClick={() => onSelectAddress?.(selectedContractor.actualAddress!)}
-                className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
-                  selectedAddress === selectedContractor.actualAddress
-                    ? 'border-[#0ea5e9] bg-blue-50'
-                    : 'border-border'
-                }`}
-              >
-                <div className="font-medium text-foreground">{selectedContractor.actualAddress}</div>
-                <div className="text-xs text-muted-foreground mt-1">Адрес фирмы</div>
-              </button>
+            {/* Только дополнительные адреса доставки */}
+            {selectedContractor.deliveryAddresses && selectedContractor.deliveryAddresses.length > 0 ? (
+              selectedContractor.deliveryAddresses.map((da, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => onSelectAddress?.(da.address)}
+                  className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
+                    selectedAddress === da.address
+                      ? 'border-[#0ea5e9] bg-blue-50'
+                      : 'border-border'
+                  }`}
+                >
+                  <div className="font-medium text-foreground">{da.address}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {da.contact} • {da.phone}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="p-3 text-sm text-muted-foreground text-center border border-dashed rounded-lg">
+                Нет добавленных адресов {role === 'seller' ? 'погрузки' : 'разгрузки'}
+              </div>
             )}
-            {/* Дополнительные адреса доставки */}
-            {selectedContractor.deliveryAddresses?.map((da, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => onSelectAddress?.(da.address)}
-                className={`w-full p-3 text-left border rounded-lg hover:bg-gray-50 text-sm ${
-                  selectedAddress === da.address
-                    ? 'border-[#0ea5e9] bg-blue-50'
-                    : 'border-border'
-                }`}
-              >
-                <div className="font-medium text-foreground">{da.address}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {da.contact} • {da.phone}
-                </div>
-              </button>
-            ))}
           </div>
         </div>
       )}
