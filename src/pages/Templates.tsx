@@ -27,10 +27,8 @@ interface TemplateFile {
 }
 
 function Templates({ onMenuClick }: TemplatesProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<TemplateFile | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -66,27 +64,6 @@ function Templates({ onMenuClick }: TemplatesProps) {
   }, []);
 
   const handleAddTemplate = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    
-    if (!file) return;
-    
-    if (file.type !== 'application/pdf') {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Можно загружать только PDF файлы'
-      });
-      return;
-    }
-    
-    const url = URL.createObjectURL(file);
-    const fileName = file.name.replace('.pdf', '');
-    
-    setSelectedFile({ file, pdfUrl: url, fileName });
     setIsEditing(true);
   };
 
@@ -128,28 +105,19 @@ function Templates({ onMenuClick }: TemplatesProps) {
       <AddTemplate 
         onBack={() => {
           setIsEditing(false);
-          setSelectedFile(null);
           setEditingTemplate(null);
           loadTemplates();
         }}
         onMenuClick={onMenuClick}
         editMode={!!editingTemplate}
         templateId={editingTemplate?.id}
-        initialTemplateName={editingTemplate?.name || selectedFile?.fileName || ''}
+        initialTemplateName={editingTemplate?.name || ''}
       />
     );
   }
 
   return (
     <div className="flex-1 flex flex-col">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-      
       <TopBar
         title="Шаблоны"
         onMenuClick={onMenuClick}
