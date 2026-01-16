@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import TopBar from '@/components/TopBar';
@@ -60,6 +60,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     full_name: user?.full_name || '',
     username: user?.username || '',
     email: user?.email || '',
+    phone: '',
     is_active: user?.is_active ?? true,
     role_ids: user?.roles?.map(r => r.role_id) || [] as number[]
   });
@@ -81,7 +82,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleSave = async () => {
-    if (!formData.full_name.trim() || !formData.username.trim() || !formData.email.trim()) {
+    if (!formData.full_name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.phone.trim()) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
@@ -171,14 +172,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     });
   };
 
-  const toggleRole = (roleId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      role_ids: prev.role_ids.includes(roleId)
-        ? prev.role_ids.filter(id => id !== roleId)
-        : [...prev.role_ids, roleId]
-    }));
-  };
+
 
   return (
     <div className="flex-1 flex flex-col h-full">
@@ -271,6 +265,17 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Телефон *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+7 (999) 123-45-67"
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Статус пользователя</Label>
@@ -289,57 +294,29 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
               <div className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <Icon name="Shield" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Роли и права доступа</h2>
+                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Роль *</h2>
                 </div>
-                <div className="space-y-3">
-                  <div className="space-y-3">
-                    {roles.map((role) => (
-                      <div
-                        key={role.id}
-                        className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:border-[#0ea5e9] transition-colors"
-                      >
-                        <Checkbox
-                          id={`role-${role.id}`}
-                          checked={formData.role_ids.includes(role.id)}
-                          onCheckedChange={() => toggleRole(role.id)}
-                          className="mt-0.5"
-                        />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`role-${role.id}`}
-                            className="text-sm font-medium leading-none cursor-pointer"
-                          >
-                            {role.display_name}
-                          </label>
-                          {role.description && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {role.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {formData.role_ids.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <p className="text-sm font-medium mb-2">Выбранные роли:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.role_ids.map(roleId => {
-                          const role = roles.find(r => r.id === roleId);
-                          return role ? (
-                            <Badge 
-                              key={roleId}
-                              variant="outline"
-                              className="bg-[#0ea5e9]/5 border-[#0ea5e9]/20"
-                            >
-                              {role.display_name}
-                            </Badge>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <Select
+                    value={formData.role_ids[0]?.toString() || ''}
+                    onValueChange={(value) => setFormData({ ...formData, role_ids: [parseInt(value)] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите роль" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.id.toString()}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{role.display_name}</span>
+                            {role.description && (
+                              <span className="text-xs text-muted-foreground">{role.description}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
