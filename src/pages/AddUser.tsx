@@ -114,24 +114,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleSave = async () => {
-    if (!formData.full_name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Заполните все обязательные поля'
-      });
-      return;
-    }
-
-    if (formData.role_ids.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Выберите хотя бы одну роль'
-      });
-      return;
-    }
-
     setIsSaving(true);
 
     try {
@@ -269,24 +251,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   };
 
   const handleAddInvite = async () => {
-    if (!formData.full_name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Заполните все обязательные поля'
-      });
-      return;
-    }
-
-    if (formData.role_ids.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Выберите хотя бы одну роль'
-      });
-      return;
-    }
-
     setIsSaving(true);
 
     try {
@@ -383,9 +347,9 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   <Icon name="UserCircle" size={20} className="text-[#0ea5e9]" />
                   <h2 className="text-base lg:text-lg font-semibold text-foreground">Основная информация</h2>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">ФИО *</Label>
+                    <Label htmlFor="full_name">ФИО</Label>
                     <Input
                       id="full_name"
                       value={formData.full_name}
@@ -394,105 +358,96 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Логин *</Label>
-                    <Input
-                      id="username"
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      placeholder="ivanov"
-                      disabled={!!user}
-                    />
-                    {user && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Логин нельзя изменить после создания
-                      </p>
-                    )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Логин</Label>
+                      <Input
+                        id="username"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        placeholder="ivanov"
+                        disabled={!!user}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Телефон</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+7 (999) 123-45-67"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="ivanov@example.com"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="ivanov@example.com"
+                      />
+                    </div>
+                    <div ref={roleSectionRef} className="space-y-2 relative">
+                      <Label htmlFor="role">Роль</Label>
+                      <div className="relative">
+                        <Input
+                          id="role"
+                          placeholder="Начните вводить название роли..."
+                          value={searchRole}
+                          onChange={(e) => {
+                            setSearchRole(e.target.value);
+                            setShowRoleList(true);
+                          }}
+                          onFocus={() => setShowRoleList(true)}
+                        />
+                        
+                        {showRoleList && roles.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {roles
+                              .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
+                                          r.name.toLowerCase().includes(searchRole.toLowerCase()))
+                              .map(role => (
+                                <button
+                                  key={role.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData({ ...formData, role_ids: [role.id] });
+                                    setSearchRole(role.display_name);
+                                    setShowRoleList(false);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
+                                >
+                                  <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">{role.display_name}</p>
+                                    {role.description && (
+                                      <p className="text-xs text-muted-foreground">{role.description}</p>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Телефон *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+7 (999) 123-45-67"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2">
                     <div className="space-y-0.5">
-                      <Label>Статус пользователя</Label>
+                      <Label>Статус</Label>
                       <p className="text-xs text-muted-foreground">
-                        {formData.is_active ? 'Аккаунт активен' : 'Аккаунт заблокирован'}
+                        {formData.is_active ? 'Активен' : 'Заблокирован'}
                       </p>
                     </div>
                     <Switch
                       checked={formData.is_active}
                       onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                     />
-                  </div>
-                </div>
-              </div>
-
-              <div ref={roleSectionRef} className="bg-white rounded-lg border border-border p-4 lg:p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Icon name="Shield" size={20} className="text-[#0ea5e9]" />
-                  <h2 className="text-base lg:text-lg font-semibold text-foreground">Роль *</h2>
-                </div>
-                <div className="space-y-2 relative">
-                  <Label htmlFor="role">Роль</Label>
-                  <div className="relative">
-                    <Input
-                      id="role"
-                      placeholder="Начните вводить название роли..."
-                      value={searchRole}
-                      onChange={(e) => {
-                        setSearchRole(e.target.value);
-                        setShowRoleList(true);
-                      }}
-                      onFocus={() => setShowRoleList(true)}
-                    />
-                    
-                    {showRoleList && roles.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {roles
-                          .filter(r => r.display_name.toLowerCase().includes(searchRole.toLowerCase()) || 
-                                      r.name.toLowerCase().includes(searchRole.toLowerCase()))
-                          .map(role => (
-                            <button
-                              key={role.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData({ ...formData, role_ids: [role.id] });
-                                setSearchRole(role.display_name);
-                                setShowRoleList(false);
-                              }}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-start gap-3 border-b border-border last:border-0"
-                            >
-                              <Icon name="Shield" size={18} className="text-[#0ea5e9] flex-shrink-0 mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{role.display_name}</p>
-                                {role.description && (
-                                  <p className="text-xs text-muted-foreground">{role.description}</p>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
