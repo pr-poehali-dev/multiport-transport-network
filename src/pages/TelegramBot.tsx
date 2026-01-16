@@ -33,6 +33,16 @@ interface Role {
   display_name: string;
 }
 
+interface LinkedUser {
+  user_id: number;
+  telegram_id: number;
+  telegram_username: string;
+  telegram_first_name: string;
+  email: string;
+  user_name: string;
+  created_at: string;
+}
+
 interface TelegramConfig {
   bot_token: string;
   bot_username: string;
@@ -56,7 +66,10 @@ const EVENT_LABELS: Record<string, string> = {
 export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
   const [settings, setSettings] = useState<TelegramSetting[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [linkedUsers, setLinkedUsers] = useState<LinkedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingRoles, setEditingRoles] = useState<string | null>(null);
+  const [tempRoleIds, setTempRoleIds] = useState<number[]>([]);
   const [botToken, setBotToken] = useState('');
   const [botUsername, setBotUsername] = useState('');
   const [adminTelegramId, setAdminTelegramId] = useState('');
@@ -79,6 +92,7 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     loadConfig();
     loadSettings();
     loadRoles();
+    loadLinkedUsers();
   }, []);
 
   const loadConfig = async () => {
@@ -330,6 +344,82 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
     }
   };
 
+  const loadLinkedUsers = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=linked');
+      const data = await response.json();
+      if (data.linked_users) {
+        setLinkedUsers(data.linked_users);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки привязанных пользователей:', error);
+    }
+  };
+
+  const handleUnlinkUser = async (userId: number) => {
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=unlink&user_id=${userId}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.ok) {
+        setLinkedUsers(prev => prev.filter(u => u.user_id !== userId));
+        toast({
+          title: 'Успешно',
+          description: 'Пользователь отвязан от Telegram'
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось отвязать пользователя'
+      });
+    }
+  };
+
+  const handleEditRoles = (eventType: string, currentRoleIds: number[]) => {
+    setEditingRoles(eventType);
+    setTempRoleIds(currentRoleIds);
+  };
+
+  const handleSaveRoles = async (eventType: string) => {
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=telegram&action=settings&event_type=${eventType}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role_ids: tempRoleIds })
+        }
+      );
+
+      if (response.ok) {
+        setSettings(prev => prev.map(s => 
+          s.event_type === eventType ? { ...s, role_ids: tempRoleIds } : s
+        ));
+        setEditingRoles(null);
+        toast({
+          title: 'Успешно',
+          description: 'Роли обновлены'
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не удалось обновить роли'
+      });
+    }
+  };
+
+  const toggleRole = (roleId: number) => {
+    setTempRoleIds(prev => 
+      prev.includes(roleId) ? prev.filter(id => id !== roleId) : [...prev, roleId]
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <TopBar
@@ -547,28 +637,134 @@ export default function TelegramBot({ onMenuClick }: TelegramBotProps) {
                         </p>
                       </div>
 
-                      {setting.role_ids && setting.role_ids.length > 0 && (
-                        <div className="space-y-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
                           <Label className="text-sm text-muted-foreground">Кому отправлять</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {setting.role_ids.map((roleId) => {
-                              const role = roles.find(r => r.id === roleId);
-                              return role ? (
-                                <Badge key={roleId} variant="secondary">
-                                  <Icon name="Shield" size={12} className="mr-1" />
-                                  {role.display_name}
-                                </Badge>
-                              ) : null;
-                            })}
-                          </div>
+                          {editingRoles === setting.event_type ? (
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setEditingRoles(null)}
+                              >
+                                <Icon name="X" size={14} className="mr-1" />
+                                Отмена
+                              </Button>
+                              <Button 
+                                size="sm"
+                                onClick={() => handleSaveRoles(setting.event_type)}
+                                className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90"
+                              >
+                                <Icon name="Check" size={14} className="mr-1" />
+                                Сохранить
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleEditRoles(setting.event_type, setting.role_ids)}
+                            >
+                              <Icon name="Edit" size={14} className="mr-1" />
+                              Изменить
+                            </Button>
+                          )}
                         </div>
-                      )}
+                        
+                        {editingRoles === setting.event_type ? (
+                          <div className="flex flex-wrap gap-2 p-3 border rounded-lg">
+                            {roles.map((role) => (
+                              <Badge 
+                                key={role.id}
+                                variant={tempRoleIds.includes(role.id) ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => toggleRole(role.id)}
+                              >
+                                <Icon name="Shield" size={12} className="mr-1" />
+                                {role.display_name}
+                                {tempRoleIds.includes(role.id) && (
+                                  <Icon name="Check" size={12} className="ml-1" />
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {setting.role_ids && setting.role_ids.length > 0 ? (
+                              setting.role_ids.map((roleId) => {
+                                const role = roles.find(r => r.id === roleId);
+                                return role ? (
+                                  <Badge key={roleId} variant="secondary">
+                                    <Icon name="Shield" size={12} className="mr-1" />
+                                    {role.display_name}
+                                  </Badge>
+                                ) : null;
+                              })
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Роли не выбраны</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
           </div>
+
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="Users" size={20} className="text-[#0ea5e9]" />
+                Привязанные пользователи
+              </CardTitle>
+              <CardDescription>
+                Пользователи, которые подключились к боту через инвайт-ссылку
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {linkedUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Icon name="UserX" size={48} className="mx-auto mb-3 opacity-50" />
+                  <p>Нет привязанных пользователей</p>
+                  <p className="text-sm mt-1">Создайте инвайт-ссылку в разделе "Пользователи"</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {linkedUsers.map((user) => (
+                    <div 
+                      key={user.user_id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Icon name="User" size={16} className="text-muted-foreground" />
+                          <span className="font-medium">{user.telegram_first_name || user.user_name}</span>
+                          {user.telegram_username && (
+                            <span className="text-sm text-muted-foreground">@{user.telegram_username}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                          <Icon name="Mail" size={14} />
+                          {user.email}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUnlinkUser(user.user_id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Icon name="Unlink" size={16} className="mr-1" />
+                        Отвязать
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="border-border bg-blue-50/50">
             <CardHeader>
