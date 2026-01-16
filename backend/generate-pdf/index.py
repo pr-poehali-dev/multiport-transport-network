@@ -10,7 +10,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
-from PyPDF2 import PdfReader, PdfWriter
+from pypdf import PdfReader, PdfWriter
 
 def handler(event: dict, context) -> dict:
     '''API для генерации PDF документов по шаблонам'''
@@ -162,8 +162,8 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     template_pdf_bytes = base64.b64decode(template['file_data'])
     template_pdf = BytesIO(template_pdf_bytes)
     
-    # Читаем шаблон
-    reader = PdfReader(template_pdf)
+    # Читаем шаблон (strict=False для игнорирования ошибок формата)
+    reader = PdfReader(template_pdf, strict=False)
     writer = PdfWriter()
     
     # Создаем overlay с текстом
@@ -190,7 +190,7 @@ def generate_pdf(template: Dict[str, Any], contract: Dict[str, Any], related_dat
     
     # Накладываем overlay на шаблон
     packet.seek(0)
-    overlay_pdf = PdfReader(packet)
+    overlay_pdf = PdfReader(packet, strict=False)
     
     page = reader.pages[0]
     page.merge_page(overlay_pdf.pages[0])
