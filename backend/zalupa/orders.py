@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any
+from telegram_notifications import send_notification
 
 
 def handle_orders(method: str, event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, str]) -> Dict[str, Any]:
@@ -251,6 +252,16 @@ def create_order(event: Dict[str, Any], cursor, conn, cors_headers: Dict[str, st
         ))
         
         order_id, created_at = cursor.fetchone()
+        
+        send_notification(
+            cursor,
+            'order_created',
+            {
+                'order_id': order_id,
+                'prefix': data.get('prefix', ''),
+                'route_number': data.get('routeNumber', '')
+            }
+        )
         
         consignees = data.get('consignees', [])
         for idx, consignee in enumerate(consignees):
