@@ -224,6 +224,8 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
     elif method == 'DELETE':
         params = event.get('queryStringParameters') or {}
         user_id = params.get('id')
+        
+        print(f"[DEBUG] DELETE /users id={user_id}")
 
         if not user_id:
             return {
@@ -233,26 +235,38 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
                 'isBase64Encoded': False
             }
 
-        cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
-        if not cursor.fetchone():
+        try:
+            cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
+            if not cursor.fetchone():
+                return {
+                    'statusCode': 404,
+                    'headers': cors_headers,
+                    'body': json.dumps({'error': 'User not found'}),
+                    'isBase64Encoded': False
+                }
+
+            cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
+            cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
+
+            conn.commit()
+            
+            print(f"[DEBUG] User {user_id} deleted successfully")
+
             return {
-                'statusCode': 404,
+                'statusCode': 200,
                 'headers': cors_headers,
-                'body': json.dumps({'error': 'User not found'}),
+                'body': json.dumps({'message': 'User deleted'}),
                 'isBase64Encoded': False
             }
-
-        cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
-        cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
-
-        conn.commit()
-
-        return {
-            'statusCode': 200,
-            'headers': cors_headers,
-            'body': json.dumps({'message': 'User deleted'}),
-            'isBase64Encoded': False
-        }
+        except Exception as e:
+            print(f"[ERROR] DELETE /users failed: {str(e)}")
+            conn.rollback()
+            return {
+                'statusCode': 500,
+                'headers': cors_headers,
+                'body': json.dumps({'error': str(e)}),
+                'isBase64Encoded': False
+            }
 
     return {
         'statusCode': 405,
