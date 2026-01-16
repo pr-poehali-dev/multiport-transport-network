@@ -58,6 +58,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [searchRole, setSearchRole] = useState('');
   const [showRoleList, setShowRoleList] = useState(false);
   const roleSectionRef = useRef<HTMLDivElement>(null);
+  const [showInviteSection, setShowInviteSection] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -75,6 +76,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   useEffect(() => {
     if (user?.id) {
       loadExistingInvite(user.id);
+      setShowInviteSection(true);
     }
   }, [user]);
 
@@ -266,6 +268,66 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
     });
   };
 
+  const handleAddInvite = async () => {
+    if (!formData.full_name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Заполните все обязательные поля'
+      });
+      return;
+    }
+
+    if (formData.role_ids.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Выберите хотя бы одну роль'
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const isEdit = !!user;
+      const url = isEdit
+        ? `https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users&id=${user.id}`
+        : 'https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=users';
+
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сохранения пользователя');
+      }
+
+      if (!isEdit && data.id) {
+        setCreatedUserId(data.id);
+      }
+
+      toast({
+        title: 'Успешно',
+        description: 'Пользователь сохранён'
+      });
+      
+      setShowInviteSection(true);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось сохранить пользователя'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
 
   return (
@@ -435,7 +497,26 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               </div>
 
-          <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
+          {!showInviteSection ? (
+            <button
+              onClick={handleAddInvite}
+              disabled={isSaving}
+              className="w-full bg-white rounded-lg border border-dashed border-border p-4 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <>
+                  <Icon name="Loader2" size={20} className="animate-spin" />
+                  <span>Сохранение...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="Plus" size={20} />
+                  <span>Добавить инвайт</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Icon name="Link" size={20} className="text-[#0ea5e9]" />
@@ -528,6 +609,7 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                 </div>
               )}
             </div>
+          )}
         </div>
       </div>
 
