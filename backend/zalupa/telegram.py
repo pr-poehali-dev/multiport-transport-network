@@ -86,6 +86,17 @@ def handle_telegram(method: str, event: dict, cursor, conn, cors_headers: dict) 
                 ''', (bot_token, bot_username))
                 conn.commit()
 
+                webhook_url = 'https://functions.poehali.dev/33cce63d-413a-4ccd-976c-ece47a291bc9'
+                webhook_response = requests.post(
+                    f'https://api.telegram.org/bot{bot_token}/setWebhook',
+                    json={'url': webhook_url},
+                    timeout=10
+                )
+                webhook_data = webhook_response.json()
+                
+                if not webhook_data.get('ok'):
+                    print(f'Webhook setup warning: {webhook_data}')
+
                 return {
                     'statusCode': 200,
                     'headers': cors_headers,
