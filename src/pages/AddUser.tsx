@@ -41,7 +41,7 @@ interface AddUserProps {
 
 export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const { toast } = useToast();
-  const isEditMode = !!user;
+  const [isEditMode, setIsEditMode] = useState(!!user);
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
@@ -139,12 +139,13 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
       };
 
       const data = isEditMode 
-        ? await updateUser(user.id!, userData)
+        ? await updateUser(user?.id || createdUserId!, userData)
         : await createUser(userData);
 
-      // Если создан новый пользователь, сохраняем его ID
+      // Если создан новый пользователь, сохраняем его ID и переключаемся в режим редактирования
       if (!isEditMode && data.id) {
         setCreatedUserId(data.id);
+        setIsEditMode(true);
         loadExistingInvite(data.id);
       }
 
