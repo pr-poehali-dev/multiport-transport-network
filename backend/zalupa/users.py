@@ -245,10 +245,7 @@ def handle_users(method: str, event: dict, cursor, conn, cors_headers: dict) -> 
                     'isBase64Encoded': False
                 }
 
-            # Удаляем все связанные записи
-            cursor.execute('DELETE FROM invites WHERE user_id = %s', (user_id,))
-            print(f"[DEBUG] Deleted invites for user {user_id}")
-            
+            # Удаляем связанные записи
             cursor.execute('DELETE FROM user_roles WHERE user_id = %s', (user_id,))
             print(f"[DEBUG] Deleted user_roles for user {user_id}")
             

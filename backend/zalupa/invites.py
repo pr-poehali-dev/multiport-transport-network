@@ -1,6 +1,5 @@
 import json
 import secrets
-import os
 from psycopg2.extras import RealDictCursor
 
 
@@ -21,15 +20,13 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
         
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
-            SELECT id, code, current_uses, max_uses, is_active
-            FROM invite_links
-            WHERE created_by = %s AND is_active = true
-            ORDER BY created_at DESC
-            LIMIT 1
+            SELECT id, invite_code, invite_created_at, invite_used_at, telegram_id
+            FROM users
+            WHERE id = %s
         ''', (user_id,))
-        invite = cursor.fetchone()
+        user = cursor.fetchone()
         
-        if not invite:
+        if not user or not user.get('invite_code'):
             return {
                 'statusCode': 200,
                 'headers': cors_headers,
@@ -41,14 +38,22 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
         config = cursor.fetchone()
         bot_username = config['bot_username'] if config and config.get('bot_username') else 'your_bot'
         
-        invite_dict = dict(invite)
-        invite_dict['invite_link'] = f'https://t.me/{bot_username}?start={invite_dict["code"]}'
-        invite_dict['is_used'] = invite_dict['current_uses'] >= invite_dict['max_uses']
+        invite_link = f'https://t.me/{bot_username}?start={user["invite_code"]}'
+        is_used = user['invite_used_at'] is not None
         
         return {
             'statusCode': 200,
             'headers': cors_headers,
-            'body': json.dumps({'invite': invite_dict}),
+            'body': json.dumps({
+                'invite': {
+                    'id': user['id'],
+                    'code': user['invite_code'],
+                    'invite_link': invite_link,
+                    'is_used': is_used,
+                    'current_uses': 1 if is_used else 0,
+                    'max_uses': 1
+                }
+            }),
             'isBase64Encoded': False
         }
     
@@ -72,18 +77,16 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
                 'isBase64Encoded': False
             }
         
-        cursor.execute('''
-            UPDATE invite_links 
-            SET is_active = false 
-            WHERE created_by = %s AND is_active = true
-        ''', (user_id,))
-        
         invite_code = secrets.token_urlsafe(16)
-        cursor.execute(
-            'INSERT INTO invite_links (code, created_by, max_uses) VALUES (%s, %s, %s) RETURNING id',
-            (invite_code, user_id, 1)
-        )
-        invite_id = cursor.fetchone()[0]
+        
+        cursor.execute('''
+            UPDATE users 
+            SET invite_code = %s, 
+                invite_created_at = CURRENT_TIMESTAMP,
+                invite_used_at = NULL,
+                telegram_id = NULL
+            WHERE id = %s
+        ''', (invite_code, user_id))
         conn.commit()
         
         cursor.execute('SELECT bot_username FROM telegram_config WHERE id = 1')
@@ -96,7 +99,7 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
             'statusCode': 201,
             'headers': cors_headers,
             'body': json.dumps({
-                'id': invite_id,
+                'id': user_id,
                 'code': invite_code,
                 'invite_link': invite_link,
                 'is_used': False
@@ -127,11 +130,12 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
 
         invite_code = secrets.token_urlsafe(16)
 
-        cursor.execute(
-            'INSERT INTO invite_links (code, created_by, max_uses) VALUES (%s, %s, %s) RETURNING id',
-            (invite_code, user_id, 1)
-        )
-        invite_id = cursor.fetchone()[0]
+        cursor.execute('''
+            UPDATE users 
+            SET invite_code = %s, 
+                invite_created_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (invite_code, user_id))
         conn.commit()
 
         cursor.execute('SELECT bot_username FROM telegram_config WHERE id = 1')
@@ -144,7 +148,7 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
             'statusCode': 201,
             'headers': cors_headers,
             'body': json.dumps({
-                'id': invite_id,
+                'id': user_id,
                 'code': invite_code,
                 'invite_link': invite_link
             }),
@@ -155,35 +159,53 @@ def handle_invites(method: str, event: dict, cursor, conn, cors_headers: dict) -
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute('''
             SELECT 
-                il.id, il.code, il.created_by, il.expires_at, 
-                il.max_uses, il.current_uses, il.is_active, il.created_at,
-                u.full_name as creator_name
-            FROM invite_links il
-            LEFT JOIN users u ON il.created_by = u.id
-            ORDER BY il.created_at DESC
+                id, full_name, invite_code, invite_created_at, 
+                invite_used_at, telegram_id
+            FROM users
+            WHERE invite_code IS NOT NULL
+            ORDER BY invite_created_at DESC
         ''')
-        invites = cursor.fetchall()
+        users = cursor.fetchall()
+
+        invites = []
+        for user in users:
+            invites.append({
+                'id': user['id'],
+                'code': user['invite_code'],
+                'created_by': user['id'],
+                'creator_name': user['full_name'],
+                'created_at': user['invite_created_at'].isoformat() if user['invite_created_at'] else None,
+                'is_used': user['invite_used_at'] is not None,
+                'current_uses': 1 if user['invite_used_at'] else 0,
+                'max_uses': 1
+            })
 
         return {
             'statusCode': 200,
             'headers': cors_headers,
-            'body': json.dumps({'invites': [dict(i) for i in invites]}),
+            'body': json.dumps({'invites': invites}),
             'isBase64Encoded': False
         }
 
     elif method == 'DELETE':
         params = event.get('queryStringParameters') or {}
-        invite_id = params.get('id')
+        user_id = params.get('id')
 
-        if not invite_id:
+        if not user_id:
             return {
                 'statusCode': 400,
                 'headers': cors_headers,
-                'body': json.dumps({'error': 'invite id is required'}),
+                'body': json.dumps({'error': 'user id is required'}),
                 'isBase64Encoded': False
             }
 
-        cursor.execute('DELETE FROM invite_links WHERE id = %s', (invite_id,))
+        cursor.execute('''
+            UPDATE users 
+            SET invite_code = NULL, 
+                invite_created_at = NULL,
+                invite_used_at = NULL
+            WHERE id = %s
+        ''', (user_id,))
         conn.commit()
 
         return {
