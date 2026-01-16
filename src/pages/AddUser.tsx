@@ -53,8 +53,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
-  const [inviteLink, setInviteLink] = useState<string>('');
-  const [showInviteSection, setShowInviteSection] = useState(false);
   const [existingInvite, setExistingInvite] = useState<any>(null);
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [regeneratingInvite, setRegeneratingInvite] = useState(false);
@@ -129,39 +127,12 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
         throw new Error(data.error || 'Ошибка сохранения пользователя');
       }
 
-      // Если создаём нового пользователя, генерируем инвайт-ссылку
-      if (!isEdit) {
-        const userId = data.id;
-        const inviteResponse = await fetch('https://functions.poehali.dev/bbe9b092-03c0-40af-8e4c-bbf9dbde445a?resource=invites', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId })
-        });
-
-        const inviteData = await inviteResponse.json();
-
-        if (inviteResponse.ok && inviteData.invite_link) {
-          setInviteLink(inviteData.invite_link);
-          setShowInviteSection(true);
-          
-          toast({
-            title: 'Пользователь создан',
-            description: 'Инвайт-ссылка сгенерирована успешно'
-          });
-        } else {
-          toast({
-            title: 'Пользователь создан',
-            description: 'Но не удалось создать инвайт-ссылку'
-          });
-          onBack();
-        }
-      } else {
-        toast({
-          title: 'Успешно',
-          description: 'Пользователь обновлён'
-        });
-        onBack();
-      }
+      toast({
+        title: 'Успешно',
+        description: isEdit ? 'Пользователь обновлён' : 'Пользователь создан'
+      });
+      
+      onBack();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -465,39 +436,6 @@ export default function AddUser({ user, onBack, onMenuClick }: AddUserProps) {
                   </Button>
                 </div>
               )}
-            </div>
-          )}
-
-          {showInviteSection && inviteLink && (
-            <div className="bg-white rounded-lg border border-[#0ea5e9] p-4 lg:p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Icon name="Link" size={20} className="text-[#0ea5e9]" />
-                <h2 className="text-base lg:text-lg font-semibold text-foreground">Инвайт-ссылка для Telegram</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Отправьте эту ссылку пользователю для подключения к боту
-              </p>
-              <div className="flex gap-2">
-                <Input 
-                  value={inviteLink} 
-                  readOnly 
-                  className="font-mono text-sm"
-                />
-                <Button 
-                  onClick={() => handleCopyInvite(inviteLink)}
-                  className="bg-[#0ea5e9] hover:bg-[#0ea5e9]/90 gap-2"
-                >
-                  <Icon name="Copy" size={18} />
-                  Скопировать
-                </Button>
-              </div>
-              <Button 
-                onClick={onBack} 
-                className="w-full"
-                variant="outline"
-              >
-                Закрыть
-              </Button>
             </div>
           )}
         </div>
